@@ -92,6 +92,9 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - Datos: verificación del respaldo en carpeta, aviso persistente de fallas, copia previa y «Deshacer restauración», aviso de almacenamiento > 85 %, aviso si una escritura falla, validación de cabecera `%PDF-`.
 - Textos y nombres unificados (GPC y temario, Ajustes → Preferencias), estados vacíos con acción.
 
+### v0.6.6 · Tinta de baja latencia ✅ (noviembre 2026)
+- Trazo en vivo incremental (solo el tramo nuevo, sin `requestAnimationFrame` ni redibujar el trazo completo), canvas `desynchronized`, eventos `pointerrawupdate`, punta con `getPredictedEvents()` en una capa aparte que se borra en cada evento, opacidad del marcatextos/lápiz en la capa y estabilización más ligera (0.75).
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

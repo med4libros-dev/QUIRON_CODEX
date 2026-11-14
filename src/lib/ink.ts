@@ -155,3 +155,82 @@ export async function renderInkPage(
   for (const s of strokes) drawStroke(ctx, s, '#111827');
   return c.toDataURL('image/png');
 }
+
+/* ---------- Trazo en vivo de baja latencia ----------
+ * Antes: cada movimiento esperaba al siguiente cuadro (requestAnimationFrame) y redibujaba el trazo
+ * completo, cada vez más largo. Ahora cada punto nuevo se dibuja al instante y solo su tramo, en un
+ * canvas «desincronizado» (sale a pantalla sin esperar al compositor), y la punta se adelanta con los
+ * puntos que predice el sistema. Al soltar, el trazo definitivo se dibuja con drawStroke como siempre.
+ */
+
+/** Contexto 2D; los canvas en vivo (data-live) piden el modo de baja latencia. */
+export function ctx2d(c: HTMLCanvasElement): CanvasRenderingContext2D | null {
+  return c.getContext('2d', c.dataset.live !== undefined ? { desynchronized: true } : undefined) as CanvasRenderingContext2D | null;
+}
+
+export interface LiveStyle {
+  tool: StrokeLike['tool'];
+  color: string;
+  size: number;
+  /** El lápiz digital reporta presión real; el mouse y el dedo no. */
+  pressure: boolean;
+}
+
+const liveWidth = (st: LiveStyle, p: number | undefined) => {
+  if (st.tool === 'highlighter' || st.tool === 'marker' || !st.pressure) return st.size;
+  const pr = p ?? 0.5;
+  return st.tool === 'pencil' ? st.size * (0.45 + pr * 0.8) : st.size * (0.3 + pr * 1.15);
+};
+
+/** Opacidad del trazo en vivo: se aplica al canvas entero para que los tramos no se oscurezcan al encimarse. */
+export const liveOpacity = (tool: StrokeLike['tool']) => (tool === 'highlighter' ? 0.32 : tool === 'pencil' ? 0.78 : 1);
+
+const mid = (a: number[], b: number[]) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+
+/** Dibuja solo los tramos nuevos (desde el índice `from`) con la misma geometría que drawStroke. Devuelve el nuevo `from`. */
+export function drawLiveSegments(ctx: CanvasRenderingContext2D, pts: number[][], from: number, st: LiveStyle, color: string): number {
+  ctx.lineCap = st.tool === 'highlighter' ? 'butt' : 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 1;
+  if (from === 0 && pts.length) {
+    ctx.beginPath();
+    ctx.arc(pts[0][0], pts[0][1], liveWidth(st, pts[0][2]) / 2, 0, Math.PI * 2);
+    if (st.tool !== 'highlighter') ctx.fill();
+    from = 1;
+  }
+  for (let i = Math.max(from, 1); i < pts.length; i++) {
+    const a = pts[i - 1];
+    const b = pts[i];
+    const start = i === 1 ? a : mid(pts[i - 2], a);
+    const end = mid(a, b);
+    ctx.beginPath();
+    ctx.moveTo(start[0], start[1]);
+    ctx.quadraticCurveTo(a[0], a[1], end[0], end[1]);
+    ctx.lineWidth = liveWidth(st, ((a[2] ?? 0.5) + (b[2] ?? 0.5)) / 2);
+    ctx.stroke();
+  }
+  return pts.length;
+}
+
+/**
+ * Punta del trazo: el último medio tramo (de la última mitad al punto real) más los puntos predichos.
+ * Va en un canvas aparte que se borra en cada evento, así la predicción nunca queda en el dibujo.
+ */
+export function drawLiveTip(ctx: CanvasRenderingContext2D, pts: number[][], predicted: number[][], st: LiveStyle, color: string, w: number, h: number) {
+  ctx.clearRect(0, 0, w, h);
+  if (pts.length < 2 && !predicted.length) return;
+  const last = pts[pts.length - 1];
+  const start = pts.length >= 2 ? mid(pts[pts.length - 2], last) : last;
+  ctx.lineCap = st.tool === 'highlighter' ? 'butt' : 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = liveWidth(st, last[2]);
+  ctx.beginPath();
+  ctx.moveTo(start[0], start[1]);
+  ctx.lineTo(last[0], last[1]);
+  for (const p of predicted) ctx.lineTo(p[0], p[1]);
+  ctx.stroke();
+}

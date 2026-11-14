@@ -6101,3 +6101,9 @@ button.kpi:hover {
     grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
+/* Trazo en vivo en su propia capa: dibujar no obliga a repintar la página ni el cristal de alrededor. */
+.ink-live {
+  pointer-events: none;
+  will-change: transform;
+  transform: translateZ(0);
+}

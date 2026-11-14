@@ -14,7 +14,7 @@ import { Icon } from '../../components/Icon';
 import { capturePointer } from '../../lib/pointer';
 import { idb } from '../../lib/idb';
 import { uid } from '../../lib/id';
-import { PAGE_H, PAGE_W, drawStroke, hitsStroke, inkColor } from '../../lib/ink';
+import { PAGE_H, PAGE_W, ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, inkColor, liveOpacity, type LiveStyle } from '../../lib/ink';
 import { PenControls } from '../../components/PenControls';
 import { loadInkImages, saveInkImages, type InkImage } from '../../lib/inkImages';
 import { useBridge } from '../../store/bridge';
@@ -289,10 +289,10 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
   const wrapRef = useRef<HTMLDivElement>(null);
   const baseRef = useRef<HTMLCanvasElement>(null);
   const liveRef = useRef<HTMLCanvasElement>(null);
+  const tipRef = useRef<HTMLCanvasElement>(null);
   const [cssW, setCssW] = useState(0);
-  const cur = useRef<{ id: number; pts: number[][]; erase: boolean; rect: DOMRect } | null>(null);
+  const cur = useRef<{ id: number; pts: number[][]; erase: boolean; rect: DOMRect; drawn: number; st: LiveStyle; color: string } | null>(null);
   const pan = useRef<{ id: number; y: number } | null>(null);
-  const raf = useRef(0);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -314,7 +314,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       c.width = w;
       c.height = h;
     }
-    const ctx = c.getContext('2d');
+    const ctx = ctx2d(c);
     if (!ctx) return null;
     const k = (cssW / PAGE_W) * dpr;
     ctx.setTransform(k, 0, 0, k, 0, 0);
@@ -327,7 +327,11 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     if (!ctx) return;
     const ink = inkColor();
     for (const s of strokes) drawStroke(ctx, s, ink);
-    if (!cur.current) prepare(liveRef.current); // limpia el trazo en vivo ya consolidado
+    if (!cur.current) {
+      // Limpia el trazo en vivo y su punta, ya consolidados en el canvas base.
+      prepare(liveRef.current);
+      prepare(tipRef.current);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [strokes, cssW, dark]);
 
@@ -339,14 +343,14 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
 
   const strokeTool: Stroke['tool'] = tool === 'eraser' ? 'pen' : tool;
 
-  const drawLive = () => {
-    cancelAnimationFrame(raf.current);
-    raf.current = requestAnimationFrame(() => {
-      const c = cur.current;
-      const ctx = prepare(liveRef.current);
-      if (!ctx || !c || c.erase) return;
-      drawStroke(ctx, { tool: strokeTool, color, size, points: c.pts }, inkColor());
-    });
+  /** Dibuja al instante solo lo nuevo del trazo y la punta predicha (sin esperar al siguiente cuadro). */
+  const paintLive = (predicted: number[][] = []) => {
+    const c = cur.current;
+    if (!c || c.erase || !liveRef.current) return;
+    const ctx = ctx2d(liveRef.current);
+    if (ctx) c.drawn = drawLiveSegments(ctx, c.pts, c.drawn, c.st, c.color);
+    const tip = tipRef.current && ctx2d(tipRef.current);
+    if (tip) drawLiveTip(tip, c.pts, predicted, c.st, c.color, PAGE_W, PAGE_H);
   };
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -361,9 +365,18 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     // Botón borrador del lápiz: button 5 / buttons bit 32.
     const erase = tool === 'eraser' || e.button === 5 || (e.buttons & 32) === 32;
     const p = toLocal(e, rect);
-    cur.current = { id: e.pointerId, pts: [p], erase, rect };
-    if (erase) onErase(index, p[0], p[1], true);
-    else drawLive();
+    const st: LiveStyle = { tool: strokeTool, color, size, pressure: e.pointerType === 'pen' };
+    cur.current = { id: e.pointerId, pts: [p], erase, rect, drawn: 0, st, color: color === 'auto' ? inkColor() : color };
+    if (erase) {
+      onErase(index, p[0], p[1], true);
+      return;
+    }
+    prepare(liveRef.current);
+    prepare(tipRef.current);
+    const op = String(liveOpacity(strokeTool));
+    if (liveRef.current) liveRef.current.style.opacity = op;
+    if (tipRef.current) tipRef.current.style.opacity = op;
+    paintLive();
   };
 
   const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -373,9 +386,15 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       pn.y = e.clientY;
       return;
     }
+    // Con pointerrawupdate (lápiz sin esperar al cuadro) la tinta ya se dibujó ahí.
+    if (rawSeen.current) return;
+    inkMove(e.nativeEvent);
+  };
+
+  /** Puntos del lápiz (incluidos los agrupados) → trazo en vivo o borrador. */
+  const inkMove = (native: PointerEvent) => {
     const c = cur.current;
-    if (!c || c.id !== e.pointerId) return;
-    const native = e.nativeEvent;
+    if (!c || c.id !== native.pointerId) return;
     const coalesced = typeof native.getCoalescedEvents === 'function' ? native.getCoalescedEvents() : [];
     for (const ev of coalesced.length ? coalesced : [native]) {
       const p = toLocal(ev, c.rect);
@@ -385,12 +404,31 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       }
       // Estabilización ligera: suaviza el temblor sin agregar retraso perceptible.
       const last = c.pts[c.pts.length - 1];
-      p[0] = Math.round((last[0] + (p[0] - last[0]) * 0.65) * 10) / 10;
-      p[1] = Math.round((last[1] + (p[1] - last[1]) * 0.65) * 10) / 10;
+      p[0] = Math.round((last[0] + (p[0] - last[0]) * 0.75) * 10) / 10;
+      p[1] = Math.round((last[1] + (p[1] - last[1]) * 0.75) * 10) / 10;
       c.pts.push(p);
     }
-    if (!c.erase) drawLive();
+    if (c.erase) return;
+    // Puntos que el sistema predice para los próximos milisegundos: adelantan la punta y borran la sensación de retraso.
+    const predicted = typeof native.getPredictedEvents === 'function' ? native.getPredictedEvents().map((ev) => toLocal(ev, c.rect)) : [];
+    paintLive(predicted);
   };
+
+  // «pointerrawupdate» llega en cuanto el lápiz reporta, sin esperar al siguiente cuadro como pointermove.
+  const rawSeen = useRef(false);
+  const inkMoveRef = useRef(inkMove);
+  inkMoveRef.current = inkMove;
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || !('onpointerrawupdate' in el)) return;
+    const h = (ev: Event) => {
+      if (!cur.current) return;
+      rawSeen.current = true;
+      inkMoveRef.current(ev as PointerEvent);
+    };
+    el.addEventListener('pointerrawupdate', h);
+    return () => el.removeEventListener('pointerrawupdate', h);
+  }, []);
 
   const onUp = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (pan.current?.id === e.pointerId) {
@@ -400,8 +438,8 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     const c = cur.current;
     if (!c || c.id !== e.pointerId) return;
     cur.current = null;
-    cancelAnimationFrame(raf.current);
     if (c.erase) return;
+    // El trazo en vivo y la punta se borran cuando el definitivo ya está dibujado (efecto de abajo): sin parpadeo.
     onStroke({ id: uid(), page: index, tool: strokeTool, color, size, points: c.pts });
   };
 
@@ -430,7 +468,8 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
         />
       ))}
       <canvas ref={baseRef} />
-      <canvas ref={liveRef} />
+      <canvas ref={liveRef} data-live="" className="ink-live" />
+      <canvas ref={tipRef} data-live="" className="ink-live" />
       {tool === 'eraser' &&
         images.map((im) => (
           <button

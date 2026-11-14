@@ -10,7 +10,7 @@ import {
   type RefObject,
 } from 'react';
 import { uid } from '../../lib/id';
-import { drawStroke, hitsStroke } from '../../lib/ink';
+import { ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, liveOpacity, type LiveStyle } from '../../lib/ink';
 import { capturePointer } from '../../lib/pointer';
 import { cropPage } from '../../lib/crop';
 import { TextLayer, extractTextInRect, loadPdfData, openPdf, type PDFDocumentProxy, type PDFPageProxy } from '../../lib/pdf';
@@ -251,7 +251,7 @@ interface PageProps {
 
 type Gesture =
   | { kind: 'rect'; id: number; x: number; y: number }
-  | { kind: 'draw'; id: number; pts: number[][]; rect: DOMRect }
+  | { kind: 'draw'; id: number; pts: number[][]; rect: DOMRect; drawn: number; st: LiveStyle }
   | { kind: 'erase'; id: number; rect: DOMRect }
   | { kind: 'pan'; id: number; y: number };
 
@@ -273,6 +273,7 @@ const PdfPage = memo(function PdfPage({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inkRef = useRef<HTMLCanvasElement>(null);
   const liveRef = useRef<HTMLCanvasElement>(null);
+  const tipRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<PDFPageProxy | null>(null);
   const [visible, setVisible] = useState(false);
@@ -376,7 +377,7 @@ const PdfPage = memo(function PdfPage({
       c.width = w;
       c.height = h;
     }
-    const ctx = c.getContext('2d');
+    const ctx = ctx2d(c);
     if (!ctx) return null;
     const k = (cssW / LW) * dpr;
     ctx.setTransform(k, 0, 0, k, 0, 0);
@@ -388,7 +389,10 @@ const PdfPage = memo(function PdfPage({
   useEffect(() => {
     const ctx = prepare(inkRef.current);
     if (ctx) for (const s of strokes) drawStroke(ctx, s, '#111827');
-    if (gesture.current?.kind !== 'draw') prepare(liveRef.current);
+    if (gesture.current?.kind !== 'draw') {
+      prepare(liveRef.current);
+      prepare(tipRef.current);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [strokes, visible, cssW, cssH]);
 
@@ -415,14 +419,14 @@ const PdfPage = memo(function PdfPage({
     }
   };
 
-  const drawLive = () => {
-    cancelAnimationFrame(raf.current);
-    raf.current = requestAnimationFrame(() => {
-      const g = gesture.current;
-      const ctx = prepare(liveRef.current);
-      if (!ctx || !g || g.kind !== 'draw') return;
-      drawStroke(ctx, { tool: drawTool, color: pen.color, size: pen.size, points: g.pts }, '#111827');
-    });
+  /** Trazo en vivo: cada punto se dibuja al instante (solo su tramo) y la punta se adelanta con la predicción. */
+  const paintLive = (predicted: number[][] = []) => {
+    const g = gesture.current;
+    if (!g || g.kind !== 'draw' || !liveRef.current) return;
+    const ctx = ctx2d(liveRef.current);
+    if (ctx) g.drawn = drawLiveSegments(ctx, g.pts, g.drawn, g.st, g.st.color);
+    const tip = tipRef.current && ctx2d(tipRef.current);
+    if (tip) drawLiveTip(tip, g.pts, predicted, g.st, g.st.color, LW, logicalH);
   };
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -448,8 +452,14 @@ const PdfPage = memo(function PdfPage({
       const [x, y] = toLogical(e, r);
       eraseAt(x, y, p.x, p.y);
     } else if (tool === 'draw') {
-      gesture.current = { kind: 'draw', id: e.pointerId, pts: [toLogical(e, r)], rect: r };
-      drawLive();
+      const st: LiveStyle = { tool: drawTool, color: pen.color === 'auto' ? '#111827' : pen.color, size: pen.size, pressure: e.pointerType === 'pen' };
+      gesture.current = { kind: 'draw', id: e.pointerId, pts: [toLogical(e, r)], rect: r, drawn: 0, st };
+      prepare(liveRef.current);
+      prepare(tipRef.current);
+      const op = String(liveOpacity(drawTool));
+      if (liveRef.current) liveRef.current.style.opacity = op;
+      if (tipRef.current) tipRef.current.style.opacity = op;
+      paintLive();
     } else if (tool === 'highlight' || tool === 'underline' || tool === 'crop') {
       gesture.current = { kind: 'rect', id: e.pointerId, x: p.x, y: p.y };
       setD(tool === 'underline' ? { x: p.x, y: p.y - LINE_H, w: 0, h: LINE_H } : { ...p, w: 0, h: 0 });
@@ -471,7 +481,15 @@ const PdfPage = memo(function PdfPage({
       else setD({ x: Math.min(g.x, p.x), y: Math.min(g.y, p.y), w: Math.abs(p.x - g.x), h: Math.abs(p.y - g.y) });
       return;
     }
-    const native = e.nativeEvent;
+    // Con pointerrawupdate (lápiz sin esperar al cuadro) la tinta ya se dibujó ahí.
+    if (rawSeen.current && (g.kind === 'draw' || g.kind === 'erase')) return;
+    inkMove(e.nativeEvent);
+  };
+
+  /** Tinta y borrador: puntos del lápiz (incluidos los agrupados) → trazo en vivo. */
+  const inkMove = (native: PointerEvent) => {
+    const g = gesture.current;
+    if (!g || g.id !== native.pointerId || (g.kind !== 'draw' && g.kind !== 'erase')) return;
     const coalesced = typeof native.getCoalescedEvents === 'function' ? native.getCoalescedEvents() : [];
     for (const ev of coalesced.length ? coalesced : [native]) {
       const pt = toLogical(ev, g.rect);
@@ -480,19 +498,36 @@ const PdfPage = memo(function PdfPage({
         continue;
       }
       const last = g.pts[g.pts.length - 1];
-      pt[0] = Math.round((last[0] + (pt[0] - last[0]) * 0.65) * 10) / 10;
-      pt[1] = Math.round((last[1] + (pt[1] - last[1]) * 0.65) * 10) / 10;
-      g.pts.push(pt);
+      pt[0] = Math.round((last[0] + (pt[0] - last[0]) * 0.75) * 10) / 10;
+      pt[1] = Math.round((last[1] + (pt[1] - last[1]) * 0.75) * 10) / 10;
+      if (g.kind === 'draw') g.pts.push(pt);
     }
-    if (g.kind === 'draw') drawLive();
+    if (g.kind === 'draw') paintLive(typeof native.getPredictedEvents === 'function' ? native.getPredictedEvents().map((ev) => toLogical(ev, g.rect)) : []);
   };
+
+  // «pointerrawupdate» llega en cuanto el lápiz reporta, sin esperar al siguiente cuadro como pointermove.
+  const annRef = useRef<HTMLDivElement>(null);
+  const rawSeen = useRef(false);
+  const inkMoveRef = useRef(inkMove);
+  inkMoveRef.current = inkMove;
+  useEffect(() => {
+    const el = annRef.current;
+    if (!el || !('onpointerrawupdate' in el)) return;
+    const h = (ev: Event) => {
+      const g = gesture.current;
+      if (!g || (g.kind !== 'draw' && g.kind !== 'erase')) return;
+      rawSeen.current = true;
+      inkMoveRef.current(ev as PointerEvent);
+    };
+    el.addEventListener('pointerrawupdate', h);
+    return () => el.removeEventListener('pointerrawupdate', h);
+  }, []);
 
   const onUp = async (e: ReactPointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     if (!g || g.id !== e.pointerId) return;
     gesture.current = null;
     if (g.kind === 'draw') {
-      cancelAnimationFrame(raf.current);
       lib().addPdfStroke(docId, { id: uid(), page: index + 1, tool: drawTool, color: pen.color, size: pen.size, points: g.pts });
       return;
     }
@@ -535,6 +570,7 @@ const PdfPage = memo(function PdfPage({
     gesture.current = null;
     setD(null);
     prepare(liveRef.current);
+    prepare(tipRef.current);
   };
 
   return (
@@ -573,9 +609,11 @@ const PdfPage = memo(function PdfPage({
         ),
       )}
       <canvas ref={inkRef} className="ink-layer" />
-      <canvas ref={liveRef} className="ink-layer" />
+      <canvas ref={liveRef} className="ink-layer ink-live" data-live="" />
+      <canvas ref={tipRef} className="ink-layer ink-live" data-live="" />
       <div
         className="ann-layer"
+        ref={annRef}
         style={{ pointerEvents: tool === 'select' ? 'none' : 'auto' }}
         onPointerDown={onDown}
         onPointerMove={onMove}

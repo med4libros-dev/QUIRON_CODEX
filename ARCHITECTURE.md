@@ -212,6 +212,11 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - **Retrato**: `SplitPane` usa `(orientation: portrait) and (max-width: 1100px)` → `.split.vertical`.
 - **Seguridad**: `flushPersistence` y `setPersistErrorHandler` en `createStore.ts`; `applyData` guarda `kv:safety:prerestore` (objeto, fuera de respaldos) y `undoLastRestore` reemplaza todo con `replace: true`; `saveToFolder` relee y valida lo escrito; fallas en `qc:backupError` + evento `qc:backup`.
 
+## v0.6.6 · Tinta de baja latencia
+
+- `lib/ink.ts`: `ctx2d` (canvas con `data-live` → `{ desynchronized: true }`), `drawLiveSegments` (dibuja solo los tramos nuevos con la geometría de `drawStroke`), `drawLiveTip` (último medio tramo + puntos predichos en una capa que se borra cada evento) y `liveOpacity`.
+- `InkCanvas.tsx` y `PdfViewer.tsx`: tres capas por hoja (base, en vivo, punta); los puntos llegan por `pointerrawupdate` cuando existe (si no, `pointermove` con `getCoalescedEvents`); al soltar, el trazo definitivo se dibuja en la base y entonces se limpian las capas en vivo.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

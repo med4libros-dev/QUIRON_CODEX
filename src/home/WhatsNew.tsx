@@ -8,6 +8,7 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
+  { icon: 'pen', title: 'Tinta sin retraso', text: 'El trazo sale en cuanto el lápiz toca la pantalla: se dibuja al instante, sin esperar al siguiente cuadro, y la punta se adelanta con la predicción de Windows. En el lienzo y sobre el PDF.' },
   { icon: 'battery', title: 'Más batería y arranque más rápido', text: 'Con la Surface desconectada se quita el fondo animado y se suaviza el cristal (Ajustes → Preferencias → Ahorro de batería). Las vistas y la exportación a PDF se cargan solo cuando las usas.' },
   { icon: 'columns', title: 'Surface en vertical', text: 'En modo tableta, Estudio pone el PDF arriba y las notas abajo; el calendario muestra la semana completa.' },
   { icon: 'shield', title: 'Tus datos, más seguros', text: 'El respaldo en la carpeta se verifica al escribirlo y te avisa si falla. Si restauras el archivo equivocado, Respaldo → «Deshacer restauración».' },
