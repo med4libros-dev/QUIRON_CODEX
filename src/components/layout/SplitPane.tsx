@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { capturePointer } from '../../lib/pointer';
 import { useSettings } from '../../store/settings';
 
@@ -15,19 +15,21 @@ export function SplitPane({ pdf, notes }: { pdf: ReactNode; notes: ReactNode }) 
   const mode = useSettings((s) => s.paneMode);
   const ref = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+  // Surface en vertical (modo tableta): PDF arriba y notas abajo.
+  const vertical = usePortrait();
 
-  /** ratio = fracción del ancho que ocupa el PDF, esté a la izquierda o a la derecha. */
-  const move = (clientX: number) => {
+  /** ratio = fracción del ancho (o alto, en vertical) que ocupa el PDF. */
+  const move = (clientX: number, clientY: number) => {
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
-    const fromLeft = (clientX - r.left) / r.width;
-    setRatio(swapped ? 1 - fromLeft : fromLeft);
+    const from = vertical ? (clientY - r.top) / r.height : (clientX - r.left) / r.width;
+    setRatio(swapped ? 1 - from : from);
   };
   const nudge = (dir: -1 | 1) => setRatio(ratio + (swapped ? -dir : dir) * 0.02);
 
   const both = mode === 'both';
   return (
-    <div className={`split${dragging ? ' dragging' : ''}${swapped ? ' swapped' : ''}`} ref={ref} data-mode={mode}>
+    <div className={`split${dragging ? ' dragging' : ''}${swapped ? ' swapped' : ''}${vertical ? ' vertical' : ''}`} ref={ref} data-mode={mode}>
       <section
         className="split-pane"
         style={{ flexBasis: both ? `${ratio * 100}%` : '100%', order: swapped ? 3 : 1 }}
@@ -39,7 +41,7 @@ export function SplitPane({ pdf, notes }: { pdf: ReactNode; notes: ReactNode }) 
       <div
         className="split-divider"
         role="separator"
-        aria-orientation="vertical"
+        aria-orientation={vertical ? 'horizontal' : 'vertical'}
         aria-valuenow={Math.round(ratio * 100)}
         tabIndex={0}
         hidden={!both}
@@ -49,13 +51,13 @@ export function SplitPane({ pdf, notes }: { pdf: ReactNode; notes: ReactNode }) 
           capturePointer(e.currentTarget, e.pointerId);
           setDragging(true);
         }}
-        onPointerMove={(e) => dragging && move(e.clientX)}
+        onPointerMove={(e) => dragging && move(e.clientX, e.clientY)}
         onPointerUp={() => setDragging(false)}
         onPointerCancel={() => setDragging(false)}
         onDoubleClick={() => setRatio(0.56)}
         onKeyDown={(e) => {
-          if (e.key === 'ArrowLeft') nudge(-1);
-          if (e.key === 'ArrowRight') nudge(1);
+          if (e.key === (vertical ? 'ArrowUp' : 'ArrowLeft')) nudge(-1);
+          if (e.key === (vertical ? 'ArrowDown' : 'ArrowRight')) nudge(1);
         }}
       >
         <span />
@@ -70,4 +72,16 @@ export function SplitPane({ pdf, notes }: { pdf: ReactNode; notes: ReactNode }) 
       </section>
     </div>
   );
+}
+
+const PORTRAIT = '(orientation: portrait) and (max-width: 1100px)';
+function usePortrait() {
+  const [v, setV] = useState(() => typeof matchMedia !== 'undefined' && matchMedia(PORTRAIT).matches);
+  useEffect(() => {
+    const mq = matchMedia(PORTRAIT);
+    const on = () => setV(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return v;
 }

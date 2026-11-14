@@ -1,14 +1,11 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { NavRail } from './components/layout/NavRail';
 import { SplitPane } from './components/layout/SplitPane';
 import { TopBar } from './components/layout/TopBar';
-import { CalendarView } from './features/calendar/CalendarView';
-import { NotebooksView } from './features/notebooks/NotebooksView';
 import { InternshipView } from './internship/InternshipView';
 import { NotesPanel } from './features/notes/NotesPanel';
 import { PdfWorkspace } from './features/pdf/PdfWorkspace';
 import { usePomodoroTicker } from './features/pomodoro/usePomodoroTicker';
-import { ProgressView } from './features/progress/ProgressView';
 import { useSettings } from './store/settings';
 import { PearlMenu, Toast } from './features/pearls/PearlMenu';
 import { FlashcardModal, FlashcardReview } from './flashcards/FlashcardUI';
@@ -16,21 +13,27 @@ import { TopicSheet } from './features/topics/TopicSheet';
 import { GuardQuick, TemarioModal } from './features/topics/Temario';
 import { SoapModal } from './soap/SoapModal';
 import { MiniPlayer } from './features/music/MiniPlayer';
-import { ExamView } from './exam/ExamView';
-import { WardView } from './ward/WardView';
 import { SearchModal } from './search/SearchModal';
 import { TtsBar } from './components/TtsBar';
 import { purgeExpiredShift } from './ward/store';
-import { HyView } from './hy/HyView';
-import { LogbookView } from './logbook/LogbookView';
 import { CompareView } from './features/pdf/CompareView';
 import { DiagramModal } from './ai/DiagramModal';
 import { HlQuizModal } from './ai/HlQuizModal';
 import { ClozeModal } from './flashcards/ClozeModal';
 import { ShortcutsModal, WhatsNew } from './home/WhatsNew';
 import { startReminders } from './lib/reminders';
+import { setPersistErrorHandler } from './lib/createStore';
 import { setNotifyFallback } from './lib/notify';
 import { useUI } from './store/ui';
+
+/* Vistas que no se usan al abrir: se cargan la primera vez que entras (arranque más rápido). */
+const CalendarView = lazy(() => import('./features/calendar/CalendarView').then((m) => ({ default: m.CalendarView })));
+const NotebooksView = lazy(() => import('./features/notebooks/NotebooksView').then((m) => ({ default: m.NotebooksView })));
+const ProgressView = lazy(() => import('./features/progress/ProgressView').then((m) => ({ default: m.ProgressView })));
+const ExamView = lazy(() => import('./exam/ExamView').then((m) => ({ default: m.ExamView })));
+const WardView = lazy(() => import('./ward/WardView').then((m) => ({ default: m.WardView })));
+const HyView = lazy(() => import('./hy/HyView').then((m) => ({ default: m.HyView })));
+const LogbookView = lazy(() => import('./logbook/LogbookView').then((m) => ({ default: m.LogbookView })));
 
 /** ¿Toca modo noche ahora? (rango que puede cruzar la medianoche, p. ej. 22→6). */
 export function nightActive(mode: 'off' | 'auto' | 'on', from: number, to: number, h = new Date().getHours()): boolean {
@@ -38,6 +41,10 @@ export function nightActive(mode: 'off' | 'auto' | 'on', from: number, to: numbe
   if (mode === 'off') return false;
   if (from === to) return false;
   return from < to ? h >= from && h < to : h >= from || h < to;
+}
+
+function ViewLoading() {
+  return <div className="view-loading" aria-busy="true" />;
 }
 
 export default function App() {
@@ -48,6 +55,7 @@ export default function App() {
   const night = useSettings((s) => s.night);
   const nightFrom = useSettings((s) => s.nightFrom);
   const nightTo = useSettings((s) => s.nightTo);
+  const saver = useSettings((s) => s.saver);
 
   // Vista guardada que ya no existe (p. ej. la antigua «Fuentes»): vuelve a Inicio.
   useEffect(() => {
@@ -80,11 +88,67 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Seguridad de datos: avisar si algo no se pudo guardar y si el almacenamiento está casi lleno.
+  useEffect(() => {
+    let lastWarn = 0;
+    setPersistErrorHandler(() => {
+      if (Date.now() - lastWarn < 60_000) return;
+      lastWarn = Date.now();
+      useUI.getState().showToast('No se pudo guardar tu último cambio: el almacenamiento puede estar lleno. Haz un respaldo y borra PDFs que ya no uses.');
+    });
+    const t = setTimeout(async () => {
+      try {
+        const est = await navigator.storage?.estimate?.();
+        if (!est?.quota || !est.usage) return;
+        const pct = est.usage / est.quota;
+        const today = new Date().toDateString();
+        if (pct > 0.85 && localStorage.getItem('qc:quotaWarned') !== today) {
+          localStorage.setItem('qc:quotaWarned', today);
+          useUI.getState().showToast(`El almacenamiento está al ${Math.round(pct * 100)}%: haz un respaldo y borra PDFs que ya no uses.`);
+        }
+      } catch {
+        /* no disponible */
+      }
+    }, 4000);
+    return () => clearTimeout(t);
+  }, []);
+
   // Recordatorios del sistema (si están activados en Ajustes).
   useEffect(() => {
     setNotifyFallback((text) => useUI.getState().showToast(text));
     return startReminders();
   }, []);
+
+  // Ahorro de batería: sin fondo animado ni desenfoque fuerte cuando la Surface va con batería.
+  useEffect(() => {
+    const el = document.documentElement;
+    const set = (on: boolean) => {
+      if (on) el.dataset.saver = 'on';
+      else delete el.dataset.saver;
+    };
+    if (saver !== 'auto') {
+      set(saver === 'on');
+      return;
+    }
+    type Battery = EventTarget & { charging: boolean };
+    const nav = navigator as Navigator & { getBattery?: () => Promise<Battery> };
+    let bat: Battery | null = null;
+    const update = () => set(!!bat && !bat.charging);
+    let cancelled = false;
+    nav.getBattery?.()
+      .then((b) => {
+        if (cancelled) return;
+        bat = b;
+        update();
+        b.addEventListener('chargingchange', update);
+      })
+      .catch(() => set(false));
+    if (!nav.getBattery) set(false);
+    return () => {
+      cancelled = true;
+      bat?.removeEventListener('chargingchange', update);
+    };
+  }, [saver]);
 
   // Modo noche: se revisa cada minuto por si cambia la hora.
   useEffect(() => {
@@ -135,37 +199,51 @@ export default function App() {
         )}
         {view === 'notebooks' && (
           <div className="view scroll">
-            <NotebooksView />
+            <Suspense fallback={<ViewLoading />}>
+              <NotebooksView />
+            </Suspense>
           </div>
         )}
         {view === 'calendar' && (
           <div className="view scroll">
-            <CalendarView />
+            <Suspense fallback={<ViewLoading />}>
+              <CalendarView />
+            </Suspense>
           </div>
         )}
         {view === 'progress' && (
           <div className="view scroll">
-            <ProgressView />
+            <Suspense fallback={<ViewLoading />}>
+              <ProgressView />
+            </Suspense>
           </div>
         )}
         {view === 'hy' && (
           <div className="view scroll">
-            <HyView />
+            <Suspense fallback={<ViewLoading />}>
+              <HyView />
+            </Suspense>
           </div>
         )}
         {view === 'exam' && (
           <div className="view scroll">
-            <ExamView />
+            <Suspense fallback={<ViewLoading />}>
+              <ExamView />
+            </Suspense>
           </div>
         )}
         {view === 'ward' && (
           <div className="view scroll">
-            <WardView />
+            <Suspense fallback={<ViewLoading />}>
+              <WardView />
+            </Suspense>
           </div>
         )}
         {view === 'logbook' && (
           <div className="view scroll">
-            <LogbookView />
+            <Suspense fallback={<ViewLoading />}>
+              <LogbookView />
+            </Suspense>
           </div>
         )}
       </div>

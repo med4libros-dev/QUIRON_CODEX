@@ -101,6 +101,13 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 - **Atajos**: **?** muestra la lista; **G** abre la Vista de Guardia desde cualquier parte.
 - **Novedades**: al actualizar verás una vez qué cambió.
 
+### v0.6.5 (estabilidad y pulido, sin funciones nuevas)
+- **Arranque más rápido**: las vistas que no usas al abrir y la exportación a PDF se cargan solo cuando las usas.
+- **Ahorro de batería** (Ajustes → Preferencias): con la Surface desconectada se quita el fondo animado y se suaviza el cristal.
+- **Surface en vertical**: Estudio con el PDF arriba y las notas abajo; el calendario muestra los 7 días.
+- **Datos más seguros**: el respaldo en la carpeta se verifica, te avisa si falla (punto en Ajustes), puedes **deshacer la última restauración** y te avisa si el almacenamiento está casi lleno o si un cambio no se pudo guardar. Los PDF dañados ya no entran a la biblioteca.
+- Objetivos táctiles más grandes, mensajes y nombres unificados.
+
 Roadmap del proyecto: [ROADMAP.md](ROADMAP.md).
 
 ## Uso rápido

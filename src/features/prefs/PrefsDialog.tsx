@@ -22,6 +22,7 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
   const [msg, setMsg] = useState<string | null>(null);
   const apiKey = useSettings((s) => s.apiKey);
   const model = useSettings((s) => s.model);
+  const saver = useSettings((s) => s.saver);
   const [keyDraft, setKeyDraft] = useState('');
 
   return (
@@ -112,6 +113,26 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
             </div>
           )}
           {msg && <p className="small warn-text">{msg}</p>}
+        </section>
+
+        <section>
+          <h4>
+            <Icon name="battery" size={15} /> Ahorro de batería
+          </h4>
+          <p className="muted small">Quita el fondo animado y suaviza el efecto cristal para que la Surface dure más. En «Automático» se activa al desconectar el cargador.</p>
+          <div className="seg" role="radiogroup" aria-label="Ahorro de batería">
+            {(
+              [
+                ['auto', 'Automático'],
+                ['on', 'Siempre'],
+                ['off', 'Nunca'],
+              ] as const
+            ).map(([id, label]) => (
+              <button key={id} className={saver === id ? 'active' : ''} aria-pressed={saver === id} onClick={() => useSettings.getState().setSaver(id)}>
+                {label}
+              </button>
+            ))}
+          </div>
         </section>
 
         <section>

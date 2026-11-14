@@ -86,6 +86,12 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - **Preferencias**: noche, recordatorios e **IA** (API key y modelo) en un solo lugar; versión visible.
 - **Atajos globales** (G, ?) y ventana de **Novedades** una vez por versión (no aparece en instalaciones nuevas).
 
+### v0.6.5 · Estabilidad y pulido ✅ (noviembre 2026)
+- Rendimiento: pdf-lib y 7 vistas con carga diferida (el paquete de arranque baja de ~1.56 MB a ~1.0 MB en producción); modo ahorro de batería (auto con `navigator.getBattery`).
+- Tableta: división vertical en Surface en retrato, semana completa en el calendario, objetivos táctiles de 40–50 px.
+- Datos: verificación del respaldo en carpeta, aviso persistente de fallas, copia previa y «Deshacer restauración», aviso de almacenamiento > 85 %, aviso si una escritura falla, validación de cabecera `%PDF-`.
+- Textos y nombres unificados (GPC y temario, Ajustes → Preferencias), estados vacíos con acción.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

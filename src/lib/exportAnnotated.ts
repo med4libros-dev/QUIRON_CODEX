@@ -1,4 +1,3 @@
-import { PDFDocument, StandardFonts, rgb, LineCapStyle } from 'pdf-lib';
 import { downloadBlob, toWinAnsi, wrap } from './exportPdf';
 import { loadPdfData } from './pdf';
 import { useLibrary } from '../store/library';
@@ -36,6 +35,7 @@ export async function buildAnnotatedPdf(docId: string): Promise<{ bytes: Uint8Ar
   const strokes = lib.inks[docId] ?? [];
   const stickies = lib.stickies[docId] ?? [];
   const bookmarks = [...(lib.bookmarks[docId] ?? [])].sort((a, b) => a.page - b.page);
+  const { PDFDocument, StandardFonts, rgb, LineCapStyle } = await import('pdf-lib');
   const pdf = await PDFDocument.load(await loadPdfData(docId), { ignoreEncryption: true });
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);

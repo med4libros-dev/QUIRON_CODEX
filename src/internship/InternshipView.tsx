@@ -120,7 +120,7 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
         </div>
         <div className="spacer" />
         <button className="btn ghost" onClick={() => useUI.getState().setTemarioOpen(true)}>
-          <Icon name="list" size={16} /> Temario
+          <Icon name="list" size={16} /> GPC y temario
         </button>
         <button className="btn ghost" onClick={() => useUI.getState().setGuardQuickOpen(true)}>
           <Icon name="shield" size={16} /> Vista de Guardia

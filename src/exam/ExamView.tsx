@@ -190,9 +190,17 @@ export function ExamView() {
             </button>
           </div>
           {!pool.length && (
-            <p className="muted small">
-              No hay preguntas para esa selección. Ve a <b>Generar casos</b> (con tu GPC adjunta) o agrega preguntas en el banco.
-            </p>
+            <div className="empty-mini">
+              <p className="muted small">No hay preguntas para esa selección. Genéralas con IA desde tu GPC adjunta o escríbelas tú en el banco.</p>
+              <div className="field-row tight">
+                <button className="btn sm" onClick={() => setTab('gen')}>
+                  <Icon name="sparkles" size={14} /> Generar casos
+                </button>
+                <button className="btn ghost sm" onClick={() => setTab('bank')}>
+                  Ir al banco
+                </button>
+              </div>
+            </div>
           )}
         </section>
       )}

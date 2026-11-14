@@ -5992,3 +5992,112 @@ button.kpi:hover {
   left: 0;
   right: auto;
 }
+
+/* =========================================================
+   v0.6.5 — Ahorro de batería, carga de vistas, táctil y tableta
+   ========================================================= */
+[data-saver='on'][data-look='glass'] body::before {
+  animation: none;
+}
+[data-saver='on'][data-look='glass'][data-theme] {
+  --glass-blur: blur(8px) saturate(115%);
+}
+[data-saver='on'] .view,
+[data-saver='on'] .rail-pop,
+[data-saver='on'] .modal-backdrop {
+  animation: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-look='glass'][data-theme] {
+    --glass-blur: none;
+  }
+}
+.view-loading {
+  height: 100%;
+  min-height: 200px;
+}
+/* Surface en vertical: PDF arriba, notas abajo, separador horizontal. */
+.split.vertical {
+  flex-direction: column;
+}
+.split.vertical .split-divider {
+  width: auto;
+  height: 9px;
+  cursor: row-resize;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.split.vertical .split-divider span {
+  width: 40px;
+  height: 1px;
+  box-shadow: 0 2px 0 var(--border-strong);
+  transform: translateY(-1px);
+}
+.split.vertical .split-divider:hover span,
+.split.vertical.dragging .split-divider span {
+  box-shadow: 0 2px 0 var(--accent-line);
+}
+.split.vertical.dragging {
+  cursor: row-resize;
+}
+@media (pointer: coarse) {
+  .split-divider {
+    width: 14px;
+  }
+  .split.vertical .split-divider {
+    height: 16px;
+  }
+  /* Objetivos de 40–44 px para dedo y lápiz en lo agregado en la v0.5–0.6 */
+  .fold-btn,
+  .asked-btn,
+  .bm-kind {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .lesson-check {
+    width: 30px;
+    height: 30px;
+  }
+  .cw {
+    padding: 4px 5px;
+  }
+  .key-chip,
+  .gm-tile {
+    min-height: 34px;
+  }
+  .gap-chip {
+    padding: 6px 10px;
+  }
+  .kpi {
+    min-height: 64px;
+  }
+  .rail-pop button,
+  .more-menu button {
+    min-height: 50px;
+  }
+  .night-chip {
+    height: 36px;
+  }
+  .vital .input {
+    width: 60px;
+    height: 36px;
+  }
+}
+.backup-alert {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--danger);
+  border-radius: var(--r);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  font-size: 13px;
+}
+/* Semana del calendario: en la Surface vertical los 7 días caben sin desplazar. */
+@media (max-width: 1100px) {
+  .week {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}

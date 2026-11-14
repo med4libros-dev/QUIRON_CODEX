@@ -4,7 +4,7 @@ import { Icon, type IconName } from '../Icon';
 import emblem from '../../assets/quiron-emblem.png';
 import { BackupDialog } from '../../features/backup/BackupDialog';
 import { PrefsDialog } from '../../features/prefs/PrefsDialog';
-import { folderStatus } from '../../lib/backup';
+import { backupError, folderStatus } from '../../lib/backup';
 import { useSettings } from '../../store/settings';
 import { useUI } from '../../store/ui';
 import type { Theme, View } from '../../types';
@@ -40,11 +40,20 @@ export function NavRail() {
   const [menu, setMenu] = useState<{ id: Menu; top: number }>({ id: null, top: 0 });
   const popRef = useRef<HTMLDivElement>(null);
 
+  const [failed, setFailed] = useState(() => !!backupError());
   useEffect(() => {
     folderStatus()
       .then((s) => setNeedsReconnect(s === 'prompt'))
       .catch(() => undefined);
+    setFailed(!!backupError());
   }, [backupOpen]);
+  useEffect(() => {
+    const on = () => setFailed(!!backupError());
+    window.addEventListener('qc:backup', on);
+    return () => window.removeEventListener('qc:backup', on);
+  }, []);
+  const backupAlert = needsReconnect || failed;
+  const backupHint = failed ? 'El respaldo automático falló' : 'Reconecta tu carpeta';
 
   // El menú se cierra al tocar fuera o con Esc.
   useEffect(() => {
@@ -105,11 +114,11 @@ export function NavRail() {
         onClick={toggleMenu('prefs')}
         aria-haspopup="menu"
         aria-expanded={menu.id === 'prefs'}
-        title={needsReconnect ? 'Ajustes · Respaldo: reconecta tu carpeta para seguir guardando' : 'Ajustes: respaldo, preferencias, tema y estilo'}
+        title={backupAlert ? `Ajustes · Respaldo: ${backupHint.toLowerCase()}` : 'Ajustes: respaldo, preferencias, tema y estilo'}
       >
         <Icon name="settings" size={20} />
         <span>Ajustes</span>
-        {needsReconnect && <i className="rail-dot" />}
+        {backupAlert && <i className="rail-dot" />}
       </button>
 
       {menu.id &&
@@ -138,12 +147,12 @@ export function NavRail() {
               </>
             ) : (
               <>
-                <button role="menuitem" onClick={run(() => setBackupOpen(true))} title={needsReconnect ? 'Respaldo: reconecta tu carpeta para seguir guardando' : 'Respaldo de tu progreso'}>
+                <button role="menuitem" onClick={run(() => setBackupOpen(true))} title={backupAlert ? `Respaldo: ${backupHint.toLowerCase()}` : 'Respaldo de tu progreso'}>
                   <Icon name="upload" size={17} />
                   <span>
-                    Respaldo <small>{needsReconnect ? 'Reconecta tu carpeta' : 'Carpeta, archivo y cifrado'}</small>
+                    Respaldo <small>{backupAlert ? backupHint : 'Carpeta, archivo y cifrado'}</small>
                   </span>
-                  {needsReconnect && <i className="rail-dot" />}
+                  {backupAlert && <i className="rail-dot" />}
                 </button>
                 <button role="menuitem" onClick={run(() => setPrefsOpen(true))} title="Modo noche, recordatorios e IA">
                   <Icon name="bell" size={17} />

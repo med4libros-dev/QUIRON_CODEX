@@ -1,5 +1,5 @@
 import { downloadBlob } from './exportPdf';
-import { freezePersistence } from './createStore';
+import { flushPersistence, freezePersistence } from './createStore';
 import { idb } from './idb';
 
 /**
@@ -33,6 +33,7 @@ interface BackupData {
 }
 
 async function collect(): Promise<BackupData> {
+  flushPersistence();
   const local: Record<string, string> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
@@ -49,13 +50,53 @@ async function collect(): Promise<BackupData> {
   return { app: 'quiron-codex', version: 1, exportedAt: new Date().toISOString(), local, kv, ink };
 }
 
-async function applyData(data: BackupData) {
+/* ---------- Red de seguridad: deshacer la última restauración ---------- */
+
+const SAFETY_KEY = 'safety:prerestore';
+/** Se guarda como objeto (no como texto), así no entra en los respaldos. */
+interface Snapshot {
+  at: string;
+  data: BackupData;
+}
+
+export async function preRestoreInfo(): Promise<string | null> {
+  return ((await idb.get<Snapshot>('kv', SAFETY_KEY)) as Snapshot | undefined)?.at ?? null;
+}
+
+async function applyData(data: BackupData, opts: { snapshot?: boolean; replace?: boolean } = {}) {
   if (data?.app !== 'quiron-codex' && data?.app !== 'alquimia') throw new Error('El archivo no es un respaldo de Quirón Codex.');
+  if (opts.snapshot !== false) {
+    // Antes de pisar nada: copia de lo que hay ahora, para poder deshacer.
+    flushPersistence();
+    await new Promise((r) => setTimeout(r, 50));
+    await idb.set('kv', SAFETY_KEY, { at: new Date().toISOString(), data: await collect() } satisfies Snapshot);
+  }
   // Que la app abierta no vuelva a escribir su estado anterior encima del restaurado.
   freezePersistence();
+  if (opts.replace) {
+    // Deshacer = dejar todo exactamente como estaba: se quita lo que la restauración agregó.
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('alq:') && k !== LAST_KEY && k !== ENC_FLAG && !(k in (data.local ?? {}))) localStorage.removeItem(k);
+    }
+    for (const k of await idb.keys('kv')) {
+      if (k === HANDLE_KEY || k === SAFETY_KEY) continue;
+      if (typeof (await idb.get<unknown>('kv', k)) === 'string' && !(k in (data.kv ?? {}))) await idb.del('kv', k);
+    }
+    for (const k of await idb.keys('ink')) if (!(k in (data.ink ?? {}))) await idb.del('ink', k);
+  }
   for (const [k, v] of Object.entries(data.local ?? {})) localStorage.setItem(k, v);
   for (const [k, v] of Object.entries(data.kv ?? {})) await idb.set('kv', k, v);
   for (const [k, v] of Object.entries(data.ink ?? {})) await idb.set('ink', k, v);
+}
+
+/** Vuelve al estado de antes de la última restauración (los PDFs no se tocan). */
+export async function undoLastRestore(): Promise<string> {
+  const snap = (await idb.get<Snapshot>('kv', SAFETY_KEY)) as Snapshot | undefined;
+  if (!snap) throw new Error('No hay ninguna restauración que deshacer.');
+  await applyData(snap.data, { snapshot: false, replace: true });
+  await idb.del('kv', SAFETY_KEY);
+  return snap.at;
 }
 
 const toB64 = async (blob: Blob) => {
@@ -166,6 +207,22 @@ async function serialize(data: BackupData): Promise<string | null> {
   return encryptText(json, password);
 }
 
+/* ---------- Avisos de falla del respaldo automático ---------- */
+const ERR_KEY = 'qc:backupError';
+export function backupError(): { msg: string; at: string } | null {
+  try {
+    return JSON.parse(localStorage.getItem(ERR_KEY) ?? 'null');
+  } catch {
+    return null;
+  }
+}
+function setBackupError(msg: string | null) {
+  const had = !!localStorage.getItem(ERR_KEY);
+  if (msg) localStorage.setItem(ERR_KEY, JSON.stringify({ msg, at: new Date().toISOString() }));
+  else localStorage.removeItem(ERR_KEY);
+  if (had !== !!msg) window.dispatchEvent(new Event('qc:backup'));
+}
+
 const markBackup = () => localStorage.setItem(LAST_KEY, new Date().toISOString());
 export const lastBackup = () => localStorage.getItem(LAST_KEY);
 
@@ -252,6 +309,15 @@ export async function saveToFolder(): Promise<boolean> {
   // Cifrado activo y bloqueado: no se escribe nada (ni en claro) hasta que lo desbloquees.
   if (out === null) return false;
   await writeFile(dir, DATA_FILE, out);
+  // Verificación: se vuelve a leer lo escrito; si no coincide, se avisa (no se marca como respaldado).
+  const back = await (await dir.getFileHandle(DATA_FILE)).getFile();
+  const text = await back.text();
+  if (text.length !== out.length) throw new Error('El respaldo en la carpeta quedó incompleto (¿OneDrive sin espacio o sin conexión?).');
+  try {
+    JSON.parse(text);
+  } catch {
+    throw new Error('El respaldo en la carpeta quedó dañado. Vuelve a intentarlo.');
+  }
   const pdfDir = await dir.getDirectoryHandle(PDF_DIR, { create: true });
   for (const id of await idb.keys('pdfs')) {
     try {
@@ -262,6 +328,7 @@ export async function saveToFolder(): Promise<boolean> {
     }
   }
   markBackup();
+  setBackupError(null);
   return true;
 }
 
@@ -303,9 +370,10 @@ export function startAutoBackup() {
     if (busy) return;
     busy = true;
     try {
-      await saveToFolder();
+      if (await saveToFolder()) setBackupError(null);
     } catch (e) {
       console.warn('Respaldo automático falló', e);
+      setBackupError(e instanceof Error ? e.message : String(e));
     } finally {
       busy = false;
     }

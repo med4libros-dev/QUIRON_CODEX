@@ -238,7 +238,8 @@ export function Toast() {
   useEffect(() => {
     if (!toast) return;
     setShown(toast.text);
-    const t = setTimeout(() => setShown(null), 3200);
+    // Los avisos largos se quedan más tiempo para poder leerlos.
+    const t = setTimeout(() => setShown(null), Math.min(9000, 2600 + toast.text.length * 45));
     return () => clearTimeout(t);
   }, [toast]);
   if (!shown) return null;

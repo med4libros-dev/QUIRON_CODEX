@@ -3,7 +3,10 @@ import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
 import {
   chooseFolder,
+  backupError,
   downloadBackup,
+  preRestoreInfo,
+  undoLastRestore,
   encryptionOn,
   encryptionUnlocked,
   setEncryption,
@@ -36,6 +39,8 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
   const [encOn, setEncOn] = useState(encryptionOn());
   const [unlocked, setUnlocked] = useState(encryptionUnlocked());
   const pwArg = () => pw || undefined;
+  const [err, setErr] = useState(backupError());
+  const [undoAt, setUndoAt] = useState<string | null>(null);
 
   const refresh = async () => {
     try {
@@ -48,6 +53,8 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
     const dir = await getFolder();
     setFolder(dir ? { name: dir.name, status: await folderStatus() } : null);
     setLast(lastBackup());
+    setErr(backupError());
+    setUndoAt(await preRestoreInfo());
   };
   useEffect(() => {
     void refresh();
@@ -71,6 +78,11 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Respaldo de tu progreso" onClose={onClose} width={520}>
       <div className="backup">
+        {err && (
+          <p className="backup-alert" role="alert">
+            <Icon name="shield" size={15} /> El respaldo automático falló el {fmtDate(err.at)}: {err.msg} Revisa la carpeta y pulsa «Respaldar ahora».
+          </p>
+        )}
         <section>
           <h4>Dónde se guarda</h4>
           <p className="muted small">
@@ -228,6 +240,28 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
             />
           </div>
         </section>
+        {undoAt && (
+          <section>
+            <h4>Deshacer la última restauración</h4>
+            <p className="muted small">
+              Antes de restaurar se guardó una copia de cómo estaba todo ({fmtDate(undoAt)}). Si restauraste el archivo equivocado, vuelve a ese punto. Los PDFs no se tocan.
+            </p>
+            <button
+              className="btn sm"
+              disabled={busy}
+              onClick={() =>
+                confirm('¿Volver a como estaba todo antes de la última restauración?') &&
+                run(async () => {
+                  await undoLastRestore();
+                  setTimeout(() => location.reload(), 900);
+                  return 'Recargando…';
+                }, 'Restauración deshecha.')
+              }
+            >
+              <Icon name="undo" size={15} /> Deshacer restauración
+            </button>
+          </section>
+        )}
         {msg && <p className={`small ${msg.ok ? 'ok-text' : 'error'}`}>{msg.text}</p>}
       </div>
     </Modal>

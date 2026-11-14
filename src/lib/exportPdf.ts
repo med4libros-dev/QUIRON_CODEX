@@ -1,11 +1,11 @@
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
+// pdf-lib (~400 KB) se carga solo al exportar: no pesa en el arranque.
+import type { Color, PDFFont, PDFPage } from 'pdf-lib';
 import { htmlToBlocks } from './html';
 import { PAGE_H, PAGE_W, renderInkPage } from './ink';
 import type { Stroke } from '../types';
 
 const A4: [number, number] = [595.28, 841.89];
 const M = 56;
-type Color = ReturnType<typeof rgb>;
 
 /* Las fuentes estándar de PDF solo cubren Latin-1 (español completo). Símbolos frecuentes en medicina
    se transliteran para que el PDF nunca salga con caracteres rotos. */
@@ -76,6 +76,7 @@ export interface ExportInput {
 }
 
 export async function buildPdf({ title, html, subtitle, strokes = [], inkPages = 1, images = [] }: ExportInput): Promise<Uint8Array> {
+  const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
   const pdf = await PDFDocument.create();
   pdf.setTitle(title);
   pdf.setCreator('Quirón Codex');

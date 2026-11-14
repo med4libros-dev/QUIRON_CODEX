@@ -1,3 +1,4 @@
+import { useUI } from './ui';
 import { createStore } from '../lib/createStore';
 import { idb } from '../lib/idb';
 import { uid } from '../lib/id';
@@ -82,9 +83,22 @@ export const useLibrary = createStore<LibraryState>(
       addFilesAll: async (files) => {
         const pdfs = files.filter((f) => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
         const added: { id: string; fileName: string }[] = [];
+        const problems: string[] = [];
+        if (pdfs.length < files.length) problems.push(`${files.length - pdfs.length} archivo(s) no son PDF`);
         for (const file of pdfs) {
+          // Un PDF real empieza con «%PDF-» (en los primeros bytes): así no entra un archivo dañado o renombrado.
+          const head = new TextDecoder('latin1').decode(await file.slice(0, 1024).arrayBuffer());
+          if (!head.includes('%PDF-')) {
+            problems.push(`«${file.name}» está dañado o no es un PDF`);
+            continue;
+          }
           const id = uid();
-          await idb.set('pdfs', id, file);
+          try {
+            await idb.set('pdfs', id, file);
+          } catch {
+            problems.push(`no hay espacio para guardar «${file.name}» (haz un respaldo y borra PDFs que ya no uses)`);
+            continue;
+          }
           added.push({ id, fileName: file.name });
           const meta: DocMeta = {
             id,
@@ -97,6 +111,7 @@ export const useLibrary = createStore<LibraryState>(
           };
           set((s) => ({ docs: [meta, ...s.docs] }));
         }
+        if (problems.length) useUI.getState().showToast(`No se agregó todo: ${problems.join('; ')}.`);
         return added;
       },
 

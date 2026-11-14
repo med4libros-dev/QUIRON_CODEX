@@ -221,7 +221,7 @@ export function GuardQuick() {
         {calc && <CalculatorCard key={calc.id} calc={calc} defaultOpen />}
         {!t ? (
           <>
-            <div className="muted small gq-label">{needle ? 'Resultados' : withCard.length ? 'Temas con ficha de guardia' : 'Aún no tienes fichas: ábrelas desde Temario → Vista de Guardia.'}</div>
+            <div className="muted small gq-label">{needle ? 'Resultados' : withCard.length ? 'Temas con ficha de guardia' : 'Aún no tienes fichas: busca un tema arriba o ábrelo desde GPC → tema → Vista de Guardia.'}</div>
             <div className="gq-chips">
               {results.map((x) => (
                 <button key={x.id} className="chip big" style={{ '--chip': SPECIALTY[x.specialty].color } as CSSProperties} onClick={() => setTopicId(x.id)}>

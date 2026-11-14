@@ -27,6 +27,13 @@ export interface BoundStore<T> {
 
 const flushers = new Set<() => void>();
 let frozen = false;
+/** Aviso a la interfaz cuando algo no se pudo guardar (p. ej. almacenamiento lleno). */
+let onPersistError: ((key: string, e: unknown) => void) | null = null;
+export const setPersistErrorHandler = (f: (key: string, e: unknown) => void) => {
+  onPersistError = f;
+};
+/** Fuerza a disco todo lo pendiente (antes de un respaldo o una restauración). */
+export const flushPersistence = () => flushers.forEach((f) => f());
 /** Detiene toda escritura a disco (al restaurar un respaldo, antes de recargar la página). */
 export function freezePersistence() {
   frozen = true;
@@ -61,9 +68,13 @@ export function createStore<T extends object>(
         localStorage.setItem(persist.key, data);
       } catch (e) {
         console.warn('No se pudo guardar', persist.key, e);
+        onPersistError?.(persist.key, e);
       }
     } else {
-      idb.set('kv', persist.key, data).catch((e) => console.warn('No se pudo guardar', persist.key, e));
+      idb.set('kv', persist.key, data).catch((e) => {
+        console.warn('No se pudo guardar', persist.key, e);
+        onPersistError?.(persist.key, e);
+      });
     }
   };
 

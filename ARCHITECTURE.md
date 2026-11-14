@@ -205,6 +205,13 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 | Novedades y atajos | `src/home/WhatsNew.tsx`, `src/version.ts` | `qc:seenVersion` (solo este equipo) |
 | Preferencias (IA) | `PrefsDialog.tsx` | `alq:settings.apiKey/model` |
 
+## v0.6.5
+
+- **Carga diferida**: `React.lazy` para Calendario, Cuadernos, Progreso, Simulacros, Turno, Perlas HY y Bitácora (`App.tsx`); `import('pdf-lib')` dentro de `buildPdf` y `buildAnnotatedPdf`. Vite separa esos trozos; la compilación de archivo único los incrusta.
+- **Ahorro de batería**: `settings.saver` → `[data-saver='on']` (sin `glass-drift`, desenfoque 8 px, sin animaciones de vista).
+- **Retrato**: `SplitPane` usa `(orientation: portrait) and (max-width: 1100px)` → `.split.vertical`.
+- **Seguridad**: `flushPersistence` y `setPersistErrorHandler` en `createStore.ts`; `applyData` guarda `kv:safety:prerestore` (objeto, fuera de respaldos) y `undoLastRestore` reemplaza todo con `replace: true`; `saveToFolder` relee y valida lo escrito; fallas en `qc:backupError` + evento `qc:backup`.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

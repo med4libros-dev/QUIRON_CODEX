@@ -28,6 +28,9 @@ export interface SettingsState {
   reminders: boolean;
   /** Hora del aviso diario de flashcards/refuerzo. */
   reminderHour: number;
+  /** Ahorro de batería: «auto» se activa al desconectar el cargador. */
+  saver: 'auto' | 'on' | 'off';
+  setSaver: (v: 'auto' | 'on' | 'off') => void;
   /** Fecha del ENARM (YYYY-MM-DD) para la cuenta regresiva de Inicio. */
   enarmDate: string | null;
   setEnarmDate: (d: string | null) => void;
@@ -69,6 +72,8 @@ export const useSettings = createStore<SettingsState>(
     reminders: false,
     reminderHour: 8,
     enarmDate: null,
+    saver: 'auto',
+    setSaver: (saver) => set({ saver }),
     setEnarmDate: (enarmDate) => set({ enarmDate }),
     setNight: (night, from, to) => set((s) => ({ night, nightFrom: from ?? s.nightFrom, nightTo: to ?? s.nightTo })),
     setReminders: (reminders, hour) => set((s) => ({ reminders, reminderHour: hour ?? s.reminderHour })),
@@ -89,8 +94,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate }) => ({
-      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate,
+    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver }) => ({
+      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver,
     }),
   },
 );

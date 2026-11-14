@@ -308,7 +308,7 @@ function Journal() {
     <div className="lb-grid journal">
       <section className="card">
         <p className="muted small">
-          <Icon name="lock" size={13} /> Privado: se guarda solo en tu equipo (y en tus respaldos; actívales contraseña en Respaldo). No escribas datos de pacientes.
+          <Icon name="lock" size={13} /> Privado: se guarda solo en tu equipo (y en tus respaldos; ponles contraseña en Ajustes → Respaldo). No escribas datos de pacientes.
         </p>
         <div className="field-row tight">
           <input className="input" type="date" value={date} onChange={(e) => load(e.target.value)} aria-label="Fecha del diario" />

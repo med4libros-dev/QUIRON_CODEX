@@ -8,11 +8,14 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'square', title: 'Flashcards de huecos', text: 'PDF → menú «⋯» → Flashcards de huecos, o «Huecos» al seleccionar texto. Escondes la palabra clave de tus subrayados.' },
+  { icon: 'battery', title: 'Más batería y arranque más rápido', text: 'Con la Surface desconectada se quita el fondo animado y se suaviza el cristal (Ajustes → Preferencias → Ahorro de batería). Las vistas y la exportación a PDF se cargan solo cuando las usas.' },
+  { icon: 'columns', title: 'Surface en vertical', text: 'En modo tableta, Estudio pone el PDF arriba y las notas abajo; el calendario muestra la semana completa.' },
+  { icon: 'shield', title: 'Tus datos, más seguros', text: 'El respaldo en la carpeta se verifica al escribirlo y te avisa si falla. Si restauras el archivo equivocado, Respaldo → «Deshacer restauración».' },
+  { icon: 'upload', title: 'PDF dañados', text: 'Un archivo dañado o que no es PDF ya no entra a tu biblioteca; te dice cuál fue.' },
+  { icon: 'hand', title: 'Más fácil con el dedo y el lápiz', text: 'Botones y casillas más grandes en lo nuevo (huecos, marcadores, tarjetas plegables, menús).' },
+  { icon: 'square', title: 'Flashcards de huecos (0.6)', text: 'PDF → menú «⋯» → Flashcards de huecos, o «Huecos» al seleccionar texto. Escondes la palabra clave de tus subrayados.' },
   { icon: 'download', title: 'PDF anotado', text: 'PDF → «⋯» → Exportar PDF anotado: tu guía con resaltados, tinta, post-its y el índice de marcadores.' },
   { icon: 'sparkles', title: 'Tu API key en un solo lugar', text: 'Ajustes → Preferencias → IA. La usan síntesis, simulacros, mnemotecnias, diagramas y preguntas.' },
-  { icon: 'home', title: 'Inicio renovado', text: 'Anillo de avance del día, «Sigue» con el próximo tema, franja con días para el ENARM y tarjetas plegables.' },
-  { icon: 'list', title: 'Barra lateral más corta', text: 'Herramientas (GPC, Guardia, Nota SOAP) y Ajustes (Respaldo, Preferencias, Tema, Estilo).' },
   { icon: 'cursor', title: 'Atajos', text: 'Pulsa «?» para verlos todos; «G» abre la Vista de Guardia desde cualquier parte.' },
 ];
 
