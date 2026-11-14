@@ -1,12 +1,14 @@
 # Compila el instalador de Windows (.msi y .exe) en los servidores de GitHub.
 # Se ejecuta a mano (pestaña Actions → «Instalador de Windows» → Run workflow)
-# o al publicar una etiqueta de versión (git tag v0.3.0 && git push --tags).
+# o al subir cambios a «main» (sin tocar solo documentación), o con una etiqueta v*.
 name: Instalador de Windows
 
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     tags: ['v*']
+    paths-ignore: ['**.md', '.claude/**']
 
 jobs:
   windows:
