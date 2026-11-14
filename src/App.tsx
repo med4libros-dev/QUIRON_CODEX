@@ -1,10 +1,9 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Icon } from './components/Icon';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { NavRail } from './components/layout/NavRail';
 import { SplitPane } from './components/layout/SplitPane';
 import { TopBar } from './components/layout/TopBar';
 import { InternshipView } from './internship/InternshipView';
-import { NotesPanel } from './features/notes/NotesPanel';
-import { PdfWorkspace } from './features/pdf/PdfWorkspace';
 import { usePomodoroTicker } from './features/pomodoro/usePomodoroTicker';
 import { useSettings } from './store/settings';
 import { PearlMenu, Toast } from './features/pearls/PearlMenu';
@@ -16,17 +15,21 @@ import { MiniPlayer } from './features/music/MiniPlayer';
 import { SearchModal } from './search/SearchModal';
 import { TtsBar } from './components/TtsBar';
 import { purgeExpiredShift } from './ward/store';
-import { CompareView } from './features/pdf/CompareView';
 import { DiagramModal } from './ai/DiagramModal';
 import { HlQuizModal } from './ai/HlQuizModal';
 import { ClozeModal } from './flashcards/ClozeModal';
 import { ShortcutsModal, WhatsNew } from './home/WhatsNew';
 import { startReminders } from './lib/reminders';
+import { startAutoFocus } from './lib/autoFocus';
 import { setPersistErrorHandler } from './lib/createStore';
 import { setNotifyFallback } from './lib/notify';
 import { useUI } from './store/ui';
 
 /* Vistas que no se usan al abrir: se cargan la primera vez que entras (arranque más rápido). */
+// Estudio (lector de PDF con pdf.js, editor y lienzo) se carga la primera vez que entras: Inicio abre antes.
+const PdfWorkspace = lazy(() => import('./features/pdf/PdfWorkspace').then((m) => ({ default: m.PdfWorkspace })));
+const NotesPanel = lazy(() => import('./features/notes/NotesPanel').then((m) => ({ default: m.NotesPanel })));
+const CompareView = lazy(() => import('./features/pdf/CompareView').then((m) => ({ default: m.CompareView })));
 const CalendarView = lazy(() => import('./features/calendar/CalendarView').then((m) => ({ default: m.CalendarView })));
 const NotebooksView = lazy(() => import('./features/notebooks/NotebooksView').then((m) => ({ default: m.NotebooksView })));
 const ProgressView = lazy(() => import('./features/progress/ProgressView').then((m) => ({ default: m.ProgressView })));
@@ -182,6 +185,26 @@ export default function App() {
   }, [theme, setDark]);
 
   usePomodoroTicker();
+  // Cronómetro automático: cuenta el tiempo real leyendo o escribiendo en Estudio y Cuadernos.
+  useEffect(startAutoFocus, []);
+  const [studySeen, setStudySeen] = useState(view === 'study');
+  if (view === 'study' && !studySeen) setStudySeen(true);
+  const compareOn = useUI((s) => !!s.compare);
+  const focus = useUI((s) => s.focus);
+  useEffect(() => {
+    const el = document.documentElement;
+    if (focus) el.dataset.focus = 'on';
+    else delete el.dataset.focus;
+    if (!focus) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('.modal-backdrop') && useUI.getState().setFocus(false);
+    const onFs = () => !document.fullscreenElement && useUI.getState().focus && useUI.getState().setFocus(false);
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('fullscreenchange', onFs);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('fullscreenchange', onFs);
+    };
+  }, [focus]);
 
   return (
     <div className="app">
@@ -190,7 +213,11 @@ export default function App() {
         <TopBar />
         {/* Estudio se mantiene montado: el PDF y la nota no se recargan al ir al calendario. */}
         <div className="view" hidden={view !== 'study'}>
-          <SplitPane pdf={<PdfWorkspace />} notes={<NotesPanel />} />
+          {studySeen && (
+            <Suspense fallback={<ViewLoading />}>
+              <SplitPane pdf={<PdfWorkspace />} notes={<NotesPanel />} />
+            </Suspense>
+          )}
         </div>
         {view === 'internado' && (
           <div className="view scroll">
@@ -253,7 +280,11 @@ export default function App() {
       <SoapModal />
       <MiniPlayer />
       <SearchModal />
-      <CompareView />
+      {compareOn && (
+        <Suspense fallback={null}>
+          <CompareView />
+        </Suspense>
+      )}
       <DiagramModal />
       <HlQuizModal />
       <ClozeModal />
@@ -264,6 +295,11 @@ export default function App() {
       <FlashcardReview />
       <PearlMenu />
       <Toast />
+      {focus && (
+        <button className="focus-exit" onClick={() => useUI.getState().setFocus(false)} title="Salir de pantalla completa (Esc)" aria-label="Salir de pantalla completa">
+          <Icon name="minimize" size={15} /> Salir
+        </button>
+      )}
       <div className="night-veil" aria-hidden="true" />
     </div>
   );

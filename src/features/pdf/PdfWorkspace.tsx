@@ -314,6 +314,7 @@ export function PdfWorkspace() {
 function MoreMenu({ docId, hlCount, onClose }: { docId: string; hlCount: number; onClose: () => void }) {
   const box = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const pdfDark = useSettings((s) => s.pdfDark);
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
       const t = e.target as Element;
@@ -339,6 +340,8 @@ function MoreMenu({ docId, hlCount, onClose }: { docId: string; hlCount: number;
     <div className="popover more-menu" ref={box} role="menu">
       {item('question', 'Preguntas con IA', 'Desde tus subrayados', () => (onClose(), useUI.getState().setHlQuiz(docId)), !hlCount, hlCount ? '' : 'Subraya o resalta texto primero')}
       {item('square', 'Flashcards de huecos', 'Escondes la palabra clave', () => (onClose(), useUI.getState().setCloze({ docId })), !hlCount, hlCount ? '' : 'Subraya o resalta texto primero')}
+      {item('moon', pdfDark ? 'Guía en claro' : 'Guía en oscuro', 'Fondo negro y texto claro para la noche', () => (onClose(), useSettings.getState().setPdfDark(!pdfDark)))}
+      {item('expand', 'Pantalla completa', 'Solo la guía y tus notas (Esc para salir)', () => (onClose(), useUI.getState().setFocus(true)))}
       {item('download', busy ? 'Generando…' : 'Exportar PDF anotado', 'Resaltados, tinta, post-its y marcadores', () => {
         setBusy(true);
         exportAnnotatedPdf(docId)

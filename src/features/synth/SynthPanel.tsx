@@ -3,12 +3,14 @@ import { Icon } from '../../components/Icon';
 import { exportToPdf } from '../../lib/exportPdf';
 import { htmlToText } from '../../lib/html';
 import { extractPagesText } from '../../lib/pdf';
-import { synthesizeWithClaude } from '../../lib/synth/claude';
+import { synthesizeWithAi } from '../../lib/synth/claude';
 import { synthesizeLocal } from '../../lib/synth/local';
 import type { SynthInput } from '../../lib/synth/types';
 import { useLibrary } from '../../store/library';
 import { useNotes } from '../../store/notes';
 import { useSettings } from '../../store/settings';
+import { AI_LABEL } from '../../lib/ai';
+import { useAiProvider, useAiReady } from '../../lib/useAi';
 import { HIGHLIGHT_META, type Highlight, type Note, type Sticky } from '../../types';
 
 const EMPTY: Highlight[] = [];
@@ -36,10 +38,8 @@ export function SynthPanel({
   const goTo = useLibrary((s) => s.goTo);
   const removeHighlight = useLibrary((s) => s.removeHighlight);
   const createNote = useNotes((s) => s.createNote);
-  const apiKey = useSettings((s) => s.apiKey);
-  const model = useSettings((s) => s.model);
-  const setApiKey = useSettings((s) => s.setApiKey);
-  const setModel = useSettings((s) => s.setModel);
+  const ready = useAiReady();
+  const provider = useAiProvider();
 
   const [engine, setEngine] = useState<'local' | 'claude'>('local');
   const [useNoteText, setUseNoteText] = useState(true);
@@ -74,7 +74,7 @@ export function SynthPanel({
           .join('\n'),
         sourceText,
       };
-      const html = engine === 'local' ? synthesizeLocal(input) : await synthesizeWithClaude(input, apiKey, model);
+      const html = engine === 'local' ? synthesizeLocal(input) : await synthesizeWithAi(input);
       setResult(html);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -139,7 +139,7 @@ export function SynthPanel({
             <button className={engine === 'local' ? 'active' : ''} onClick={() => setEngine('local')} title="Sin internet ni costo; extractivo">
               Local
             </button>
-            <button className={engine === 'claude' ? 'active' : ''} onClick={() => setEngine('claude')} title="Resúmenes redactados con IA (requiere API key)">
+            <button className={engine === 'claude' ? 'active' : ''} onClick={() => setEngine('claude')} title="Resúmenes redactados con IA (Claude o Gemini; requiere API key)">
               Claude (IA)
             </button>
           </div>
@@ -149,19 +149,10 @@ export function SynthPanel({
           </button>
         </div>
 
-        {engine === 'claude' && (
-          <details className="ai-settings" open={!apiKey}>
-            <summary>Motor de IA</summary>
-            <label className="field">
-              <span className="small muted">API key de Anthropic</span>
-              <input className="input" type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-ant-…" />
-            </label>
-            <label className="field">
-              <span className="small muted">Modelo</span>
-              <input className="input" value={model} onChange={(e) => setModel(e.target.value)} />
-            </label>
-            <p className="muted small">La clave se guarda solo en este navegador y el material se envía a la API de Anthropic al generar.</p>
-          </details>
+        {engine === 'claude' && !ready && (
+          <p className="small warn-text">
+            Falta tu API key de {AI_LABEL[provider]}: agrégala en Ajustes → Preferencias → IA (puedes usar Claude o Gemini).
+          </p>
         )}
         {error && <p className="error small">{error}</p>}
       </section>

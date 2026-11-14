@@ -115,6 +115,17 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.7
+- **Lazo** en el lienzo: encierra trazos y muévelos, escálalos, cámbiales el color, duplícalos o bórralos.
+- **Formas rectas**: línea, flecha, rectángulo y elipse al dejar el lápiz quieto (Preferencias → Lápiz para apagarlo).
+- **Plumas favoritas** (4, a un toque; mantener presionado guarda la actual) y **botón lateral** del lápiz como borrador o lazo.
+- **Hojas del lienzo**: insertar, subir, bajar y quitar; plantillas **Cornell** y **dos columnas**.
+- **Guía en oscuro** y **pantalla completa** de lectura, desde el menú «⋯» del PDF.
+- **Reloj de estudio automático**: cuenta el tiempo real leyendo o escribiendo y lo guarda en Progreso; se detiene solo a los 2 min sin actividad.
+- **Gemini o Claude**: elige el motor de IA y tu clave en Ajustes → Preferencias → IA.
+- **Diagnóstico del lápiz**: mide el retraso real (eventos, dibujo, cuadros) y señala la causa.
+- Escritura: el trazo recién soltado ya no obliga a redibujar la hoja ni a guardar en medio de la palabra.
+
 Roadmap del proyecto: [ROADMAP.md](ROADMAP.md).
 
 ## Uso rápido

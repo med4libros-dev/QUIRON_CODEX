@@ -217,6 +217,20 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - `lib/ink.ts`: `ctx2d` (canvas con `data-live` → `{ desynchronized: true }`), `drawLiveSegments` (dibuja solo los tramos nuevos con la geometría de `drawStroke`), `drawLiveTip` (último medio tramo + puntos predichos en una capa que se borra cada evento) y `liveOpacity`.
 - `InkCanvas.tsx` y `PdfViewer.tsx`: tres capas por hoja (base, en vivo, punta); los puntos llegan por `pointerrawupdate` cuando existe (si no, `pointermove` con `getCoalescedEvents`); al soltar, el trazo definitivo se dibuja en la base y entonces se limpian las capas en vivo.
 
+## v0.7
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Lazo y formas | `src/lib/shapes.ts` (puro) | `recognizeShape`, `strokesInLasso`, `applyXf`, `strokesBox` |
+| Zoom | `src/lib/usePinchZoom.ts` | Vista previa por `transform`, zoom real al soltar; `settings.inkZoom` |
+| Tinta sin trabas | `src/lib/inkBusy.ts`, `src/lib/groups.ts` | `performance.now()`; grupos por página que conservan identidad |
+| Reloj de estudio | `src/lib/autoFocus.ts` | Suma minutos a `planner.logs`; para a los 2 min sin actividad |
+| Motor de IA | `src/lib/ai.ts`, `src/lib/useAi.ts` | Claude (`/v1/messages`) o Gemini (`generateContent`, `thinkingBudget: 0` en flash) |
+| Diagnóstico | `src/features/prefs/InkDiagnostic.tsx` | Mide latencia de entrada, dibujo y cuadros |
+
+- El trazo que acabas de soltar se pinta en la capa base y se marca como «ya dibujado»: el efecto de redibujo lo detecta y no repite la hoja. La lista de trazos se actualiza en la primera pausa (250 ms) y el guardado en la siguiente (600 ms), nunca en medio de un trazo.
+- Las hojas fuera de vista liberan sus canvas (`IntersectionObserver`, margen 900 px).
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

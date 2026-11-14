@@ -6,6 +6,7 @@ import { openTopicNote, ensureTopicNote } from '../internship/openLesson';
 import { addInkImage } from '../lib/inkImages';
 import { useBridge } from '../store/bridge';
 import { useSettings } from '../store/settings';
+import { useAiReady } from '../lib/useAi';
 import { useUI } from '../store/ui';
 import { generateDiagram, renderDiagram, type Diagram, type DiagramKind } from './features';
 
@@ -14,8 +15,7 @@ const KIND_LABEL: Record<DiagramKind, string> = { start: 'Inicio', step: 'Paso',
 /** Diagrama / algoritmo del tema desde la GPC: lo revisas, corriges los textos y lo pegas en el lienzo para rayar encima. */
 export function DiagramModal() {
   const topicId = useUI((s) => s.diagram);
-  const apiKey = useSettings((s) => s.apiKey);
-  const model = useSettings((s) => s.model);
+  const ready = useAiReady();
   const [d, setD] = useState<Diagram | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export function DiagramModal() {
     setBusy(true);
     setMsg(null);
     try {
-      setD(await generateDiagram(topicId, { apiKey, model }));
+      setD(await generateDiagram(topicId));
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
     } finally {
@@ -74,10 +74,10 @@ export function DiagramModal() {
         {!d && (
           <>
             <p className="muted small">
-              Claude lee la GPC adjunta al tema (la GER, o tus apuntes si no hay) y arma el algoritmo de diagnóstico y manejo. Revisa cada caja contra la guía antes de estudiarlo; puedes corregir los textos aquí y rayar encima en el lienzo.
+              La IA lee la GPC adjunta al tema (la GER, o tus apuntes si no hay) y arma el algoritmo de diagnóstico y manejo. Revisa cada caja contra la guía antes de estudiarlo; puedes corregir los textos aquí y rayar encima en el lienzo.
             </p>
-            {!apiKey && <p className="small warn-text">Necesitas tu API key de Anthropic (Ajustes → Preferencias → IA).</p>}
-            <button className="btn primary" onClick={() => void go()} disabled={busy || !apiKey}>
+            {!ready && <p className="small warn-text">Necesitas tu API key (Ajustes → Preferencias → IA): puedes usar Claude o Gemini.</p>}
+            <button className="btn primary" onClick={() => void go()} disabled={busy || !ready}>
               <Icon name="flow" size={15} /> {busy ? 'Armando el algoritmo…' : 'Generar diagrama'}
             </button>
           </>

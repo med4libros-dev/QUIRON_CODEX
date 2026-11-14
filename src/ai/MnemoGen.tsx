@@ -6,14 +6,13 @@ import { useCards } from '../flashcards/store';
 import { TopicSelect } from '../flashcards/FlashcardUI';
 import { TOPIC } from '../internship/curriculum';
 import { useHy } from '../hy/store';
-import { useSettings } from '../store/settings';
+import { useAiReady } from '../lib/useAi';
 import { useUI } from '../store/ui';
 import { generateMnemonics, type MnemoCandidate } from './features';
 
 /** Mnemotecnias con IA para tus temas débiles: tú eliges cuáles se guardan en Perlas HY. */
 export function MnemoGen() {
-  const apiKey = useSettings((s) => s.apiKey);
-  const model = useSettings((s) => s.model);
+  const ready = useAiReady();
   const cards = useCards((s) => s.cards);
   const questions = useExam((s) => s.questions);
   const attempts = useExam((s) => s.attempts);
@@ -30,7 +29,7 @@ export function MnemoGen() {
     setMsg(null);
     setCands([]);
     try {
-      const list = await generateMnemonics(topicId, { apiKey, model });
+      const list = await generateMnemonics(topicId);
       setCands(list.map((m) => ({ ...m, pick: false })));
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
@@ -60,10 +59,10 @@ export function MnemoGen() {
           <Icon name="x" size={14} />
         </button>
       </div>
-      <p className="muted small">Claude lee la GPC adjunta al tema (o tus apuntes) y propone mnemotecnias. Elige las que te sirvan: solo esas se guardan.</p>
+      <p className="muted small">La IA lee la GPC adjunta al tema (o tus apuntes) y propone mnemotecnias. Elige las que te sirvan: solo esas se guardan.</p>
       <div className="field-row tight">
         <TopicSelect value={topicId} onChange={setTopicId} allowNone={false} className="select grow" />
-        <button className="btn primary sm" onClick={() => void go()} disabled={busy || !topicId || !apiKey} title={apiKey ? '' : 'Agrega tu API key en Ajustes → Preferencias'}>
+        <button className="btn primary sm" onClick={() => void go()} disabled={busy || !topicId || !ready} title={ready ? '' : 'Agrega tu API key en Ajustes → Preferencias'}>
           <Icon name="sparkles" size={14} /> {busy ? 'Pensando…' : 'Proponer'}
         </button>
       </div>
@@ -77,7 +76,7 @@ export function MnemoGen() {
           ))}
         </div>
       )}
-      {!apiKey && <p className="small warn-text">Necesitas tu API key de Anthropic (Ajustes → Preferencias → IA).</p>}
+      {!ready && <p className="small warn-text">Necesitas tu API key (Ajustes → Preferencias → IA): puedes usar Claude o Gemini.</p>}
       {msg && <p className="small error">{msg}</p>}
       {cands.length > 0 && (
         <>

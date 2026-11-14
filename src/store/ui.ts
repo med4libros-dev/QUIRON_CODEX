@@ -49,6 +49,9 @@ export interface UIState {
   cloze: { docId: string; items?: { text: string; page: number }[]; topicId?: string | null } | null;
   setCloze: (c: UIState['cloze']) => void;
   shortcutsOpen: boolean;
+  /** Lectura a pantalla completa: sin barra lateral ni barras superiores. */
+  focus: boolean;
+  setFocus: (v: boolean) => void;
   /** El modo noche está activo ahora (lo calcula App). */
   nightOn: boolean;
   soapOpen: boolean;
@@ -87,6 +90,16 @@ export const useUI = createStore<UIState>((set) => ({
   cloze: null,
   setCloze: (cloze) => set({ cloze }),
   shortcutsOpen: false,
+  focus: false,
+  setFocus: (focus) => {
+    set({ focus });
+    try {
+      if (focus) void document.documentElement.requestFullscreen?.().catch(() => undefined);
+      else if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => undefined);
+    } catch {
+      /* pantalla completa no disponible: queda el modo sin barras */
+    }
+  },
   nightOn: false,
   soapOpen: false,
   setSoapOpen: (soapOpen) => set({ soapOpen, topicSheet: null, guardQuickOpen: false }),

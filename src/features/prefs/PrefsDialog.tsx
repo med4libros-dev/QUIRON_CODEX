@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
+import { InkDiagnostic } from './InkDiagnostic';
+import { AI_KEY_HINT, AI_LABEL, type AiProvider } from '../../lib/ai';
+import { saveAiKey } from '../../lib/useAi';
 import { checkReminders, dailySummary } from '../../lib/reminders';
 import { notify, notifyPermission } from '../../lib/notify';
 import { isDesktop } from '../../lib/platform';
 import { useSettings } from '../../store/settings';
 import { useUI } from '../../store/ui';
+import { useTools } from '../../store/tools';
 import { APP_VERSION } from '../../version';
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
@@ -20,13 +24,20 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
   const reminderHour = useSettings((s) => s.reminderHour);
   const { setNight, setReminders } = useSettings.getState();
   const [msg, setMsg] = useState<string | null>(null);
-  const apiKey = useSettings((s) => s.apiKey);
+  const [diag, setDiag] = useState(false);
+  const provider = useSettings((s) => s.aiProvider);
+  const geminiModel = useSettings((s) => s.geminiModel);
+  const curKey = useSettings((s) => (s.aiProvider === 'gemini' ? s.geminiKey : s.apiKey));
   const model = useSettings((s) => s.model);
   const saver = useSettings((s) => s.saver);
   const inkPredict = useSettings((s) => s.inkPredict);
+  const barrel = useTools((s) => s.barrel);
+  const snapShapes = useTools((s) => s.snapShapes);
   const [keyDraft, setKeyDraft] = useState('');
 
   return (
+    <>
+    {diag && <InkDiagnostic onClose={() => setDiag(false)} />}
     <Modal title="Preferencias" onClose={onClose} width={540}>
       <div className="prefs">
         <section>
@@ -120,10 +131,24 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
           <h4>
             <Icon name="pen" size={15} /> Lápiz
           </h4>
+          <div className="field-row tight">
+            <span className="small">Botón lateral del lápiz</span>
+            <select className="select xs" value={barrel} onChange={(e) => useTools.getState().setBarrel(e.target.value as 'eraser' | 'lasso' | 'none')} aria-label="Botón lateral del lápiz">
+              <option value="eraser">Borrador</option>
+              <option value="lasso">Lazo</option>
+              <option value="none">Nada</option>
+            </select>
+          </div>
+          <label className="check">
+            <input type="checkbox" checked={snapShapes} onChange={(e) => useTools.getState().setSnapShapes(e.target.checked)} /> Formas rectas al dejar el lápiz quieto
+          </label>
           <label className="check">
             <input type="checkbox" checked={inkPredict} onChange={(e) => useSettings.getState().setInkPredict(e.target.checked)} /> Punta predictiva (experimental)
           </label>
-          <p className="muted small">Adelanta el trazo unos milisegundos con la predicción de Windows. Pruébala: si la punta «baila» en trazos rápidos, déjala apagada.</p>
+          <p className="muted small">Adelanta el trazo unos milisegundos con la predicción de Windows. Pruébala: si la punta «baila» o las letras parecen unirse, déjala apagada.</p>
+          <button className="btn ghost sm" onClick={() => setDiag(true)}>
+            <Icon name="target" size={14} /> Diagnóstico del lápiz
+          </button>
         </section>
 
         <section>
@@ -148,27 +173,34 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
 
         <section>
           <h4>
-            <Icon name="sparkles" size={15} /> IA (Claude)
+            <Icon name="sparkles" size={15} /> IA
           </h4>
           <p className="muted small">
-            Opcional. Se usa para síntesis, simulacros, mnemotecnias, diagramas y preguntas desde subrayados; siempre con tu material. La clave se guarda solo en este equipo.
+            Opcional. Se usa para síntesis, simulacros, mnemotecnias, diagramas y preguntas desde subrayados; siempre con tu material. Elige con cuál quieres trabajar: la clave se guarda solo en este equipo y el material se envía directo a ese proveedor.
           </p>
-          {apiKey ? (
+          <div className="seg" role="radiogroup" aria-label="Motor de IA">
+            {(['claude', 'gemini'] as AiProvider[]).map((id) => (
+              <button key={id} className={provider === id ? 'active' : ''} aria-pressed={provider === id} onClick={() => useSettings.getState().setAiProvider(id)}>
+                {AI_LABEL[id]}
+              </button>
+            ))}
+          </div>
+          {curKey ? (
             <div className="field-row tight">
-              <span className="small ok-text">● Clave guardada (…{apiKey.slice(-4)})</span>
+              <span className="small ok-text">● Clave de {AI_LABEL[provider]} guardada (…{curKey.slice(-4)})</span>
               <span className="spacer" />
-              <button className="btn ghost sm" onClick={() => confirm('¿Quitar tu API key de este equipo?') && useSettings.getState().setApiKey('')}>
+              <button className="btn ghost sm" onClick={() => confirm(`¿Quitar tu API key de ${AI_LABEL[provider]} de este equipo?`) && saveAiKey('')}>
                 Quitar
               </button>
             </div>
           ) : (
             <div className="field-row tight">
-              <input className="input grow" type="password" value={keyDraft} onChange={(e) => setKeyDraft(e.target.value)} placeholder="sk-ant-…" aria-label="API key de Anthropic" />
+              <input className="input grow" type="password" value={keyDraft} onChange={(e) => setKeyDraft(e.target.value)} placeholder={AI_KEY_HINT[provider]} aria-label={`API key de ${AI_LABEL[provider]}`} />
               <button
                 className="btn sm"
                 disabled={!keyDraft.trim()}
                 onClick={() => {
-                  useSettings.getState().setApiKey(keyDraft.trim());
+                  saveAiKey(keyDraft.trim());
                   setKeyDraft('');
                 }}
               >
@@ -178,8 +210,18 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
           )}
           <label className="field">
             <span className="small">Modelo</span>
-            <input className="input sm" value={model} onChange={(e) => useSettings.getState().setModel(e.target.value)} aria-label="Modelo de Claude" />
+            <input
+              className="input sm"
+              value={provider === 'gemini' ? geminiModel : model}
+              onChange={(e) => (provider === 'gemini' ? useSettings.getState().setGeminiModel(e.target.value) : useSettings.getState().setModel(e.target.value))}
+              aria-label={`Modelo de ${AI_LABEL[provider]}`}
+            />
           </label>
+          <p className="muted small">
+            {provider === 'gemini'
+              ? 'La clave de Gemini se obtiene en Google AI Studio (aistudio.google.com). Modelos útiles: gemini-2.5-flash (rápido y barato) o gemini-2.5-pro (más cuidadoso).'
+              : 'La clave de Claude se obtiene en console.anthropic.com.'}
+          </p>
         </section>
 
         <p className="small muted">
@@ -190,5 +232,6 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
         </p>
       </div>
     </Modal>
+    </>
   );
 }

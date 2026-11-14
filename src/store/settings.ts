@@ -34,6 +34,9 @@ export interface SettingsState {
   /** Punta predictiva del lápiz (experimental): adelanta el trazo unos milisegundos. */
   inkPredict: boolean;
   setInkPredict: (v: boolean) => void;
+  /** Guías en oscuro: fondo negro y texto claro (solo cambia cómo se ven, no el archivo). */
+  pdfDark: boolean;
+  setPdfDark: (v: boolean) => void;
   /** Zoom del lienzo de notas (1 = ancho de la hoja). */
   inkZoom: number;
   setInkZoom: (z: number) => void;
@@ -53,6 +56,13 @@ export interface SettingsState {
   setActiveDoc: (id: string | null) => void;
   setActiveNote: (id: string | null) => void;
   setNotebookScope: (id: string | null) => void;
+  /** Motor de IA: Claude (Anthropic) o Gemini (Google). */
+  aiProvider: 'claude' | 'gemini';
+  geminiKey: string;
+  geminiModel: string;
+  setAiProvider: (p: 'claude' | 'gemini') => void;
+  setGeminiKey: (k: string) => void;
+  setGeminiModel: (m: string) => void;
   setApiKey: (k: string) => void;
   setModel: (m: string) => void;
 }
@@ -80,6 +90,8 @@ export const useSettings = createStore<SettingsState>(
     enarmDate: null,
     inkPredict: false,
     setInkPredict: (inkPredict) => set({ inkPredict }),
+    pdfDark: false,
+    setPdfDark: (pdfDark) => set({ pdfDark }),
     inkZoom: 1,
     setInkZoom: (inkZoom) => set({ inkZoom: Math.min(3, Math.max(0.5, Math.round(inkZoom * 100) / 100)) }),
     saver: 'auto',
@@ -98,14 +110,20 @@ export const useSettings = createStore<SettingsState>(
     setActiveDoc: (activeDocId) => set({ activeDocId, activeNoteId: null }),
     setActiveNote: (activeNoteId) => set({ activeNoteId }),
     setNotebookScope: (notebookScope) => set({ notebookScope, activeNoteId: null }),
+    aiProvider: 'claude',
+    geminiKey: '',
+    geminiModel: 'gemini-2.5-flash',
+    setAiProvider: (aiProvider) => set({ aiProvider }),
+    setGeminiKey: (geminiKey) => set({ geminiKey }),
+    setGeminiModel: (geminiModel) => set({ geminiModel }),
     setApiKey: (apiKey) => set({ apiKey }),
     setModel: (model) => set({ model }),
   }),
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict }) => ({
-      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict,
+    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, aiProvider, geminiKey, geminiModel }) => ({
+      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, aiProvider, geminiKey, geminiModel,
     }),
   },
 );

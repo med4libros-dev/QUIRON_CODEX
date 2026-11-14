@@ -1,5 +1,4 @@
 import { idb } from './idb';
-import { extractAllPages } from './pdf';
 
 /**
  * Índice de texto por página de cada PDF. Se guarda en IndexedDB como objeto (no como texto),
@@ -16,6 +15,7 @@ export async function pagesOf(docId: string, onProgress?: (d: number, t: number)
     mem.set(docId, stored.pages);
     return stored.pages;
   }
+  const { extractAllPages } = await import('./pdf'); // pdf.js se carga solo cuando hace falta
   const pages = await extractAllPages(docId, 2000, onProgress);
   mem.set(docId, pages);
   try {

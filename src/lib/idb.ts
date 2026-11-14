@@ -38,9 +38,16 @@ function run<T>(store: StoreName, mode: IDBTransactionMode, fn: (s: IDBObjectSto
   );
 }
 
+/** Contador de escrituras: el respaldo automático se salta si nada cambió desde el último. */
+let changes = 0;
+export const changeCount = () => changes;
+export const bumpChanges = () => {
+  changes++;
+};
+
 export const idb = {
   get: <T>(store: StoreName, key: string) => run<T | undefined>(store, 'readonly', (s) => s.get(key)),
-  set: (store: StoreName, key: string, value: unknown) => run<void>(store, 'readwrite', (s) => s.put(value, key)),
+  set: (store: StoreName, key: string, value: unknown) => (changes++, run<void>(store, 'readwrite', (s) => s.put(value, key))),
   del: (store: StoreName, key: string) => run<void>(store, 'readwrite', (s) => s.delete(key)),
   keys: (store: StoreName) => run<IDBValidKey[]>(store, 'readonly', (s) => s.getAllKeys()).then((k) => k.map(String)),
 };

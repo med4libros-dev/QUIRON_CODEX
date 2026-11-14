@@ -1,5 +1,7 @@
 import { downloadBlob } from './exportPdf';
 import { flushPersistence, freezePersistence } from './createStore';
+import { changeCount } from './idb';
+import { inkBusy } from './inkBusy';
 import { idb } from './idb';
 
 /**
@@ -366,11 +368,18 @@ export async function loadFromFolder(pw?: string): Promise<string> {
 /** Respaldo automático: cada 2 minutos y al ocultar/cerrar la pestaña, si hay carpeta con permiso. */
 export function startAutoBackup() {
   let busy = false;
+  let savedAt = -1;
   const tick = async () => {
-    if (busy) return;
+    // Nada cambió desde el último respaldo, o el lápiz está escribiendo: no se hace nada.
+    if (busy || changeCount() === savedAt || inkBusy()) return;
     busy = true;
     try {
-      if (await saveToFolder()) setBackupError(null);
+      const before = changeCount();
+      if (await saveToFolder()) {
+        // El propio respaldo escribe (marca de fecha): se descuenta para no respaldar en bucle.
+        savedAt = before === changeCount() ? before : changeCount();
+        setBackupError(null);
+      }
     } catch (e) {
       console.warn('Respaldo automático falló', e);
       setBackupError(e instanceof Error ? e.message : String(e));

@@ -17,6 +17,9 @@ import { uid } from '../../lib/id';
 import { PAGE_H, PAGE_W, ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, inkColor, liveOpacity, stabilize, type LiveStyle } from '../../lib/ink';
 import { PenControls } from '../../components/PenControls';
 import { usePinchZoom } from '../../lib/usePinchZoom';
+import { inkDown, inkIsDown, inkUp } from '../../lib/inkBusy';
+import { stableGroups } from '../../lib/groups';
+import { applyXf, recognizeShape, strokesBox, strokesInLasso, type Xf } from '../../lib/shapes';
 import { loadInkImages, saveInkImages, type InkImage } from '../../lib/inkImages';
 import { useBridge } from '../../store/bridge';
 import { useTools } from '../../store/tools';
@@ -26,13 +29,17 @@ import type { InkTool, Note, PaperStyle, Stroke } from '../../types';
 
 const EMPTY: Stroke[] = [];
 const EMPTY_IMG: InkImage[] = [];
+type Mode = 'draw' | 'eraser' | 'lasso';
+type SelAction = { type: 'delete' } | { type: 'duplicate' } | { type: 'color'; color: string };
+const SEL_COLORS = ['auto', '#dc2626', '#2563eb', '#16a34a', '#d97706'];
+const INK_ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
 
 /**
  * Lienzo para escritura a mano, optimizado para lápiz (Surface Pen):
- *  - Presión real del lápiz → grosor variable; eventos "coalesced" para trazos suaves a alta frecuencia.
- *  - Botón borrador del lápiz detectado automáticamente.
- *  - "Solo lápiz": la palma/dedo no dibuja; el dedo desplaza la hoja.
- *  - Dos capas de canvas: trazos guardados + trazo en curso (no se redibuja todo en cada movimiento).
+ *  - Presión real del lápiz → grosor variable; cada punto se dibuja al instante.
+ *  - Lazo (mover, escalar, recolorear, duplicar, borrar), formas rectas al dejar el lápiz quieto.
+ *  - Botón borrador y botón lateral del lápiz; "Solo lápiz": el dedo desplaza la hoja.
+ *  - Hojas: insertar, subir/bajar, quitar; plantillas de hoja.
  *  - Los trazos se guardan aparte en IndexedDB, con guardado diferido.
  */
 export function InkCanvas({ note }: { note: Note }) {
@@ -42,8 +49,8 @@ export function InkCanvas({ note }: { note: Note }) {
   const drawTool = useTools((s) => s.canvasTool);
   const setDrawTool = useTools((s) => s.setCanvasTool);
   const setting = useTools((s) => s.settings[s.canvasTool]);
-  const [erasing, setErasing] = useState(false);
-  const tool: InkTool = erasing ? 'eraser' : drawTool;
+  const [mode, setMode] = useState<Mode>('draw');
+  const tool: InkTool = mode === 'draw' ? drawTool : mode;
   const penOnly = useTools((s) => s.penOnly);
   const inkZoom = useSettings((s) => s.inkZoom);
   const setInkZoom = useSettings((s) => s.setInkZoom);
@@ -57,6 +64,7 @@ export function InkCanvas({ note }: { note: Note }) {
   const erasePushed = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [images, setImages] = useState<InkImage[]>(EMPTY_IMG);
+  const [sel, setSel] = useState<{ page: number; ids: Set<string> } | null>(null);
   const inkRev = useBridge((s) => (s.inkRev?.noteId === note.id ? s.inkRev.n : 0));
 
   // Recortes pegados desde el PDF: se guardan aparte de los trazos y se recargan si llega uno nuevo.
@@ -67,21 +75,18 @@ export function InkCanvas({ note }: { note: Note }) {
       alive = false;
     };
   }, [note.id, inkRev]);
-  const removeImage = useCallback(
-    (id: string) => {
-      setImages((cur) => {
-        const next = cur.filter((i) => i.id !== id);
-        void saveInkImages(note.id, next);
-        return next;
-      });
+  const saveImages = useCallback(
+    (next: InkImage[]) => {
+      setImages(next);
+      void saveInkImages(note.id, next);
     },
     [note.id],
   );
-  const imgByPage = useMemo(() => {
-    const m = new Map<number, InkImage[]>();
-    for (const im of images) m.set(im.page, [...(m.get(im.page) ?? []), im]);
-    return m;
-  }, [images]);
+  const imagesRef = useRef(images);
+  imagesRef.current = images;
+  const removeImage = useCallback((id: string) => saveImages(imagesRef.current.filter((i) => i.id !== id)), [saveImages]);
+  const imgGroups = useRef(new Map<number, InkImage[]>());
+  const imgByPage = useMemo(() => (imgGroups.current = stableGroups(imgGroups.current, images)), [images]);
 
   // Al pegar un recorte, desplazarse hasta él.
   useEffect(() => {
@@ -92,6 +97,7 @@ export function InkCanvas({ note }: { note: Note }) {
 
   useEffect(() => {
     let alive = true;
+    setSel(null);
     idb.get<Stroke[]>('ink', note.id).then((s) => {
       if (!alive) return;
       latest.current = s ?? [];
@@ -109,15 +115,25 @@ export function InkCanvas({ note }: { note: Note }) {
       latest.current = next;
       dirty.current = true;
       setStrokes(next);
-      clearTimeout(timer.current);
-      timer.current = setTimeout(() => {
-        dirty.current = false;
-        void idb.set('ink', note.id, latest.current);
-        update(note.id, {});
-      }, 600);
+      scheduleSave();
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [note.id, update],
   );
+  /** Guardado diferido; si el lápiz sigue escribiendo, espera a la primera pausa. */
+  const scheduleSave = () => {
+    clearTimeout(timer.current);
+    const tick = () => {
+      if (inkIsDown()) {
+        timer.current = setTimeout(tick, 150);
+        return;
+      }
+      dirty.current = false;
+      void idb.set('ink', note.id, latest.current);
+      update(note.id, {});
+    };
+    timer.current = setTimeout(tick, 600);
+  };
 
   const pushUndo = () => {
     undo.current.push(latest.current);
@@ -126,21 +142,51 @@ export function InkCanvas({ note }: { note: Note }) {
     setHistoryTick((n) => n + 1);
   };
 
-  const addStroke = useCallback(
-    (s: Stroke) => {
-      pushUndo();
-      persist([...latest.current, s]);
-    },
-    [persist],
-  );
+  // Al soltar el lápiz NO se renderiza nada: el trazo ya está pintado en la hoja. La lista se actualiza
+  // en la primera pausa de 250 ms, así escribir rápido no dispara trabajo de la interfaz entre letra y letra.
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const addStroke = useCallback((s: Stroke) => {
+    undo.current.push(latest.current);
+    if (undo.current.length > 80) undo.current.shift();
+    redo.current = [];
+    latest.current = [...latest.current, s];
+    dirty.current = true;
+    clearTimeout(flushTimer.current);
+    const flush = () => {
+      if (inkIsDown()) {
+        flushTimer.current = setTimeout(flush, 150); // nunca en medio de un trazo
+        return;
+      }
+      setStrokes(latest.current);
+      setHistoryTick((n) => n + 1);
+      scheduleSave();
+    };
+    flushTimer.current = setTimeout(flush, 250);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => () => clearTimeout(flushTimer.current), [note.id]);
+  // Al ocultar o cerrar la ventana se guarda de inmediato lo que esté pendiente.
+  useEffect(() => {
+    const save = () => {
+      if (!dirty.current) return;
+      dirty.current = false;
+      clearTimeout(timer.current);
+      void idb.set('ink', note.id, latest.current);
+    };
+    const onVis = () => document.visibilityState === 'hidden' && save();
+    window.addEventListener('pagehide', save);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      window.removeEventListener('pagehide', save);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [note.id]);
 
   const eraseAt = useCallback(
     (page: number, x: number, y: number, begin: boolean) => {
       if (begin) erasePushed.current = false;
       const cur = latest.current;
-      const next = cur.filter(
-        (s) => s.page !== page || !hitsStroke(s, x, y, 12),
-      );
+      const next = cur.filter((s) => s.page !== page || !hitsStroke(s, x, y, 12));
       if (next.length === cur.length) return;
       if (!erasePushed.current) {
         pushUndo();
@@ -151,25 +197,69 @@ export function InkCanvas({ note }: { note: Note }) {
     [persist],
   );
 
+  /* ---------- Lazo ---------- */
+  const selRef = useRef(sel);
+  selRef.current = sel;
+  const onSelect = useCallback((page: number, ids: string[]) => setSel(ids.length ? { page, ids: new Set(ids) } : null), []);
+  const onTransform = useCallback(
+    (f: Xf) => {
+      const cur = selRef.current;
+      if (!cur) return;
+      pushUndo();
+      persist(latest.current.map((s) => (cur.ids.has(s.id) ? applyXf(s, f) : s)));
+    },
+    [persist],
+  );
+  const onSelAction = useCallback(
+    (a: SelAction) => {
+      const cur = selRef.current;
+      if (!cur) return;
+      pushUndo();
+      if (a.type === 'delete') {
+        persist(latest.current.filter((s) => !cur.ids.has(s.id)));
+        setSel(null);
+      } else if (a.type === 'color') {
+        persist(latest.current.map((s) => (cur.ids.has(s.id) ? { ...s, color: a.color } : s)));
+      } else {
+        const copies = latest.current.filter((s) => cur.ids.has(s.id)).map((s) => ({ ...applyXf(s, { dx: 24, dy: 24, s: 1, ox: 0, oy: 0 }), id: uid() }));
+        persist([...latest.current, ...copies]);
+        setSel({ page: cur.page, ids: new Set(copies.map((c) => c.id)) });
+      }
+    },
+    [persist],
+  );
+
   const doUndo = () => {
     const prev = undo.current.pop();
     if (!prev) return;
     redo.current.push(latest.current);
+    setSel(null);
     persist(prev);
   };
   const doRedo = () => {
     const next = redo.current.pop();
     if (!next) return;
     undo.current.push(latest.current);
+    setSel(null);
     persist(next);
   };
   const clearAll = () => {
     if (!latest.current.length || !confirm('¿Borrar todos los trazos de esta nota?')) return;
     pushUndo();
+    setSel(null);
     persist([]);
   };
 
   const onKeyDown = (e: ReactKeyboardEvent) => {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selRef.current) {
+      e.preventDefault();
+      onSelAction({ type: 'delete' });
+      return;
+    }
+    if (e.key === 'Escape' && selRef.current) {
+      setSel(null);
+      return;
+    }
     if (!(e.ctrlKey || e.metaKey)) return;
     const k = e.key.toLowerCase();
     if (k === 'z' && !e.shiftKey) {
@@ -181,24 +271,50 @@ export function InkCanvas({ note }: { note: Note }) {
     }
   };
 
-  const byPage = useMemo(() => {
-    const m = new Map<number, Stroke[]>();
-    for (const s of strokes ?? []) {
-      const list = m.get(s.page);
-      if (list) list.push(s);
-      else m.set(s.page, [s]);
-    }
-    return m;
-  }, [strokes]);
+  // Agrupar por hoja conservando los arreglos que no cambiaron: escribir en una hoja no redibuja las demás.
+  const groups = useRef(new Map<number, Stroke[]>());
+  const byPage = useMemo(() => (groups.current = stableGroups(groups.current, strokes ?? [])), [strokes]);
 
   usePinchZoom(scrollRef, inkZoom, setInkZoom, { min: 0.5, max: 3 });
-  const pages = Math.max(1, note.inkPages);
-  const INK_ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+  let lastUsed = -1;
+  for (const s of strokes ?? []) if (s.page > lastUsed) lastUsed = s.page;
+  for (const im of images) if (im.page > lastUsed) lastUsed = im.page;
+  const pages = Math.max(1, note.inkPages, lastUsed + 1);
   const zoomStep = (dir: 1 | -1) => {
     const i = INK_ZOOMS.findIndex((v) => v >= inkZoom - 0.001);
     const idx = (i === -1 ? INK_ZOOMS.length - 1 : i) + dir;
     setInkZoom(INK_ZOOMS[Math.min(INK_ZOOMS.length - 1, Math.max(0, idx))]);
   };
+
+  /* ---------- Hojas: insertar, mover, quitar ---------- */
+  const remap = (f: (page: number) => number | null) => {
+    pushUndo();
+    setSel(null);
+    persist(latest.current.flatMap((s) => {
+      const p = f(s.page);
+      return p === null ? [] : p === s.page ? [s] : [{ ...s, page: p }];
+    }));
+    saveImages(imagesRef.current.flatMap((im) => {
+      const p = f(im.page);
+      return p === null ? [] : [{ ...im, page: p }];
+    }));
+  };
+  const insertPage = (at: number) => {
+    remap((p) => (p >= at ? p + 1 : p));
+    update(note.id, { inkPages: pages + 1 });
+  };
+  const movePage = (i: number, dir: 1 | -1) => {
+    const j = i + dir;
+    if (j < 0 || j >= pages) return;
+    remap((p) => (p === i ? j : p === j ? i : p));
+  };
+  const deletePage = (i: number) => {
+    const used = latest.current.some((s) => s.page === i) || imagesRef.current.some((im) => im.page === i);
+    if (used && !confirm(`¿Quitar la hoja ${i + 1} con todo lo que tiene?`)) return;
+    remap((p) => (p === i ? null : p > i ? p - 1 : p));
+    update(note.id, { inkPages: Math.max(1, pages - 1) });
+  };
+
   const color = setting.color;
   const size = setting.size;
 
@@ -207,14 +323,26 @@ export function InkCanvas({ note }: { note: Note }) {
       <div className="ink-toolbar" role="toolbar" aria-label="Herramientas de dibujo">
         <PenControls
           tool={drawTool}
-          inactive={erasing}
+          inactive={mode !== 'draw'}
           onTool={(t) => {
             setDrawTool(t);
-            setErasing(false);
+            setMode('draw');
           }}
         />
-        <button className={`icon-btn${erasing ? ' active' : ''}`} onClick={() => setErasing((v) => !v)} title="Borrador de trazo (o usa el borrador del lápiz)" aria-pressed={erasing}>
+        <button className={`icon-btn${mode === 'eraser' ? ' active' : ''}`} onClick={() => setMode((m) => (m === 'eraser' ? 'draw' : 'eraser'))} title="Borrador de trazo (o usa el borrador del lápiz)" aria-pressed={mode === 'eraser'} aria-label="Borrador">
           <Icon name="eraser" />
+        </button>
+        <button
+          className={`icon-btn${mode === 'lasso' ? ' active' : ''}`}
+          onClick={() => {
+            setMode((m) => (m === 'lasso' ? 'draw' : 'lasso'));
+            setSel(null);
+          }}
+          title="Lazo: encierra trazos para moverlos, cambiarles tamaño o color, duplicarlos o borrarlos"
+          aria-pressed={mode === 'lasso'}
+          aria-label="Lazo"
+        >
+          <Icon name="lasso" />
         </button>
         <div className="tb-sep" />
         <button className="icon-btn" onClick={doUndo} disabled={!undo.current.length} title="Deshacer (Ctrl+Z)">
@@ -243,14 +371,11 @@ export function InkCanvas({ note }: { note: Note }) {
         >
           <Icon name="hand" size={16} /> Solo lápiz
         </button>
-        <select
-          className="select xs"
-          value={note.paper}
-          onChange={(e) => update(note.id, { paper: e.target.value as PaperStyle })}
-          aria-label="Tipo de hoja"
-        >
+        <select className="select xs" value={note.paper} onChange={(e) => update(note.id, { paper: e.target.value as PaperStyle })} aria-label="Tipo de hoja">
           <option value="lined">Rayada</option>
           <option value="grid">Cuadrícula</option>
+          <option value="cornell">Cornell</option>
+          <option value="columns">Dos columnas</option>
           <option value="blank">Lisa</option>
         </select>
         <button className="icon-btn danger" onClick={clearAll} title="Borrar todo">
@@ -263,22 +388,43 @@ export function InkCanvas({ note }: { note: Note }) {
         ) : (
           <>
             {Array.from({ length: pages }, (_, i) => (
-              <InkPage
-                key={i}
-                index={i}
-                strokes={byPage.get(i) ?? EMPTY}
-                images={imgByPage.get(i) ?? EMPTY_IMG}
-                onRemoveImage={removeImage}
-                tool={tool}
-                color={color}
-                size={size}
-                penOnly={penOnly}
-                paper={note.paper}
-                dark={dark}
-                scrollRef={scrollRef}
-                onStroke={addStroke}
-                onErase={eraseAt}
-              />
+              <div className="ink-sheet" key={i}>
+                <div className="ink-page-head">
+                  <span className="muted small">Hoja {i + 1}</span>
+                  <span className="spacer" />
+                  <button className="icon-btn xs" onClick={() => insertPage(i)} title="Insertar una hoja antes de esta" aria-label={`Insertar hoja antes de la ${i + 1}`}>
+                    <Icon name="plus" size={14} />
+                  </button>
+                  <button className="icon-btn xs" onClick={() => movePage(i, -1)} disabled={i === 0} title="Subir hoja" aria-label={`Subir hoja ${i + 1}`}>
+                    <Icon name="arrowUp" size={14} />
+                  </button>
+                  <button className="icon-btn xs" onClick={() => movePage(i, 1)} disabled={i === pages - 1} title="Bajar hoja" aria-label={`Bajar hoja ${i + 1}`}>
+                    <Icon name="arrowDown" size={14} />
+                  </button>
+                  <button className="icon-btn xs" onClick={() => deletePage(i)} disabled={pages === 1} title="Quitar hoja" aria-label={`Quitar hoja ${i + 1}`}>
+                    <Icon name="trash" size={14} />
+                  </button>
+                </div>
+                <InkPage
+                  index={i}
+                  strokes={byPage.get(i) ?? EMPTY}
+                  images={imgByPage.get(i) ?? EMPTY_IMG}
+                  onRemoveImage={removeImage}
+                  tool={tool}
+                  color={color}
+                  size={size}
+                  penOnly={penOnly}
+                  paper={note.paper}
+                  dark={dark}
+                  scrollRef={scrollRef}
+                  sel={sel?.page === i ? sel.ids : null}
+                  onStroke={addStroke}
+                  onErase={eraseAt}
+                  onSelect={onSelect}
+                  onTransform={onTransform}
+                  onSelAction={onSelAction}
+                />
+              </div>
             ))}
             <button className="btn ghost add-page" onClick={() => update(note.id, { inkPages: pages + 1 })}>
               <Icon name="plus" size={16} /> Añadir hoja
@@ -302,18 +448,38 @@ interface PageProps {
   paper: PaperStyle;
   dark: boolean;
   scrollRef: RefObject<HTMLDivElement | null>;
+  sel: Set<string> | null;
   onStroke: (s: Stroke) => void;
   onErase: (page: number, x: number, y: number, begin: boolean) => void;
+  onSelect: (page: number, ids: string[]) => void;
+  onTransform: (f: Xf) => void;
+  onSelAction: (a: SelAction) => void;
 }
 
-const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, tool, color, size, penOnly, paper, dark, scrollRef, onStroke, onErase }: PageProps) {
+type Gesture =
+  | { kind: 'draw'; id: number; pts: number[][]; rect: DOMRect; drawn: number; st: LiveStyle; color: string; snapped: boolean; anchor: number[] }
+  | { kind: 'erase'; id: number; rect: DOMRect }
+  | { kind: 'lasso'; id: number; pts: number[][]; rect: DOMRect }
+  | { kind: 'move' | 'scale'; id: number; rect: DOMRect; start: number[] };
+
+const IDENT = (ox = 0, oy = 0): Xf => ({ dx: 0, dy: 0, s: 1, ox, oy });
+
+const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, tool, color, size, penOnly, paper, dark, scrollRef, sel, onStroke, onErase, onSelect, onTransform, onSelAction }: PageProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const baseRef = useRef<HTMLCanvasElement>(null);
   const liveRef = useRef<HTMLCanvasElement>(null);
   const tipRef = useRef<HTMLCanvasElement>(null);
   const [cssW, setCssW] = useState(0);
-  const cur = useRef<{ id: number; pts: number[][]; erase: boolean; rect: DOMRect; drawn: number; st: LiveStyle; color: string } | null>(null);
+  const [visible, setVisible] = useState(index < 2);
+  const cur = useRef<Gesture | null>(null);
   const pan = useRef<{ id: number; y: number; x: number } | null>(null);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const xfRef = useRef<Xf | null>(null);
+  const [xf, setXfState] = useState<Xf | null>(null);
+  const setXf = (f: Xf | null) => {
+    xfRef.current = f;
+    setXfState(f);
+  };
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -322,14 +488,26 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     measure();
-    return () => ro.disconnect();
+    // Las hojas lejos de la vista sueltan sus canvas (memoria) y se redibujan al acercarse.
+    const io = new IntersectionObserver(([en]) => setVisible(en.isIntersecting), { root: scrollRef.current, rootMargin: '900px 0px' });
+    io.observe(el);
+    return () => {
+      ro.disconnect();
+      io.disconnect();
+      clearTimeout(holdTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Ajusta el canvas a la resolución del dispositivo y deja el contexto en coordenadas lógicas. */
   const prepare = (c: HTMLCanvasElement | null) => {
-    if (!c || !cssW) return null;
-    // Con zoom alto se limita la resolución interna (≤ 3200 px de ancho) para no gastar memoria ni batería.
-    const dpr = Math.min(window.devicePixelRatio || 1, 2, 3200 / cssW);
+    if (!c) return null;
+    if (!cssW || !visible) {
+      if (c.width) c.width = c.height = 0;
+      return null;
+    }
+    // Con zoom alto se limita la resolución interna (≤ 2200 px de ancho) para no gastar memoria ni batería.
+    const dpr = Math.min(window.devicePixelRatio || 1, 2, 2200 / cssW);
     const w = Math.round(cssW * dpr);
     const h = Math.round(((cssW * PAGE_H) / PAGE_W) * dpr);
     if (c.width !== w || c.height !== h) {
@@ -344,32 +522,57 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     return ctx;
   };
 
+  const selStrokes = useMemo(() => (sel ? strokes.filter((s) => sel.has(s.id)) : EMPTY), [strokes, sel]);
+  const baseStrokes = useMemo(() => (selStrokes.length ? strokes.filter((s) => !sel!.has(s.id)) : strokes), [strokes, sel, selStrokes]);
+  const box = useMemo(() => strokesBox(selStrokes), [selStrokes]);
+
   // Al soltar el lápiz el trazo ya se dibujó en la base: no hace falta redibujar toda la hoja
   // (ese redibujo completo trababa el inicio del siguiente trazo al escribir rápido).
-  const committed = useRef<string | null>(null);
-  const prevStrokes = useRef<Stroke[]>(strokes);
+  const committed = useRef(new Set<string>());
+  const prevStrokes = useRef<Stroke[]>(baseStrokes);
   const prevKey = useRef('');
 
   useEffect(() => {
     const prev = prevStrokes.current;
-    const key = `${cssW}|${dark}`;
-    const id = committed.current;
-    const appended = !!id && key === prevKey.current && strokes.length === prev.length + 1 && strokes[strokes.length - 1].id === id && prev.every((s, i) => s === strokes[i]);
-    prevStrokes.current = strokes;
+    const key = `${cssW}|${dark}|${visible}`;
+    // ¿Solo se agregaron trazos que ya están pintados en la base? Entonces no hay nada que redibujar.
+    const done = committed.current;
+    const appended =
+      done.size > 0 &&
+      key === prevKey.current &&
+      baseStrokes.length > prev.length &&
+      prev.every((s, i) => s === baseStrokes[i]) &&
+      baseStrokes.slice(prev.length).every((s) => done.has(s.id));
+    prevStrokes.current = baseStrokes;
     prevKey.current = key;
-    committed.current = null;
+    if (!cur.current) committed.current = new Set();
     if (appended) return;
     const ctx = prepare(baseRef.current);
     if (!ctx) return;
     const ink = inkColor();
-    for (const s of strokes) drawStroke(ctx, s, ink);
-    if (!cur.current) {
-      // Limpia el trazo en vivo y su punta, ya consolidados en el canvas base.
-      prepare(liveRef.current);
-      prepare(tipRef.current);
-    }
+    for (const s of baseStrokes) drawStroke(ctx, s, ink);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [strokes, cssW, dark]);
+  }, [baseStrokes, cssW, dark, visible]);
+
+  // Selección del lazo: sus trazos se pintan en la capa en vivo con la transformación en curso (barato al arrastrar).
+  const liveKey = useRef('');
+  const hadSel = useRef(false);
+  useEffect(() => {
+    if (cur.current?.kind === 'draw') return;
+    // Sin selección y sin cambio de tamaño no hay nada que hacer (no se limpia la hoja en cada trazo).
+    const k = `${cssW}|${visible}`;
+    if (!selStrokes.length && !hadSel.current && k === liveKey.current) return;
+    liveKey.current = k;
+    hadSel.current = selStrokes.length > 0;
+    const ctx = prepare(liveRef.current);
+    prepare(tipRef.current);
+    if (liveRef.current) liveRef.current.style.opacity = '1';
+    if (!ctx || !selStrokes.length) return;
+    const f = xf ?? IDENT();
+    const ink = inkColor();
+    for (const s of selStrokes) drawStroke(ctx, f.s === 1 && !f.dx && !f.dy ? s : applyXf(s, f), ink);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selStrokes, xf, baseStrokes, cssW, dark, visible]);
 
   const toLocal = (ev: { clientX: number; clientY: number; pressure: number }, r: DOMRect): number[] => [
     Math.round(((ev.clientX - r.left) / r.width) * PAGE_W * 10) / 10,
@@ -377,16 +580,47 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     Math.round((ev.pressure || 0.5) * 100) / 100,
   ];
 
-  const strokeTool: Stroke['tool'] = tool === 'eraser' ? 'pen' : tool;
+  const strokeTool: Stroke['tool'] = tool === 'eraser' || tool === 'lasso' ? 'pen' : tool;
 
   /** Dibuja al instante solo lo nuevo del trazo y la punta predicha (sin esperar al siguiente cuadro). */
   const paintLive = (predicted: number[][] = []) => {
     const c = cur.current;
-    if (!c || c.erase || !liveRef.current) return;
+    if (!c || c.kind !== 'draw' || !liveRef.current) return;
     const ctx = ctx2d(liveRef.current);
     if (ctx) c.drawn = drawLiveSegments(ctx, c.pts, c.drawn, c.st, c.color);
     const tip = tipRef.current && ctx2d(tipRef.current);
     if (tip) drawLiveTip(tip, c.pts, predicted, c.st, c.color);
+  };
+
+  /** Lazo en curso: línea punteada en la capa de la punta. */
+  const paintLasso = (pts: number[][]) => {
+    const ctx = tipRef.current && ctx2d(tipRef.current);
+    if (!ctx) return;
+    ctx.clearRect(0, 0, PAGE_W, PAGE_H);
+    ctx.save();
+    ctx.setLineDash([8, 6]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#6366f1';
+    ctx.beginPath();
+    pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  /** Lápiz quieto al final del trazo → forma limpia (línea, flecha, rectángulo, elipse). */
+  const trySnap = () => {
+    const c = cur.current;
+    if (!c || c.kind !== 'draw' || c.snapped || !useTools.getState().snapShapes) return;
+    const shape = recognizeShape(c.pts);
+    if (!shape) return;
+    c.pts = shape.points;
+    c.snapped = true;
+    c.st = { ...c.st, pressure: false };
+    c.drawn = 0;
+    for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, PAGE_W, PAGE_H);
+    paintLive();
+    wrapRef.current?.classList.add('snapped');
+    setTimeout(() => wrapRef.current?.classList.remove('snapped'), 250);
   };
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -394,19 +628,40 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       pan.current = { id: e.pointerId, y: e.clientY, x: e.clientX };
       return;
     }
+    const barrel = e.pointerType === 'pen' && (e.button === 2 || (e.buttons & 2) === 2) ? useTools.getState().barrel : 'none';
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     capturePointer(e.currentTarget, e.pointerId);
+    inkDown();
     const rect = e.currentTarget.getBoundingClientRect();
-    // Botón borrador del lápiz: button 5 / buttons bit 32.
-    const erase = tool === 'eraser' || e.button === 5 || (e.buttons & 32) === 32;
     const p = toLocal(e, rect);
-    const st: LiveStyle = { tool: strokeTool, color, size, pressure: e.pointerType === 'pen' };
-    cur.current = { id: e.pointerId, pts: [p], erase, rect, drawn: 0, st, color: color === 'auto' ? inkColor() : color };
-    if (erase) {
+    // Con una selección activa: dentro del recuadro se mueve; en la esquina se cambia el tamaño; fuera se suelta.
+    if (box) {
+      const pad = 14;
+      if (Math.hypot(p[0] - (box.x + box.w), p[1] - (box.y + box.h)) < 34) {
+        cur.current = { kind: 'scale', id: e.pointerId, rect, start: p };
+        setXf(IDENT(box.x, box.y));
+        return;
+      }
+      if (p[0] >= box.x - pad && p[0] <= box.x + box.w + pad && p[1] >= box.y - pad && p[1] <= box.y + box.h + pad) {
+        cur.current = { kind: 'move', id: e.pointerId, rect, start: p };
+        setXf(IDENT(box.x, box.y));
+        return;
+      }
+      onSelect(index, []);
+    }
+    // Botón borrador del lápiz: button 5 / buttons bit 32. Botón lateral: según Preferencias.
+    if (tool === 'eraser' || barrel === 'eraser' || e.button === 5 || (e.buttons & 32) === 32) {
+      cur.current = { kind: 'erase', id: e.pointerId, rect };
       onErase(index, p[0], p[1], true);
       return;
     }
+    if (tool === 'lasso' || barrel === 'lasso') {
+      cur.current = { kind: 'lasso', id: e.pointerId, pts: [p], rect };
+      return;
+    }
+    const st: LiveStyle = { tool: strokeTool, color, size, pressure: e.pointerType === 'pen' };
+    cur.current = { kind: 'draw', id: e.pointerId, pts: [p], rect, drawn: 0, st, color: color === 'auto' ? inkColor() : color, snapped: false, anchor: p };
     const op = String(liveOpacity(strokeTool));
     if (liveRef.current) liveRef.current.style.opacity = op;
     if (tipRef.current) tipRef.current.style.opacity = op;
@@ -425,6 +680,20 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       pn.x = e.clientX;
       return;
     }
+    const c = cur.current;
+    if (!c || c.id !== e.pointerId) return;
+    if (c.kind === 'move' || c.kind === 'scale') {
+      if (!box) return;
+      const p = toLocal(e, c.rect);
+      if (c.kind === 'move') setXf({ dx: p[0] - c.start[0], dy: p[1] - c.start[1], s: 1, ox: box.x, oy: box.y });
+      else setXf({ dx: 0, dy: 0, s: Math.min(6, Math.max(0.2, Math.max((p[0] - box.x) / box.w, (p[1] - box.y) / box.h))), ox: box.x, oy: box.y });
+      return;
+    }
+    if (c.kind === 'lasso') {
+      c.pts.push(toLocal(e, c.rect));
+      paintLasso(c.pts);
+      return;
+    }
     // Con pointerrawupdate (lápiz sin esperar al cuadro) la tinta ya se dibujó ahí.
     if (rawSeen.current) return;
     inkMove(e.nativeEvent);
@@ -433,20 +702,27 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
   /** Puntos del lápiz (incluidos los agrupados) → trazo en vivo o borrador. */
   const inkMove = (native: PointerEvent) => {
     const c = cur.current;
-    if (!c || c.id !== native.pointerId) return;
+    if (!c || c.id !== native.pointerId || (c.kind !== 'draw' && c.kind !== 'erase')) return;
+    if (c.kind === 'draw' && c.snapped) return;
     const coalesced = typeof native.getCoalescedEvents === 'function' ? native.getCoalescedEvents() : [];
     for (const ev of coalesced.length ? coalesced : [native]) {
       const p = toLocal(ev, c.rect);
-      if (c.erase) {
+      if (c.kind === 'erase') {
         onErase(index, p[0], p[1], false);
         continue;
       }
-      // Estabilización ligera: suaviza el temblor sin agregar retraso perceptible.
+      // Suavizado adaptable: quita el temblor al escribir despacio, sin retraso en trazos rápidos.
       stabilize(c.pts[c.pts.length - 1], p);
       c.pts.push(p);
     }
-    if (c.erase) return;
-    // Puntos que el sistema predice para los próximos milisegundos: adelantan la punta y borran la sensación de retraso.
+    if (c.kind === 'erase') return;
+    // Formas rectas: el reloj se reinicia solo cuando el lápiz se aleja de donde estaba.
+    const last = c.pts[c.pts.length - 1];
+    if (Math.hypot(last[0] - c.anchor[0], last[1] - c.anchor[1]) > 7) {
+      c.anchor = last;
+      clearTimeout(holdTimer.current);
+      holdTimer.current = setTimeout(trySnap, 550);
+    }
     const predicted = useSettings.getState().inkPredict && typeof native.getPredictedEvents === 'function' ? native.getPredictedEvents().map((ev) => toLocal(ev, c.rect)) : [];
     paintLive(predicted);
   };
@@ -459,7 +735,8 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     const el = wrapRef.current;
     if (!el || !('onpointerrawupdate' in el)) return;
     const h = (ev: Event) => {
-      if (!cur.current) return;
+      const k = cur.current?.kind;
+      if (k !== 'draw' && k !== 'erase') return;
       rawSeen.current = true;
       inkMoveRef.current(ev as PointerEvent);
     };
@@ -475,23 +752,42 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     const c = cur.current;
     if (!c || c.id !== e.pointerId) return;
     cur.current = null;
-    if (c.erase) return;
+    inkUp();
+    clearTimeout(holdTimer.current);
+    if (c.kind === 'erase') return;
+    if (c.kind === 'move' || c.kind === 'scale') {
+      const f = xfRef.current;
+      setXf(null);
+      if (f && (f.dx || f.dy || f.s !== 1)) onTransform(f);
+      return;
+    }
+    if (c.kind === 'lasso') {
+      const ctx = tipRef.current && ctx2d(tipRef.current);
+      ctx?.clearRect(0, 0, PAGE_W, PAGE_H);
+      onSelect(index, strokesInLasso(strokes, c.pts));
+      return;
+    }
+    if (c.kind !== 'draw') return;
     // El trazo definitivo se pinta en la base aquí mismo (solo él) y se limpian las capas en vivo: sin parpadeo ni redibujo.
     const stroke: Stroke = { id: uid(), page: index, tool: strokeTool, color, size, points: c.pts };
     const base = baseRef.current && ctx2d(baseRef.current);
     if (base) {
       drawStroke(base, stroke, inkColor());
-      committed.current = stroke.id;
-      for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, PAGE_W, PAGE_H);
+      committed.current.add(stroke.id);
     }
+    // La punta y el trazo en vivo se borran SIEMPRE: si quedaran, la cola predicha uniría una letra con la siguiente.
+    for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, PAGE_W, PAGE_H);
     onStroke(stroke);
   };
 
   const line = (cssW / PAGE_W) * 44;
+  const f = xf ?? IDENT();
+  const shown = box && { x: box.x + f.dx, y: box.y + f.dy, w: box.w * f.s, h: box.h * f.s };
+  const stop = (ev: ReactPointerEvent) => ev.stopPropagation();
   return (
     <div
       ref={wrapRef}
-      className={`ink-page${tool === 'eraser' ? ' erasing' : ''}`}
+      className={`ink-page${tool === 'eraser' ? ' erasing' : ''}${tool === 'lasso' ? ' lassoing' : ''}`}
       data-paper={paper}
       style={{ '--line': `${line}px` } as CSSProperties}
       onPointerDown={onDown}
@@ -514,6 +810,24 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       <canvas ref={baseRef} />
       <canvas ref={liveRef} data-live="" className="ink-live" />
       <canvas ref={tipRef} data-live="" className="ink-live" />
+      {shown && (
+        <div className="sel-box" style={{ left: `${(shown.x / PAGE_W) * 100}%`, top: `${(shown.y / PAGE_H) * 100}%`, width: `${(shown.w / PAGE_W) * 100}%`, height: `${(shown.h / PAGE_H) * 100}%` }}>
+          <i className="sel-handle" />
+          {!xf && (
+            <div className="sel-bar" onPointerDown={stop} onPointerUp={stop} onPointerMove={stop}>
+              {SEL_COLORS.map((c) => (
+                <button key={c} className={`swatch${c === 'auto' ? ' auto' : ''}`} style={c === 'auto' ? undefined : { background: c }} onClick={() => onSelAction({ type: 'color', color: c })} aria-label={`Cambiar color a ${c === 'auto' ? 'tinta' : c}`} title="Cambiar color" />
+              ))}
+              <button className="icon-btn xs" onClick={() => onSelAction({ type: 'duplicate' })} title="Duplicar" aria-label="Duplicar selección">
+                <Icon name="copy" size={14} />
+              </button>
+              <button className="icon-btn xs danger" onClick={() => onSelAction({ type: 'delete' })} title="Borrar (Supr)" aria-label="Borrar selección">
+                <Icon name="trash" size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       {tool === 'eraser' &&
         images.map((im) => (
           <button

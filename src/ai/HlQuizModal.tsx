@@ -4,15 +4,16 @@ import { Modal } from '../components/Modal';
 import { Runner } from '../exam/ExamView';
 import { useExam } from '../exam/store';
 import { useLibrary } from '../store/library';
-import { useSettings } from '../store/settings';
+import { AI_KEY_HINT, AI_LABEL } from '../lib/ai';
+import { saveAiKey, useAiProvider, useAiReady } from '../lib/useAi';
 import { useUI } from '../store/ui';
 import { questionsFromHighlights } from './features';
 
 /** Preguntas rápidas con IA desde tus subrayados de un PDF; entran al banco «por revisar». */
 export function HlQuizModal() {
   const docId = useUI((s) => s.hlQuiz);
-  const apiKey = useSettings((s) => s.apiKey);
-  const model = useSettings((s) => s.model);
+  const ready = useAiReady();
+  const provider = useAiProvider();
   const doc = useLibrary((s) => s.docs.find((d) => d.id === docId) ?? null);
   const hl = useLibrary((s) => (docId ? (s.highlights[docId] ?? []).filter((h) => h.text.trim().length > 12).length : 0));
   const [n, setN] = useState(4);
@@ -32,7 +33,7 @@ export function HlQuizModal() {
     setBusy(true);
     setMsg(null);
     try {
-      const qs = await questionsFromHighlights(docId, { apiKey, model }, n);
+      const qs = await questionsFromHighlights(docId, n);
       setIds(useExam.getState().addQuestions(qs));
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
@@ -44,12 +45,12 @@ export function HlQuizModal() {
     <Modal title="Preguntas desde tus subrayados" onClose={close} width={520}>
       <div className="form">
         <p className="muted small">
-          Claude usa solo lo que resaltaste o subrayaste en <b>{doc.name}</b> ({hl} fragmento{hl === 1 ? '' : 's'} con texto) y te hace preguntas en modo estudio. Se guardan en tu banco de Simulacros «por revisar».
+          {AI_LABEL[provider].split(' ')[0]} usa solo lo que resaltaste o subrayaste en <b>{doc.name}</b> ({hl} fragmento{hl === 1 ? '' : 's'} con texto) y te hace preguntas en modo estudio. Se guardan en tu banco de Simulacros «por revisar».
         </p>
-        {!apiKey && (
+        {!ready && (
           <div className="field-row tight">
-            <input className="input grow" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="Tu API key de Anthropic (sk-ant-…)" aria-label="API key" />
-            <button className="btn sm" disabled={!key.trim()} onClick={() => useSettings.getState().setApiKey(key.trim())}>
+            <input className="input grow" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder={`Tu API key de ${AI_LABEL[provider]} (${AI_KEY_HINT[provider]})`} aria-label="API key" />
+            <button className="btn sm" disabled={!key.trim()} onClick={() => saveAiKey(key.trim())}>
               Guardar clave
             </button>
           </div>
@@ -62,7 +63,7 @@ export function HlQuizModal() {
               </option>
             ))}
           </select>
-          <button className="btn primary" disabled={busy || !apiKey || !hl} onClick={() => void go()}>
+          <button className="btn primary" disabled={busy || !ready || !hl} onClick={() => void go()}>
             <Icon name="question" size={15} /> {busy ? 'Preparando…' : 'Preguntarme'}
           </button>
         </div>

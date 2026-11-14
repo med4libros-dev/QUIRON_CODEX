@@ -6,6 +6,12 @@ export interface ToolSetting {
   size: number;
 }
 
+export interface FavPen {
+  tool: DrawTool;
+  color: string;
+  size: number;
+}
+
 export interface ToolsState {
   /** Color y grosor recordados por instrumento (compartidos entre el lienzo y el PDF). */
   settings: Record<DrawTool, ToolSetting>;
@@ -18,6 +24,15 @@ export interface ToolsState {
   /** Solo el lápiz escribe; la mano/palma (touch) solo desplaza. Activado por defecto. */
   penOnly: boolean;
   setPenOnly: (v: boolean) => void;
+  /** Plumas favoritas: instrumento + color + grosor, a un toque. */
+  favorites: FavPen[];
+  saveFavorite: (i: number, f: FavPen) => void;
+  /** Botón lateral del lápiz: borrador, lazo o nada. */
+  barrel: 'eraser' | 'lasso' | 'none';
+  setBarrel: (b: 'eraser' | 'lasso' | 'none') => void;
+  /** Formas rectas al dejar el lápiz quieto. */
+  snapShapes: boolean;
+  setSnapShapes: (v: boolean) => void;
   setToolSetting: (tool: DrawTool, patch: Partial<ToolSetting>) => void;
   setCanvasTool: (t: DrawTool) => void;
   setPdfTool: (t: DrawTool) => void;
@@ -43,6 +58,17 @@ export const useTools = createStore<ToolsState>(
     stickyColor: STICKY_COLORS[0],
     penOnly: true,
     setPenOnly: (penOnly) => set({ penOnly }),
+    favorites: [
+      { tool: 'pen', color: 'auto', size: 3 },
+      { tool: 'pen', color: '#dc2626', size: 3 },
+      { tool: 'marker', color: '#2563eb', size: 6 },
+      { tool: 'highlighter', color: '#facc15', size: 20 },
+    ],
+    saveFavorite: (i, f) => set((s) => ({ favorites: s.favorites.map((x, j) => (j === i ? f : x)) })),
+    barrel: 'eraser',
+    setBarrel: (barrel) => set({ barrel }),
+    snapShapes: true,
+    setSnapShapes: (snapShapes) => set({ snapShapes }),
     setToolSetting: (tool, patch) => set((s) => ({ settings: { ...s.settings, [tool]: { ...s.settings[tool], ...patch } } })),
     setCanvasTool: (canvasTool) => set({ canvasTool }),
     setPdfTool: (pdfTool) => set({ pdfTool }),
@@ -53,8 +79,8 @@ export const useTools = createStore<ToolsState>(
   {
     key: 'alq:tools',
     storage: 'local',
-    pick: ({ settings, canvasTool, pdfTool, hlColor, underlineWidth, stickyColor, penOnly }) => ({
-      settings, canvasTool, pdfTool, hlColor, underlineWidth, stickyColor, penOnly,
+    pick: ({ settings, canvasTool, pdfTool, hlColor, underlineWidth, stickyColor, penOnly, favorites, barrel, snapShapes }) => ({
+      settings, canvasTool, pdfTool, hlColor, underlineWidth, stickyColor, penOnly, favorites, barrel, snapShapes,
     }),
   },
 );

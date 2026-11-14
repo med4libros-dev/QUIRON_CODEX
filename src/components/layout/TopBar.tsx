@@ -4,8 +4,26 @@ import { useLibrary } from '../../store/library';
 import { useSettings } from '../../store/settings';
 import { useUI } from '../../store/ui';
 import { Icon } from '../Icon';
+import { useStudyToday } from '../../lib/autoFocus';
 import emblem from '../../assets/quiron-emblem.png';
 import type { View } from '../../types';
+
+/** Reloj de estudio de hoy: corre solo mientras lees o escribes. */
+function StudyClock() {
+  const { minutes, partial, counting } = useStudyToday();
+  if (!minutes && !counting) return null;
+  const h = Math.floor(minutes / 60);
+  const label = h ? `${h} h ${minutes % 60} min` : `${minutes} min`;
+  return (
+    <button
+      className={`study-clock${counting ? ' on' : ''}`}
+      onClick={() => useSettings.getState().setView('progress')}
+      title={counting ? `Contando tu estudio de hoy (${partial}s del minuto en curso). Se detiene solo a los 2 min sin actividad.` : 'Estudio registrado hoy. Abre Progreso para ver el detalle.'}
+    >
+      <Icon name="clock" size={14} /> {label}
+    </button>
+  );
+}
 
 const TITLES: Record<View, string> = { internado: 'Inicio', study: 'Estudio', notebooks: 'Cuadernos', calendar: 'Calendario', progress: 'Progreso', hy: 'Perlas HY', exam: 'Simulacros', ward: 'Turno', logbook: 'Bitácora' };
 
@@ -31,6 +49,7 @@ export function TopBar() {
           </>
         )}
       </div>
+      <StudyClock />
       {view === 'study' && <LayoutControls />}
       {nightOn && (
         <button className="night-chip" onClick={() => useSettings.getState().setNight('off')} title="Modo noche activo: toca para apagarlo (Ajustes → Preferencias)" aria-label="Apagar modo noche">

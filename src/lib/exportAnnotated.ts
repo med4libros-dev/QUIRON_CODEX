@@ -1,5 +1,5 @@
 import { downloadBlob, toWinAnsi, wrap } from './exportPdf';
-import { loadPdfData } from './pdf';
+import { idb } from './idb';
 import { useLibrary } from '../store/library';
 import { HIGHLIGHT_META } from '../types';
 
@@ -22,6 +22,12 @@ function parseColor(c: string): { r: number; g: number; b: number; a: number } {
   return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255, a: 1 };
 }
 
+async function loadData(docId: string): Promise<ArrayBuffer> {
+  const blob = await idb.get<Blob>('pdfs', docId);
+  if (!blob) throw new Error('No se encontró el archivo en este equipo.');
+  return blob.arrayBuffer();
+}
+
 export interface AnnotatedStats {
   highlights: number;
   strokes: number;
@@ -36,7 +42,7 @@ export async function buildAnnotatedPdf(docId: string): Promise<{ bytes: Uint8Ar
   const stickies = lib.stickies[docId] ?? [];
   const bookmarks = [...(lib.bookmarks[docId] ?? [])].sort((a, b) => a.page - b.page);
   const { PDFDocument, StandardFonts, rgb, LineCapStyle } = await import('pdf-lib');
-  const pdf = await PDFDocument.load(await loadPdfData(docId), { ignoreEncryption: true });
+  const pdf = await PDFDocument.load(await loadData(docId), { ignoreEncryption: true });
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const pages = pdf.getPages();

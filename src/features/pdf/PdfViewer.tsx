@@ -11,6 +11,9 @@ import {
 } from 'react';
 import { uid } from '../../lib/id';
 import { useSettings } from '../../store/settings';
+import { inkDown, inkIsDown, inkUp } from '../../lib/inkBusy';
+import { stableGroups } from '../../lib/groups';
+import { recognizeShape } from '../../lib/shapes';
 import { usePinchZoom } from '../../lib/usePinchZoom';
 import { ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, liveOpacity, stabilize, type LiveStyle } from '../../lib/ink';
 import { capturePointer } from '../../lib/pointer';
@@ -45,16 +48,6 @@ const pct = (v: number) => `${v * 100}%`;
 const LW = 1000;
 /** Altura aproximada de una línea de texto (fracción de la altura de página) para el subrayado. */
 const LINE_H = 0.016;
-
-function groupByPage<T extends { page: number }>(items: T[]): Map<number, T[]> {
-  const m = new Map<number, T[]>();
-  for (const it of items) {
-    const list = m.get(it.page);
-    if (list) list.push(it);
-    else m.set(it.page, [it]);
-  }
-  return m;
-}
 
 /**
  * Visor de PDF pensado para documentos pesados:
@@ -141,9 +134,14 @@ export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage
     if (nav && nav.docId === docId) pageEls.current[nav.page - 1]?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, [nav, docId]);
 
-  const hlByPage = useMemo(() => groupByPage(highlights), [highlights]);
-  const inkByPage = useMemo(() => groupByPage(inks), [inks]);
-  const stickyByPage = useMemo(() => groupByPage(stickies), [stickies]);
+  // Grupos estables: anotar en una página no vuelve a renderizar ni a redibujar las demás.
+  const gH = useRef(new Map<number, Highlight[]>());
+  const gI = useRef(new Map<number, Stroke[]>());
+  const gS = useRef(new Map<number, Sticky[]>());
+  const hlByPage = useMemo(() => (gH.current = stableGroups(gH.current, highlights)), [highlights]);
+  const inkByPage = useMemo(() => (gI.current = stableGroups(gI.current, inks)), [inks]);
+  const stickyByPage = useMemo(() => (gS.current = stableGroups(gS.current, stickies)), [stickies]);
+  const pdfDark = useSettings((s) => s.pdfDark);
   const bookmarkByPage = useMemo(() => new Map((bookmarks ?? []).map((b) => [b.page, b])), [bookmarks]);
 
   const onScroll = () => {
@@ -215,7 +213,7 @@ export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage
   }
 
   return (
-    <div className="pdf-scroll" ref={scrollRef} onScroll={onScroll} data-tool={tool} onPointerUp={onSelectEnd} onKeyUp={(e) => e.shiftKey && onSelectEnd()}>
+    <div className="pdf-scroll" ref={scrollRef} onScroll={onScroll} data-tool={tool} data-dark={pdfDark ? '1' : undefined} onPointerUp={onSelectEnd} onKeyUp={(e) => e.shiftKey && onSelectEnd()}>
       {!pdf || !base || !scale ? (
         <div className="loading">Cargando documento…</div>
       ) : (
@@ -258,7 +256,7 @@ interface PageProps {
 
 type Gesture =
   | { kind: 'rect'; id: number; x: number; y: number }
-  | { kind: 'draw'; id: number; pts: number[][]; rect: DOMRect; drawn: number; st: LiveStyle }
+  | { kind: 'draw'; id: number; pts: number[][]; rect: DOMRect; drawn: number; st: LiveStyle; snapped: boolean; anchor: number[] }
   | { kind: 'erase'; id: number; rect: DOMRect }
   | { kind: 'pan'; id: number; y: number; x: number };
 
@@ -393,21 +391,34 @@ const PdfPage = memo(function PdfPage({
   };
 
   // Tinta guardada sobre la página (sobre papel blanco: "tinta" = casi negro).
-  const committed = useRef<string | null>(null);
+  const committed = useRef(new Set<string>());
+  /** Trazos ya pintados que aún no se envían a la biblioteca (se envían en la primera pausa). */
+  const pendingInk = useRef<Stroke[]>([]);
+  const inkFlush = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const flushInk = () => {
+    clearTimeout(inkFlush.current);
+    const list = pendingInk.current;
+    pendingInk.current = [];
+    for (const st of list) lib().addPdfStroke(docId, st);
+  };
+  const flushInkRef = useRef(flushInk);
+  flushInkRef.current = flushInk;
+  useEffect(() => () => flushInkRef.current(), []);
   const prevStrokes = useRef(strokes);
   const prevKey = useRef('');
   useEffect(() => {
     // Trazo recién soltado: ya está pintado en la capa de tinta, no se redibuja toda la página.
     const prev = prevStrokes.current;
     const key = `${visible}|${cssW}|${cssH}`;
-    const id = committed.current;
-    const appended = !!id && key === prevKey.current && strokes.length === prev.length + 1 && strokes[strokes.length - 1].id === id && prev.every((s, i) => s === strokes[i]);
+    const done = committed.current;
+    const appended = done.size > 0 && key === prevKey.current && strokes.length > prev.length && prev.every((s, i) => s === strokes[i]) && strokes.slice(prev.length).every((s) => done.has(s.id));
     prevStrokes.current = strokes;
     prevKey.current = key;
-    committed.current = null;
+    if (!pendingInk.current.length) committed.current = new Set();
     if (appended) return;
     const ctx = prepare(inkRef.current);
     if (ctx) for (const s of strokes) drawStroke(ctx, s, '#111827');
+    if (ctx) for (const s of pendingInk.current) drawStroke(ctx, s, '#111827');
     if (gesture.current?.kind !== 'draw') {
       prepare(liveRef.current);
       prepare(tipRef.current);
@@ -439,6 +450,10 @@ const PdfPage = memo(function PdfPage({
   };
 
   /** Trazo en vivo: cada punto se dibuja al instante (solo su tramo) y la punta se adelanta con la predicción. */
+  /** El borrador necesita ver los trazos recién escritos: se envían antes de borrar. */
+  const flushIfErasing = (erasing: boolean) => {
+    if (erasing && pendingInk.current.length) flushInk();
+  };
   const paintLive = (predicted: number[][] = []) => {
     const g = gesture.current;
     if (!g || g.kind !== 'draw' || !liveRef.current) return;
@@ -458,7 +473,9 @@ const PdfPage = memo(function PdfPage({
     }
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
-    const penEraser = e.button === 5 || (e.buttons & 32) === 32;
+    // Borrador del lápiz (botón 5) o botón lateral configurado como borrador.
+    const barrel = e.pointerType === 'pen' && (e.button === 2 || (e.buttons & 2) === 2) && useTools.getState().barrel === 'eraser';
+    const penEraser = barrel || e.button === 5 || (e.buttons & 32) === 32;
     const p = norm(e, r);
     if (tool === 'sticky' && !penEraser) {
       const id = lib().addSticky(docId, { page: index + 1, x: p.x, y: p.y, text: '', color: stickyColor, open: true });
@@ -466,13 +483,18 @@ const PdfPage = memo(function PdfPage({
       return;
     }
     capturePointer(e.currentTarget, e.pointerId);
+    if (tool === 'erase' || penEraser || tool === 'draw') {
+      inkDown();
+      flushIfErasing(tool === 'erase' || penEraser);
+    }
     if (tool === 'erase' || penEraser) {
       gesture.current = { kind: 'erase', id: e.pointerId, rect: r };
       const [x, y] = toLogical(e, r);
       eraseAt(x, y, p.x, p.y);
     } else if (tool === 'draw') {
       const st: LiveStyle = { tool: drawTool, color: pen.color === 'auto' ? '#111827' : pen.color, size: pen.size, pressure: e.pointerType === 'pen' };
-      gesture.current = { kind: 'draw', id: e.pointerId, pts: [toLogical(e, r)], rect: r, drawn: 0, st };
+      const p0 = toLogical(e, r);
+      gesture.current = { kind: 'draw', id: e.pointerId, pts: [p0], rect: r, drawn: 0, st, snapped: false, anchor: p0 };
       const op = String(liveOpacity(drawTool));
       if (liveRef.current) liveRef.current.style.opacity = op;
       if (tipRef.current) tipRef.current.style.opacity = op;
@@ -507,10 +529,26 @@ const PdfPage = memo(function PdfPage({
     inkMove(e.nativeEvent);
   };
 
+  /** Lápiz quieto al final del trazo → forma limpia (línea, flecha, rectángulo, elipse). */
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const trySnap = () => {
+    const g = gesture.current;
+    if (!g || g.kind !== 'draw' || g.snapped || !useTools.getState().snapShapes) return;
+    const shape = recognizeShape(g.pts);
+    if (!shape) return;
+    g.pts = shape.points;
+    g.snapped = true;
+    g.st = { ...g.st, pressure: false };
+    g.drawn = 0;
+    for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, LW, logicalH);
+    paintLive();
+  };
+
   /** Tinta y borrador: puntos del lápiz (incluidos los agrupados) → trazo en vivo. */
   const inkMove = (native: PointerEvent) => {
     const g = gesture.current;
     if (!g || g.id !== native.pointerId || (g.kind !== 'draw' && g.kind !== 'erase')) return;
+    if (g.kind === 'draw' && g.snapped) return;
     const coalesced = typeof native.getCoalescedEvents === 'function' ? native.getCoalescedEvents() : [];
     for (const ev of coalesced.length ? coalesced : [native]) {
       const pt = toLogical(ev, g.rect);
@@ -520,6 +558,14 @@ const PdfPage = memo(function PdfPage({
       }
       stabilize(g.pts[g.pts.length - 1], pt);
       g.pts.push(pt);
+    }
+    if (g.kind === 'draw') {
+      const last = g.pts[g.pts.length - 1];
+      if (Math.hypot(last[0] - g.anchor[0], last[1] - g.anchor[1]) > 7) {
+        g.anchor = last;
+        clearTimeout(holdTimer.current);
+        holdTimer.current = setTimeout(trySnap, 550);
+      }
     }
     if (g.kind === 'draw') paintLive(useSettings.getState().inkPredict && typeof native.getPredictedEvents === 'function' ? native.getPredictedEvents().map((ev) => toLogical(ev, g.rect)) : []);
   };
@@ -546,15 +592,24 @@ const PdfPage = memo(function PdfPage({
     const g = gesture.current;
     if (!g || g.id !== e.pointerId) return;
     gesture.current = null;
+    clearTimeout(holdTimer.current);
+    if (g.kind === 'draw' || g.kind === 'erase') inkUp();
     if (g.kind === 'draw') {
       const stroke = { id: uid(), page: index + 1, tool: drawTool, color: pen.color, size: pen.size, points: g.pts };
       const base = inkRef.current && ctx2d(inkRef.current);
       if (base) {
         drawStroke(base, stroke, '#111827');
-        committed.current = stroke.id;
-        for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, LW, logicalH);
+        committed.current.add(stroke.id);
       }
-      lib().addPdfStroke(docId, stroke);
+      for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, LW, logicalH);
+      // Sin trabajo de interfaz entre letra y letra: se envía a la biblioteca en la primera pausa.
+      pendingInk.current.push(stroke);
+      clearTimeout(inkFlush.current);
+      const later = () => {
+        if (inkIsDown()) inkFlush.current = setTimeout(later, 150);
+        else flushInk();
+      };
+      inkFlush.current = setTimeout(later, 250);
       return;
     }
     if (g.kind !== 'rect') return;
@@ -593,6 +648,8 @@ const PdfPage = memo(function PdfPage({
   };
 
   const cancel = () => {
+    const k = gesture.current?.kind;
+    if (k === 'draw' || k === 'erase') inkUp();
     gesture.current = null;
     setD(null);
     prepare(liveRef.current);

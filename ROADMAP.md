@@ -99,6 +99,14 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 ### v0.6.6 · Tinta de baja latencia ✅ (noviembre 2026)
 - Trazo en vivo incremental (solo el tramo nuevo, sin `requestAnimationFrame` ni redibujar el trazo completo), canvas `desynchronized`, eventos `pointerrawupdate`, punta con `getPredictedEvents()` en una capa aparte que se borra en cada evento, opacidad del marcatextos/lápiz en la capa y estabilización más ligera (0.75).
 
+### v0.7 · Lápiz primero ✅ (noviembre 2026)
+- **Lazo** (`strokesInLasso`, `applyXf`), **reconocimiento de formas** (`recognizeShape`: línea, flecha, rectángulo, elipse), **plumas favoritas**, **botón lateral** configurable, **hojas** (insertar/mover/quitar con remapeo de trazos e imágenes) y plantillas Cornell/columnas.
+- **Guía en oscuro** (filtro invert+hue-rotate sobre el canvas) y **modo lectura** a pantalla completa.
+- **Reloj de estudio automático** (`lib/autoFocus.ts`) que alimenta el mismo registro de foco del Pomodoro.
+- **Motor de IA intercambiable**: Claude o Gemini (`lib/ai.ts`), con clave y modelo por proveedor.
+- **Rendimiento del lápiz**: confirmación incremental sin redibujar la hoja, grupos estables por página (`lib/groups.ts`), guardados aplazados mientras escribes (`lib/inkBusy.ts`), hojas lejanas sueltan sus canvas, Estudio sin fondo animado ni desenfoque.
+- **Diagnóstico del lápiz**: mide eventos/s, tiempo de dibujo, evento→pintado, cuadro y pintado→pantalla.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

@@ -1,3 +1,4 @@
+import { callAi } from '../ai';
 import { sanitizeHtml } from '../html';
 import { HIGHLIGHT_META } from '../../types';
 import type { SynthInput } from './types';
@@ -30,33 +31,10 @@ export function buildMaterial(input: SynthInput, limit = 90_000): string {
   return text.length > limit ? `${text.slice(0, limit)}\n\n[Material truncado por longitud]` : text;
 }
 
-export async function synthesizeWithClaude(input: SynthInput, apiKey: string, model: string): Promise<string> {
-  if (!apiKey.trim()) throw new Error('Agrega tu API key de Anthropic en «Motor de IA».');
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey.trim(),
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 4096,
-      system: SYSTEM,
-      messages: [{ role: 'user', content: buildMaterial(input) }],
-    }),
-  });
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new Error(`La API respondió ${res.status}. ${detail.slice(0, 240)}`);
-  }
-  const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-  const text = (data.content ?? [])
-    .filter((c) => c.type === 'text')
-    .map((c) => c.text ?? '')
-    .join('')
-    .replace(/^```(?:html)?\s*|\s*```$/g, '');
+/** Hoja de repaso redactada con el motor de IA que hayas elegido (Claude o Gemini). */
+export async function synthesizeWithAi(input: SynthInput): Promise<string> {
+  const raw = await callAi({ system: SYSTEM, user: buildMaterial(input), maxTokens: 4096 });
+  const text = raw.replace(/^```(?:html)?\s*|\s*```$/g, '');
   if (!text.trim()) throw new Error('La respuesta llegó vacía.');
   return sanitizeHtml(text);
 }

@@ -2,14 +2,13 @@ import { materialFor } from '../exam/generate';
 import { sanitizeQuestion, type Question } from '../exam/store';
 import { TOPIC } from '../internship/curriculum';
 import { topicsForDoc } from '../internship/topicStore';
-import { callClaude, parseJson } from '../lib/claude';
+import { callAi, parseJson } from '../lib/ai';
 import { useLibrary } from '../store/library';
 
 /**
  * Funciones de IA sobre TU material (GPC adjunta, apuntes o subrayados).
  * Todo lo que generan entra como borrador: tú eliges qué se queda.
  */
-type Ai = { apiKey: string; model: string };
 
 /* ---------- Mnemotecnias para temas débiles ---------- */
 
@@ -25,10 +24,10 @@ Cada una: "title" (la palabra o frase mnemotécnica, p. ej. «CHARCOT»), "text"
 Reglas: usa EXCLUSIVAMENTE el material; no inventes cifras, dosis ni criterios que no estén ahí. Prefiere mnemotecnias cortas y pronunciables.
 Responde SOLO con JSON válido: {"mnemonics":[...]}`;
 
-export async function generateMnemonics(topicId: string, ai: Ai, count = 4): Promise<MnemoCandidate[]> {
+export async function generateMnemonics(topicId: string, count = 4): Promise<MnemoCandidate[]> {
   const t = TOPIC[topicId];
   const mat = await materialFor(topicId);
-  const raw = await callClaude({ ...ai, system: MNEMO_SYSTEM, maxTokens: 3000, user: `Tema: ${t.title}\nCrea ${count} mnemotecnias distintas.\n\n## Material (${mat.docName})\n${mat.text}` });
+  const raw = await callAi({ system: MNEMO_SYSTEM, maxTokens: 3000, user: `Tema: ${t.title}\nCrea ${count} mnemotecnias distintas.\n\n## Material (${mat.docName})\n${mat.text}` });
   const parsed = parseJson(raw) as { mnemonics?: unknown[] };
   const str = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
   const out = (parsed.mnemonics ?? [])
@@ -81,10 +80,10 @@ export function sanitizeDiagram(raw: unknown): Diagram {
   return { title: typeof r.title === 'string' ? r.title.slice(0, 100) : 'Algoritmo', nodes, edges };
 }
 
-export async function generateDiagram(topicId: string, ai: Ai): Promise<Diagram> {
+export async function generateDiagram(topicId: string): Promise<Diagram> {
   const t = TOPIC[topicId];
   const mat = await materialFor(topicId);
-  const raw = await callClaude({ ...ai, system: DIAGRAM_SYSTEM, maxTokens: 3000, user: `Tema: ${t.title}\n\n## Material (${mat.docName})\n${mat.text}` });
+  const raw = await callAi({ system: DIAGRAM_SYSTEM, maxTokens: 3000, user: `Tema: ${t.title}\n\n## Material (${mat.docName})\n${mat.text}` });
   return sanitizeDiagram(parseJson(raw));
 }
 
@@ -95,7 +94,7 @@ Formato por pregunta: "vignette", "question", "options" (4, cada una con "text" 
 Reglas: usa SOLO los fragmentos; no inventes datos que no estén ahí. Español de México.
 Responde SOLO con JSON válido: {"questions":[...]}`;
 
-export async function questionsFromHighlights(docId: string, ai: Ai, count = 4): Promise<Omit<Question, 'id' | 'createdAt'>[]> {
+export async function questionsFromHighlights(docId: string, count = 4): Promise<Omit<Question, 'id' | 'createdAt'>[]> {
   const lib = useLibrary.getState();
   const doc = lib.docs.find((d) => d.id === docId);
   const hls = (lib.highlights[docId] ?? []).filter((h) => h.text.trim().length > 12).sort((a, b) => a.page - b.page);
@@ -106,7 +105,7 @@ export async function questionsFromHighlights(docId: string, ai: Ai, count = 4):
     if (material.length + line.length > 30_000) break;
     material += line;
   }
-  const raw = await callClaude({ ...ai, system: HL_SYSTEM, maxTokens: 5000, user: `Documento: ${doc?.name ?? 'PDF'}\nGenera ${count} preguntas.\n\n## Subrayados\n${material}` });
+  const raw = await callAi({ system: HL_SYSTEM, maxTokens: 5000, user: `Documento: ${doc?.name ?? 'PDF'}\nGenera ${count} preguntas.\n\n## Subrayados\n${material}` });
   const parsed = parseJson(raw) as { questions?: unknown[] };
   const topicId = topicsForDoc(docId)[0] ?? null;
   const out: Omit<Question, 'id' | 'createdAt'>[] = [];

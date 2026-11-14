@@ -5,7 +5,7 @@ import { pagesOf } from '../lib/pageIndex';
 import { useLibrary } from '../store/library';
 import { useNotes } from '../store/notes';
 import { sanitizeQuestion, type Question } from './store';
-import { callClaude, parseJson } from '../lib/claude';
+import { callAi, parseJson } from '../lib/ai';
 
 /**
  * Generador de casos clínicos tipo ENARM a partir de TU material:
@@ -44,14 +44,10 @@ export async function materialFor(topicId: string): Promise<{ text: string; docI
 export async function generateQuestions(
   topicId: string,
   count: number,
-  apiKey: string,
-  model: string,
 ): Promise<Omit<Question, 'id' | 'createdAt'>[]> {
   const t = TOPIC[topicId];
   const mat = await materialFor(topicId);
-  const text = await callClaude({
-    apiKey,
-    model,
+  const text = await callAi({
     system: SYSTEM,
     maxTokens: 8000,
     user: `Tema: ${t.title}\nGenera ${count} casos clínicos distintos.\n\n## Material (${mat.docName})\n${mat.text}`,

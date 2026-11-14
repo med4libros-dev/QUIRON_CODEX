@@ -1,4 +1,6 @@
+import { useRef } from 'react';
 import { Icon, type IconName } from './Icon';
+import { useUI } from '../store/ui';
 import { DRAW_TOOLS } from '../lib/ink';
 import { useTools } from '../store/tools';
 import type { DrawTool } from '../types';
@@ -27,6 +29,7 @@ export function PenControls({
 
   return (
     <div className="pen-controls">
+      {showTools && onTool && <FavPens tool={tool} onTool={onTool} />}
       {showTools && onTool && (
         <div className="seg" role="radiogroup" aria-label="Instrumento">
           {DRAW_TOOL_ORDER.map((t) => (
@@ -81,6 +84,56 @@ export function PenControls({
       </label>
       </>
       )}
+    </div>
+  );
+}
+
+/** Plumas favoritas: un toque la usa; mantener presionado (o clic derecho) guarda la pluma actual en ese lugar. */
+function FavPens({ tool, onTool }: { tool: DrawTool; onTool: (t: DrawTool) => void }) {
+  const favorites = useTools((s) => s.favorites);
+  const settings = useTools((s) => s.settings);
+  const hold = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const saved = useRef(false);
+  const save = (i: number) => {
+    saved.current = true;
+    useTools.getState().saveFavorite(i, { tool, ...settings[tool] });
+    useUI.getState().showToast(`Pluma ${i + 1} guardada: ${DRAW_TOOLS[tool].label.toLowerCase()}`);
+  };
+  return (
+    <div className="fav-pens" role="group" aria-label="Plumas favoritas">
+      {favorites.map((f, i) => {
+        const on = f.tool === tool && settings[tool].color === f.color && settings[tool].size === f.size;
+        const d = Math.min(18, Math.max(5, f.tool === 'highlighter' ? f.size / 2 : f.size + 3));
+        return (
+          <button
+            key={i}
+            className={`fav-pen${on ? ' active' : ''}`}
+            title={`Pluma ${i + 1}: ${DRAW_TOOLS[f.tool].label} · grosor ${f.size}. Mantén presionado para guardar aquí la pluma actual.`}
+            aria-label={`Pluma favorita ${i + 1}`}
+            aria-pressed={on}
+            onPointerDown={() => {
+              saved.current = false;
+              clearTimeout(hold.current);
+              hold.current = setTimeout(() => save(i), 600);
+            }}
+            onPointerUp={() => clearTimeout(hold.current)}
+            onPointerLeave={() => clearTimeout(hold.current)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              clearTimeout(hold.current);
+              if (!saved.current) save(i);
+            }}
+            onClick={() => {
+              if (saved.current) return;
+              useTools.getState().setToolSetting(f.tool, { color: f.color, size: f.size });
+              onTool(f.tool);
+            }}
+          >
+            <Icon name={ICONS[f.tool]} size={13} />
+            <i style={{ width: d, height: d, background: f.color === 'auto' ? 'var(--ink)' : f.color, opacity: f.tool === 'highlighter' ? 0.6 : 1 }} />
+          </button>
+        );
+      })}
     </div>
   );
 }

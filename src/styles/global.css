@@ -6106,9 +6106,7 @@ button.kpi:hover {
   pointer-events: none;
 }
 /* Zoom del lienzo y pellizco */
-.ink-page {
-  width: calc(min(100%, 900px) * var(--ink-zoom, 1));
-}
+
 .pdf-scroll,
 .ink-scroll {
   touch-action: pan-x pan-y;
@@ -6116,4 +6114,256 @@ button.kpi:hover {
 .ink-zoom {
   display: flex;
   align-items: center;
+}
+
+/* =========================================================
+   v0.7 — Lápiz primero
+   ========================================================= */
+
+/* En Estudio nada compite con el lápiz: fondo quieto y paneles sin desenfoque
+   (el desenfoque sobre un fondo animado obligaba a la GPU a recalcular toda la pantalla en cada cuadro). */
+[data-look='glass'][data-view='study'] body::before {
+  animation: none;
+}
+[data-look='glass'][data-view='study'][data-theme] {
+  --glass-blur: none;
+}
+[data-view='study'] .view {
+  animation: none;
+}
+
+/* Lazo */
+.ink-page.lassoing {
+  cursor: crosshair;
+}
+.sel-box {
+  position: absolute;
+  border: 1.5px dashed #6366f1;
+  background: rgba(99, 102, 241, 0.06);
+  pointer-events: none;
+  z-index: 3;
+}
+.sel-handle {
+  position: absolute;
+  right: -9px;
+  bottom: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #6366f1;
+  border: 2px solid #fff;
+}
+.sel-bar {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--surface-solid, var(--surface));
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-float);
+  pointer-events: auto;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+[data-look='glass'] .sel-bar {
+  background: var(--bg);
+}
+
+/* Plumas favoritas */
+.fav-pens {
+  display: flex;
+  gap: 3px;
+}
+.fav-pen {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.fav-pen i {
+  display: inline-block;
+  border-radius: 50%;
+}
+.fav-pen.active {
+  border-color: var(--accent-line);
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+/* Hojas del lienzo */
+.ink-sheet {
+  width: calc(min(100%, 900px) * var(--ink-zoom, 1));
+  margin: 0 auto 22px;
+}
+.ink-sheet .ink-page {
+  width: 100%;
+  margin: 0;
+}
+.ink-page-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  padding: 0 2px;
+  opacity: 0.75;
+}
+.ink-page-head:hover {
+  opacity: 1;
+}
+.ink-page[data-paper='cornell'] {
+  background-image: linear-gradient(90deg, transparent calc(28% - 1.5px), var(--border-strong) calc(28% - 1.5px), var(--border-strong) 28%, transparent 28%),
+    linear-gradient(to bottom, transparent calc(80% - 1.5px), var(--border-strong) calc(80% - 1.5px), var(--border-strong) 80%, transparent 80%),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--line) - 1px), var(--rule) calc(var(--line) - 1px) var(--line));
+  background-size: 100% 80%, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-position: 0 0, 0 0, 0 calc(var(--line) * 2);
+}
+.ink-page[data-paper='columns'] {
+  background-image: linear-gradient(90deg, transparent calc(50% - 1px), var(--border-strong) calc(50% - 1px), var(--border-strong) 50%, transparent 50%),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--line) - 1px), var(--rule) calc(var(--line) - 1px) var(--line));
+  background-position: 0 0, 0 calc(var(--line) * 2);
+}
+
+/* Guías en oscuro: se invierte solo cómo se ve la página y la tinta; los recortes salen del original. */
+.pdf-scroll[data-dark='1'] .pdf-page {
+  background: #121212;
+}
+[data-theme] .pdf-scroll[data-dark='1'] .pdf-page > canvas,
+[data-theme] .pdf-scroll[data-dark='1'] .pdf-page > canvas:first-child {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95);
+}
+.pdf-scroll[data-dark='1'] .hl:not(.underline) {
+  mix-blend-mode: screen;
+  opacity: 0.45;
+}
+.pdf-scroll[data-dark='1'] .textLayer ::selection {
+  background: rgba(245, 158, 11, 0.4);
+}
+
+/* Pantalla completa de lectura */
+[data-focus='on'] .app {
+  grid-template-columns: 0 1fr;
+}
+[data-focus='on'] .rail,
+[data-focus='on'] .topbar,
+[data-focus='on'] .mini-player,
+[data-focus='on'] .pdf-workspace > .toolbar {
+  display: none;
+}
+.focus-exit {
+  position: fixed;
+  top: 8px;
+  right: 10px;
+  z-index: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  opacity: 0.55;
+  cursor: pointer;
+}
+.focus-exit:hover {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .fav-pen {
+    height: 40px;
+    padding: 0 9px;
+  }
+  .ink-page-head .icon-btn {
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .ink-page-head {
+    height: 38px;
+  }
+  .sel-bar .swatch,
+  .sel-bar .icon-btn {
+    min-width: 34px;
+    min-height: 34px;
+  }
+  .sel-handle {
+    width: 24px;
+    height: 24px;
+    right: -12px;
+    bottom: -12px;
+  }
+}
+/* Diagnóstico del lápiz */
+.ink-diag {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.diag-canvas {
+  width: 100%;
+  height: 300px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  touch-action: none;
+  cursor: crosshair;
+}
+.diag-out {
+  margin: 0;
+  padding: 10px 12px;
+  font: 12px/1.55 var(--font-ui);
+  white-space: pre-wrap;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+/* Reloj de estudio automático */
+.study-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.study-clock.on {
+  color: var(--text);
+  border-color: var(--accent-line);
+}
+.study-clock.on svg {
+  color: var(--accent);
+  animation: clock-pulse 2.4s ease-in-out infinite;
+}
+@keyframes clock-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .study-clock.on svg {
+    animation: none;
+  }
 }

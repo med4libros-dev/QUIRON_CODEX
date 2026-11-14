@@ -8,17 +8,14 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'zoomIn', title: 'Zoom para escribir cómodo', text: 'Pellizca con dos dedos (o Ctrl + rueda) en el PDF y en el lienzo de notas; el lienzo tiene además botones − / % / +. Con el dedo te desplazas en cualquier dirección.' },
-  { icon: 'pen', title: 'Escritura rápida más firme', text: 'Al soltar el lápiz ya no se redibuja toda la hoja, así el siguiente trazo empieza sin tirón. La punta predictiva quedó apagada (Preferencias → Lápiz, por si quieres probarla).' },
-  { icon: 'battery', title: 'Más batería y arranque más rápido', text: 'Con la Surface desconectada se quita el fondo animado y se suaviza el cristal (Ajustes → Preferencias → Ahorro de batería). Las vistas y la exportación a PDF se cargan solo cuando las usas.' },
-  { icon: 'columns', title: 'Surface en vertical', text: 'En modo tableta, Estudio pone el PDF arriba y las notas abajo; el calendario muestra la semana completa.' },
-  { icon: 'shield', title: 'Tus datos, más seguros', text: 'El respaldo en la carpeta se verifica al escribirlo y te avisa si falla. Si restauras el archivo equivocado, Respaldo → «Deshacer restauración».' },
-  { icon: 'upload', title: 'PDF dañados', text: 'Un archivo dañado o que no es PDF ya no entra a tu biblioteca; te dice cuál fue.' },
-  { icon: 'hand', title: 'Más fácil con el dedo y el lápiz', text: 'Botones y casillas más grandes en lo nuevo (huecos, marcadores, tarjetas plegables, menús).' },
-  { icon: 'square', title: 'Flashcards de huecos (0.6)', text: 'PDF → menú «⋯» → Flashcards de huecos, o «Huecos» al seleccionar texto. Escondes la palabra clave de tus subrayados.' },
-  { icon: 'download', title: 'PDF anotado', text: 'PDF → «⋯» → Exportar PDF anotado: tu guía con resaltados, tinta, post-its y el índice de marcadores.' },
-  { icon: 'sparkles', title: 'Tu API key en un solo lugar', text: 'Ajustes → Preferencias → IA. La usan síntesis, simulacros, mnemotecnias, diagramas y preguntas.' },
-  { icon: 'cursor', title: 'Atajos', text: 'Pulsa «?» para verlos todos; «G» abre la Vista de Guardia desde cualquier parte.' },
+  { icon: 'lasso', title: 'Lazo', text: 'En el lienzo, el botón del lazo encierra lo que escribiste para moverlo, agrandarlo, cambiarle el color, duplicarlo o borrarlo.' },
+  { icon: 'flow', title: 'Formas rectas', text: 'Dibuja una flecha, un cuadro o un círculo y deja el lápiz quieto medio segundo: se convierte en forma limpia. Se apaga en Preferencias → Lápiz.' },
+  { icon: 'pen', title: 'Plumas favoritas', text: 'Cuatro plumas a un toque, arriba de los colores. Mantén presionada una para guardar ahí la pluma que estés usando. El botón lateral del lápiz hace de borrador o de lazo.' },
+  { icon: 'copy', title: 'Hojas del lienzo', text: 'Inserta hojas en medio, súbelas, bájalas o quítalas; y plantillas Cornell y de dos columnas.' },
+  { icon: 'moon', title: 'Guía en oscuro y pantalla completa', text: 'En el PDF, menú «⋯»: fondo negro con texto claro, y lectura sin barras (Esc para salir).' },
+  { icon: 'clock', title: 'Tu tiempo de estudio se cuenta solo', text: 'Mientras lees o escribes, el reloj de arriba suma tu tiempo y lo guarda en Progreso. Se detiene a los 2 minutos sin actividad.' },
+  { icon: 'sparkles', title: 'Gemini o Claude', text: 'En Ajustes → Preferencias → IA puedes elegir el motor y poner tu clave de Google (Gemini) en vez de la de Anthropic.' },
+  { icon: 'target', title: 'Diagnóstico del lápiz', text: 'Preferencias → Lápiz → Diagnóstico: mide el retraso real en tu Surface y te dice dónde está el problema.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

@@ -55,7 +55,7 @@ export interface DocMeta {
 /* ---------- Notas ---------- */
 /** Instrumentos de escritura: cada uno conserva su propio color y grosor. */
 export type DrawTool = 'pen' | 'pencil' | 'marker' | 'highlighter';
-export type InkTool = DrawTool | 'eraser';
+export type InkTool = DrawTool | 'eraser' | 'lasso';
 /** Trazo en coordenadas lógicas de página (ancho 1000). points: [x, y, presión]. */
 export interface Stroke {
   id: string;
@@ -65,7 +65,7 @@ export interface Stroke {
   size: number;
   points: number[][];
 }
-export type PaperStyle = 'blank' | 'lined' | 'grid';
+export type PaperStyle = 'blank' | 'lined' | 'grid' | 'cornell' | 'columns';
 /** Cuaderno: agrupa notas por materia o por tema, sin importar de qué PDF vengan. */
 export interface Notebook {
   id: string;

@@ -1,3 +1,5 @@
+import { inkBusy } from './inkBusy';
+import { bumpChanges } from './idb';
 import { useSyncExternalStore } from 'react';
 import { idb } from './idb';
 
@@ -66,6 +68,7 @@ export function createStore<T extends object>(
     if (persist.storage === 'local') {
       try {
         localStorage.setItem(persist.key, data);
+        bumpChanges();
       } catch (e) {
         console.warn('No se pudo guardar', persist.key, e);
         onPersistError?.(persist.key, e);
@@ -82,7 +85,12 @@ export function createStore<T extends object>(
     if (!persist || !hydrated) return;
     pending = true;
     clearTimeout(timer);
-    timer = setTimeout(write, persist.storage === 'local' ? 200 : 350);
+    // Si el lápiz está escribiendo, el guardado espera a la primera pausa (serializar en medio del trazo lo traba).
+    const tick = () => {
+      if (inkBusy(200)) timer = setTimeout(tick, 120);
+      else write();
+    };
+    timer = setTimeout(tick, persist.storage === 'local' ? 200 : 350);
   };
 
   const set: SetState<T> = (patch) => {

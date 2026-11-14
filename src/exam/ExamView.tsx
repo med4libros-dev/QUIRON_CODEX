@@ -9,7 +9,8 @@ import { useInternship } from '../internship/store';
 import { addDays, fromKey, toKey, todayKey } from '../lib/date';
 import { downloadBlob } from '../lib/exportPdf';
 import { openPdfPage } from '../store/navigate';
-import { useSettings } from '../store/settings';
+import { AI_KEY_HINT, AI_LABEL } from '../lib/ai';
+import { saveAiKey, useAiProvider, useAiReady } from '../lib/useAi';
 import { useUI } from '../store/ui';
 import { topicMastery, weakTopics } from '../analytics/mastery';
 import { generateQuestions } from './generate';
@@ -239,8 +240,8 @@ export function ExamView() {
 }
 
 function Generator({ week, weak }: { week: string[]; weak: string[] }) {
-  const apiKey = useSettings((s) => s.apiKey);
-  const model = useSettings((s) => s.model);
+  const ready = useAiReady();
+  const provider = useAiProvider();
   const addQuestions = useExam((s) => s.addQuestions);
   const [topicId, setTopicId] = useState<string | null>(week[0] ?? weak[0] ?? null);
   const [n, setN] = useState(5);
@@ -252,7 +253,7 @@ function Generator({ week, weak }: { week: string[]; weak: string[] }) {
     setBusy(true);
     setMsg(null);
     try {
-      const qs = await generateQuestions(topicId, n, apiKey, model);
+      const qs = await generateQuestions(topicId, n);
       addQuestions(qs);
       setMsg(`Listo: ${qs.length} casos de «${TOPIC[topicId].title}» en el banco, marcados «por revisar».`);
     } catch (e) {
@@ -264,14 +265,14 @@ function Generator({ week, weak }: { week: string[]; weak: string[] }) {
   return (
     <section className="card exam-setup">
       <p className="muted small">
-        Claude lee la <b>GER</b> adjunta al tema (o tus apuntes, si no hay GPC) y redacta casos con viñeta, distractores y la explicación de cada opción, citando la página. Revísalos antes de confiar en ellos: entran como «por revisar».
+        {AI_LABEL[provider].split(' ')[0]} lee la <b>GER</b> adjunta al tema (o tus apuntes, si no hay GPC) y redacta casos con viñeta, distractores y la explicación de cada opción, citando la página. Revísalos antes de confiar en ellos: entran como «por revisar».
       </p>
-      {!apiKey && (
+        {!ready && (
         <div className="field-row tight">
-          <input className="input grow" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="Tu API key de Anthropic (sk-ant-…)" aria-label="API key" />
-          <button className="btn sm" disabled={!key.trim()} onClick={() => useSettings.getState().setApiKey(key.trim())}>
-            Guardar clave
-          </button>
+        <input className="input grow" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder={`Tu API key de ${AI_LABEL[provider]} (${AI_KEY_HINT[provider]})`} aria-label="API key" />
+        <button className="btn sm" disabled={!key.trim()} onClick={() => saveAiKey(key.trim())}>
+          Guardar clave
+        </button>
         </div>
       )}
       <div className="field-row tight">
@@ -283,7 +284,7 @@ function Generator({ week, weak }: { week: string[]; weak: string[] }) {
             </option>
           ))}
         </select>
-        <button className="btn primary" onClick={() => void go()} disabled={busy || !topicId || !apiKey}>
+        <button className="btn primary" onClick={() => void go()} disabled={busy || !topicId || !ready}>
           <Icon name="sparkles" size={15} /> {busy ? 'Generando…' : 'Generar'}
         </button>
       </div>
