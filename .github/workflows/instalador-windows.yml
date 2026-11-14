@@ -36,10 +36,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # Con etiqueta v* crea un borrador de Release con los instaladores adjuntos.
-          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
-          releaseName: 'Quirón Codex ${{ github.ref_name }}'
-          releaseDraft: true
+          # Publica (o actualiza) la versión en «Releases» con descarga directa del instalador.
+          tagName: v__VERSION__
+          releaseName: 'Quirón Codex v__VERSION__'
+          releaseBody: 'Descarga el archivo que termina en **-setup.exe**, ábrelo y sigue los pasos. Si Windows muestra «Windows protegió tu PC», elige «Más información → Ejecutar de todas formas».'
+          releaseDraft: false
+          prerelease: false
 
       - name: Guardar instaladores
         uses: actions/upload-artifact@v4
