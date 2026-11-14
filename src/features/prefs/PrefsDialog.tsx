@@ -5,11 +5,13 @@ import { checkReminders, dailySummary } from '../../lib/reminders';
 import { notify, notifyPermission } from '../../lib/notify';
 import { isDesktop } from '../../lib/platform';
 import { useSettings } from '../../store/settings';
+import { useUI } from '../../store/ui';
+import { APP_VERSION } from '../../version';
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const hh = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
-/** Ajustes: modo noche y recordatorios del sistema. */
+/** Preferencias: modo noche, recordatorios del sistema e IA. */
 export function PrefsDialog({ onClose }: { onClose: () => void }) {
   const night = useSettings((s) => s.night);
   const nightFrom = useSettings((s) => s.nightFrom);
@@ -18,9 +20,12 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
   const reminderHour = useSettings((s) => s.reminderHour);
   const { setNight, setReminders } = useSettings.getState();
   const [msg, setMsg] = useState<string | null>(null);
+  const apiKey = useSettings((s) => s.apiKey);
+  const model = useSettings((s) => s.model);
+  const [keyDraft, setKeyDraft] = useState('');
 
   return (
-    <Modal title="Ajustes" onClose={onClose} width={520}>
+    <Modal title="Preferencias" onClose={onClose} width={540}>
       <div className="prefs">
         <section>
           <h4>
@@ -108,6 +113,49 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
           )}
           {msg && <p className="small warn-text">{msg}</p>}
         </section>
+
+        <section>
+          <h4>
+            <Icon name="sparkles" size={15} /> IA (Claude)
+          </h4>
+          <p className="muted small">
+            Opcional. Se usa para síntesis, simulacros, mnemotecnias, diagramas y preguntas desde subrayados; siempre con tu material. La clave se guarda solo en este equipo.
+          </p>
+          {apiKey ? (
+            <div className="field-row tight">
+              <span className="small ok-text">● Clave guardada (…{apiKey.slice(-4)})</span>
+              <span className="spacer" />
+              <button className="btn ghost sm" onClick={() => confirm('¿Quitar tu API key de este equipo?') && useSettings.getState().setApiKey('')}>
+                Quitar
+              </button>
+            </div>
+          ) : (
+            <div className="field-row tight">
+              <input className="input grow" type="password" value={keyDraft} onChange={(e) => setKeyDraft(e.target.value)} placeholder="sk-ant-…" aria-label="API key de Anthropic" />
+              <button
+                className="btn sm"
+                disabled={!keyDraft.trim()}
+                onClick={() => {
+                  useSettings.getState().setApiKey(keyDraft.trim());
+                  setKeyDraft('');
+                }}
+              >
+                Guardar
+              </button>
+            </div>
+          )}
+          <label className="field">
+            <span className="small">Modelo</span>
+            <input className="input sm" value={model} onChange={(e) => useSettings.getState().setModel(e.target.value)} aria-label="Modelo de Claude" />
+          </label>
+        </section>
+
+        <p className="small muted">
+          Quirón Codex {APP_VERSION} ·{' '}
+          <button className="linkish" onClick={() => (onClose(), useUI.setState({ shortcutsOpen: true }))}>
+            Atajos de teclado
+          </button>
+        </p>
       </div>
     </Modal>
   );

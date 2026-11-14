@@ -4,6 +4,7 @@ import { Icon, type IconName } from '../../components/Icon';
 import { PenControls } from '../../components/PenControls';
 import { useLibrary } from '../../store/library';
 import { useUI } from '../../store/ui';
+import { exportAnnotatedPdf } from '../../lib/exportAnnotated';
 import { useSettings } from '../../store/settings';
 import { STICKY_COLORS, useTools } from '../../store/tools';
 import { HIGHLIGHT_META, HIGHLIGHT_ORDER, type DocMeta } from '../../types';
@@ -56,6 +57,7 @@ export function PdfWorkspace() {
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [bmOpen, setBmOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const pageMarked = useLibrary((s) => (activeDocId ? (s.bookmarks[activeDocId] ?? []).some((b) => b.page === page) : false));
 
   const currentPage = useRef(1);
@@ -238,14 +240,12 @@ export function PdfWorkspace() {
                 <Icon name="eye" size={14} /> {Math.min(100, Math.round((readCount / doc.pageCount) * 100))}%
               </span>
             )}
-            <button
-              className="icon-btn"
-              onClick={() => useUI.getState().setHlQuiz(doc.id)}
-              disabled={!hlCount}
-              title={hlCount ? 'Preguntas rápidas con IA desde tus subrayados' : 'Subraya o resalta texto para generar preguntas'}
-            >
-              <Icon name="question" />
-            </button>
+            <div className="group more-wrap">
+              <button className={`icon-btn${moreOpen ? ' active' : ''}`} data-more-toggle onClick={() => setMoreOpen((v) => !v)} title="Más: preguntas, huecos, exportar anotado" aria-haspopup="menu" aria-expanded={moreOpen} aria-label="Más acciones del PDF">
+                <Icon name="more" />
+              </button>
+              {moreOpen && <MoreMenu docId={doc.id} hlCount={hlCount} onClose={() => setMoreOpen(false)} />}
+            </div>
           </>
         )}
       </div>
@@ -306,6 +306,49 @@ export function PdfWorkspace() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Menú «Más» del PDF: lo que se hace con tus subrayados y anotaciones. */
+function MoreMenu({ docId, hlCount, onClose }: { docId: string; hlCount: number; onClose: () => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Element;
+      if (!box.current?.contains(t) && !t.closest('[data-more-toggle]')) onClose();
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    document.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+  const item = (icon: IconName, title: string, sub: string, fn: () => void, disabled = false, hint = '') => (
+    <button role="menuitem" onClick={fn} disabled={disabled} title={hint || title}>
+      <Icon name={icon} size={17} />
+      <span>
+        {title} <small>{sub}</small>
+      </span>
+    </button>
+  );
+  return (
+    <div className="popover more-menu" ref={box} role="menu">
+      {item('question', 'Preguntas con IA', 'Desde tus subrayados', () => (onClose(), useUI.getState().setHlQuiz(docId)), !hlCount, hlCount ? '' : 'Subraya o resalta texto primero')}
+      {item('square', 'Flashcards de huecos', 'Escondes la palabra clave', () => (onClose(), useUI.getState().setCloze({ docId })), !hlCount, hlCount ? '' : 'Subraya o resalta texto primero')}
+      {item('download', busy ? 'Generando…' : 'Exportar PDF anotado', 'Resaltados, tinta, post-its y marcadores', () => {
+        setBusy(true);
+        exportAnnotatedPdf(docId)
+          .then((st) => useUI.getState().showToast(`PDF anotado listo: ${st.highlights} resaltado${st.highlights === 1 ? '' : 's'}, ${st.strokes} trazo${st.strokes === 1 ? '' : 's'}, ${st.stickies} post-it${st.stickies === 1 ? '' : 's'}`))
+          .catch((e) => alert(`No se pudo exportar: ${e instanceof Error ? e.message : String(e)}`))
+          .finally(() => {
+            setBusy(false);
+            onClose();
+          });
+      }, busy)}
     </div>
   );
 }

@@ -63,7 +63,7 @@ export function MnemoGen() {
       <p className="muted small">Claude lee la GPC adjunta al tema (o tus apuntes) y propone mnemotecnias. Elige las que te sirvan: solo esas se guardan.</p>
       <div className="field-row tight">
         <TopicSelect value={topicId} onChange={setTopicId} allowNone={false} className="select grow" />
-        <button className="btn primary sm" onClick={() => void go()} disabled={busy || !topicId || !apiKey} title={apiKey ? '' : 'Agrega tu API key en Estudio → Síntesis'}>
+        <button className="btn primary sm" onClick={() => void go()} disabled={busy || !topicId || !apiKey} title={apiKey ? '' : 'Agrega tu API key en Ajustes → Preferencias'}>
           <Icon name="sparkles" size={14} /> {busy ? 'Pensando…' : 'Proponer'}
         </button>
       </div>
@@ -77,7 +77,7 @@ export function MnemoGen() {
           ))}
         </div>
       )}
-      {!apiKey && <p className="small warn-text">Necesitas tu API key de Anthropic (Estudio → Síntesis → Motor de IA).</p>}
+      {!apiKey && <p className="small warn-text">Necesitas tu API key de Anthropic (Ajustes → Preferencias → IA).</p>}
       {msg && <p className="small error">{msg}</p>}
       {cands.length > 0 && (
         <>

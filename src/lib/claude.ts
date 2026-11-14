@@ -1,6 +1,6 @@
 /** Llamada mínima a la API de Anthropic desde el navegador (con tu API key, guardada solo en este equipo). */
 export async function callClaude(opts: { apiKey: string; model: string; system: string; user: string; maxTokens?: number }): Promise<string> {
-  if (!opts.apiKey.trim()) throw new Error('Agrega tu API key de Anthropic (Estudio → Síntesis → Motor de IA) para usar esta función.');
+  if (!opts.apiKey.trim()) throw new Error('Agrega tu API key de Anthropic (Ajustes → Preferencias → IA) para usar esta función.');
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {

@@ -79,6 +79,13 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - Barra lateral de 17 a 11 botones (menús «Herramientas» y «Ajustes»); franja de 4 indicadores en Inicio con cuenta regresiva al ENARM; tarjetas plegables; ámbar reservado para la acción principal; prioridad como punto; tablas en modo lectura con edición explícita; estados vacíos con ejemplo y acción; aviso de modo noche; transiciones de 120 ms (respetan «reducir movimiento»).
 - v0.5.2: «Lección de hoy» como tarjeta principal: anillo de avance del día, bloque «Sigue» con el próximo tema, resumen de lecciones, ornamento y estado de día completo.
 
+### v0.6 · Huecos, PDF anotado y pulido ✅ (noviembre 2026)
+- **Flashcards de huecos (cloze)** desde los subrayados del PDF o desde una selección (menú de perlas): sugerencia automática (cifra con unidad o término más largo), edición tocando palabras, varias por lote, ligadas al tema y a la página.
+- **Exportar PDF anotado** (pdf-lib): resaltados como rectángulos translúcidos, subrayados, tinta con presión, post-its como recuadros con texto e índice de marcadores en una hoja final.
+- Menú **⋯** en la barra del PDF (preguntas con IA, huecos, exportar anotado).
+- **Preferencias**: noche, recordatorios e **IA** (API key y modelo) en un solo lugar; versión visible.
+- **Atajos globales** (G, ?) y ventana de **Novedades** una vez por versión (no aparece en instalaciones nuevas).
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

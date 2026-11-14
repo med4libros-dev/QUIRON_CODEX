@@ -105,7 +105,7 @@ export function NavRail() {
         onClick={toggleMenu('prefs')}
         aria-haspopup="menu"
         aria-expanded={menu.id === 'prefs'}
-        title={needsReconnect ? 'Ajustes · Respaldo: reconecta tu carpeta para seguir guardando' : 'Ajustes: respaldo, noche y recordatorios, tema y estilo'}
+        title={needsReconnect ? 'Ajustes · Respaldo: reconecta tu carpeta para seguir guardando' : 'Ajustes: respaldo, preferencias, tema y estilo'}
       >
         <Icon name="settings" size={20} />
         <span>Ajustes</span>
@@ -145,10 +145,10 @@ export function NavRail() {
                   </span>
                   {needsReconnect && <i className="rail-dot" />}
                 </button>
-                <button role="menuitem" onClick={run(() => setPrefsOpen(true))} title="Modo noche y recordatorios">
+                <button role="menuitem" onClick={run(() => setPrefsOpen(true))} title="Modo noche, recordatorios e IA">
                   <Icon name="bell" size={17} />
                   <span>
-                    Noche y avisos <small>Modo noche, recordatorios</small>
+                    Preferencias <small>Noche, avisos e IA</small>
                   </span>
                 </button>
                 <div className="rail-pop-sep" />

@@ -26,6 +26,8 @@ import { LogbookView } from './logbook/LogbookView';
 import { CompareView } from './features/pdf/CompareView';
 import { DiagramModal } from './ai/DiagramModal';
 import { HlQuizModal } from './ai/HlQuizModal';
+import { ClozeModal } from './flashcards/ClozeModal';
+import { ShortcutsModal, WhatsNew } from './home/WhatsNew';
 import { startReminders } from './lib/reminders';
 import { setNotifyFallback } from './lib/notify';
 import { useUI } from './store/ui';
@@ -58,6 +60,24 @@ export default function App() {
     purgeExpiredShift();
     const t = setInterval(() => purgeExpiredShift(), 60_000);
     return () => clearInterval(t);
+  }, []);
+
+  // Atajos globales: G = Vista de Guardia, ? = lista de atajos (no mientras escribes).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.ctrlKey || e.metaKey || e.altKey || !t || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      if (document.querySelector('.modal-backdrop, .compare-overlay')) return;
+      if (e.key === '?') {
+        e.preventDefault();
+        useUI.setState({ shortcutsOpen: true });
+      } else if (e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        useUI.getState().setGuardQuickOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   // Recordatorios del sistema (si están activados en Ajustes).
@@ -158,6 +178,9 @@ export default function App() {
       <CompareView />
       <DiagramModal />
       <HlQuizModal />
+      <ClozeModal />
+      <ShortcutsModal />
+      <WhatsNew />
       <TtsBar />
       <FlashcardModal />
       <FlashcardReview />

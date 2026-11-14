@@ -191,6 +191,18 @@ function PearlMenuInner({ pearl }: { pearl: Pearl }) {
         <button className="pearl-btn" onClick={toCard} title="Convertir en flashcard (el texto va al reverso)">
           <Icon name="cards" size={16} /> Flashcard
         </button>
+        <button
+          className="pearl-btn"
+          onClick={() => {
+            useUI.getState().setCloze({ docId: pearl.docId, items: [{ text: pearl.text, page: pearl.page }], topicId: topicId && topicId !== OPEN_NOTE ? topicId : null });
+            document.getSelection()?.removeAllRanges();
+            setPearl(null);
+          }}
+          disabled={!pearl.text || pearl.text.trim().split(/\s+/).length < 3}
+          title="Flashcard de huecos: escondes las palabras clave y tratas de recordarlas"
+        >
+          <Icon name="square" size={16} /> Huecos
+        </button>
         <button className="pearl-btn" onClick={() => void toCanvas()} title="Pegar como imagen en el lienzo para rayar encima">
           <Icon name="crop" size={16} /> Lienzo
         </button>

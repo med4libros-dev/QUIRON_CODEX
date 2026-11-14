@@ -76,7 +76,7 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.5 (19 mejoras)
 - **Bitácora** (barra lateral): procedimientos con conteo observé/asistí/realicé y meta por procedimiento, todos tus casos y un **diario** privado del internado (una entrada por día).
 - **Turno**: pendientes con hora, signos vitales marcados ↑/↓ según **tu** tabla por edad (Guardia → Signos vitales) y **Ensayo** del pase de visita con cronómetro de 60–120 s.
-- **Ajustes → Noche y avisos**: **recordatorios** de Windows (flashcards y refuerzo del día, pendientes con hora, 30 min antes del fin del turno) y **modo noche** (sin luz azul, automático por horario).
+- **Ajustes → Preferencias**: **recordatorios** de Windows (flashcards y refuerzo del día, pendientes con hora, 30 min antes del fin del turno) y **modo noche** (sin luz azul, automático por horario).
 - **Respaldo → Cifrado con contraseña** (AES-256). La contraseña no se guarda: si la olvidas, el respaldo no se recupera.
 - **PDF**: % leído y «retomar p. X»; marcadores como página clave (algoritmo, tabla, dosis, criterios); botón **?** para preguntas rápidas con IA desde tus subrayados; **Comparar lado a lado** dos guías del tema con scroll sincronizado.
 - **Ficha del tema**: **Diagrama** del algoritmo con IA desde tu GPC (editable y se pega en el lienzo), % completo de tu nota.
@@ -87,12 +87,19 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 - **Perlas HY → Mnemotecnias con IA** para tus temas débiles: eliges cuáles se guardan.
 
 ### v0.5.1 (pulido visual)
-- Barra lateral más corta: **Herramientas** agrupa GPC, Guardia y Nota SOAP; **Ajustes** agrupa Respaldo, Noche y avisos, Tema y Estilo. Cabe en la Surface sin desplazar.
+- Barra lateral más corta: **Herramientas** agrupa GPC, Guardia y Nota SOAP; **Ajustes** agrupa Respaldo, Preferencias, Tema y Estilo. Cabe en la Surface sin desplazar.
 - **Inicio**: franja con flashcards de hoy, temas débiles, pendientes del turno y días para el ENARM (toca para poner la fecha). Las tarjetas de la derecha se pliegan con la flecha y se recuerda tu elección.
 - Menos ámbar: queda para la acción principal y lo urgente; «Prioridad alta» ahora es un punto junto al tema.
 - Bitácora y signos vitales se ven como tabla limpia; se editan con «Editar metas» / «Editar rangos».
 - **Lección de hoy** rediseñada: anillo con los minutos que llevas, «Sigue» con el próximo tema en grande y el botón Empezar a la vista; al terminar el día, el anillo se pone verde.
 - Turno con tarjetas más anchas cuando hay pocos pacientes, estados vacíos con ejemplo y botón, números en la tipografía del Codex, aviso de **Noche** en la barra superior (tócalo para apagarlo) y transiciones suaves entre vistas.
+
+### v0.6
+- **Flashcards de huecos**: en el PDF, menú **⋯ → Flashcards de huecos** (desde tus subrayados) o **Huecos** al seleccionar texto. La app sugiere qué esconder (cifras con unidad o el término clave); tocas las palabras para cambiarlo.
+- **PDF anotado**: menú **⋯ → Exportar PDF anotado**. Tu guía con resaltados, subrayados, tinta, post-its y una hoja final con tus marcadores; el original no se toca.
+- **Ajustes → Preferencias → IA**: tu API key y el modelo en un solo lugar (lo usan síntesis, simulacros, mnemotecnias, diagramas y preguntas).
+- **Atajos**: **?** muestra la lista; **G** abre la Vista de Guardia desde cualquier parte.
+- **Novedades**: al actualizar verás una vez qué cambió.
 
 Roadmap del proyecto: [ROADMAP.md](ROADMAP.md).
 

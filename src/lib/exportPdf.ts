@@ -17,7 +17,7 @@ const MAP: Record<string, string> = {
 };
 const WINANSI_EXTRA = new Set('€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ');
 
-function toWinAnsi(s: string): string {
+export function toWinAnsi(s: string): string {
   let out = '';
   for (const ch of s.normalize('NFC')) {
     const mapped = MAP[ch];
@@ -36,7 +36,7 @@ function toWinAnsi(s: string): string {
   return out;
 }
 
-function wrap(text: string, font: PDFFont, size: number, maxW: number): string[] {
+export function wrap(text: string, font: PDFFont, size: number, maxW: number): string[] {
   const words = text.split(/\s+/).filter(Boolean);
   const fits = (t: string) => font.widthOfTextAtSize(t, size) <= maxW;
   const lines: string[] = [];

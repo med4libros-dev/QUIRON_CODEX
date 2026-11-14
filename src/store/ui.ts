@@ -45,6 +45,10 @@ export interface UIState {
   /** Preguntas desde subrayados (id de documento). */
   hlQuiz: string | null;
   setHlQuiz: (docId: string | null) => void;
+  /** Flashcards de huecos: de los subrayados de un PDF o de un fragmento suelto. */
+  cloze: { docId: string; items?: { text: string; page: number }[]; topicId?: string | null } | null;
+  setCloze: (c: UIState['cloze']) => void;
+  shortcutsOpen: boolean;
   /** El modo noche está activo ahora (lo calcula App). */
   nightOn: boolean;
   soapOpen: boolean;
@@ -80,6 +84,9 @@ export const useUI = createStore<UIState>((set) => ({
   setDiagram: (diagram) => set({ diagram, topicSheet: null }),
   hlQuiz: null,
   setHlQuiz: (hlQuiz) => set({ hlQuiz }),
+  cloze: null,
+  setCloze: (cloze) => set({ cloze }),
+  shortcutsOpen: false,
   nightOn: false,
   soapOpen: false,
   setSoapOpen: (soapOpen) => set({ soapOpen, topicSheet: null, guardQuickOpen: false }),

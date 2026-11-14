@@ -195,6 +195,16 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - `KpiStrip` en `InternshipView.tsx`; fecha del ENARM en `alq:settings.enarmDate`.
 - `ui.nightOn` (lo calcula App) → aviso en `TopBar`.
 
+## v0.6
+
+| Módulo | Archivo | Persistencia |
+|---|---|---|
+| Huecos (cloze) | `src/flashcards/ClozeModal.tsx` (`suggestCloze`, `buildCloze` puros) | Tarjetas normales en `kv:cards` (frente con «_____») |
+| PDF anotado | `src/lib/exportAnnotated.ts` (usa `toWinAnsi`/`wrap` de `exportPdf.ts`) | — (descarga) |
+| Menú «⋯» del PDF | `MoreMenu` en `PdfWorkspace.tsx` | — |
+| Novedades y atajos | `src/home/WhatsNew.tsx`, `src/version.ts` | `qc:seenVersion` (solo este equipo) |
+| Preferencias (IA) | `PrefsDialog.tsx` | `alq:settings.apiKey/model` |
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

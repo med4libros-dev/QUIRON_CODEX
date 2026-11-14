@@ -76,7 +76,7 @@ export function DiagramModal() {
             <p className="muted small">
               Claude lee la GPC adjunta al tema (la GER, o tus apuntes si no hay) y arma el algoritmo de diagnóstico y manejo. Revisa cada caja contra la guía antes de estudiarlo; puedes corregir los textos aquí y rayar encima en el lienzo.
             </p>
-            {!apiKey && <p className="small warn-text">Necesitas tu API key de Anthropic (Estudio → Síntesis → Motor de IA).</p>}
+            {!apiKey && <p className="small warn-text">Necesitas tu API key de Anthropic (Ajustes → Preferencias → IA).</p>}
             <button className="btn primary" onClick={() => void go()} disabled={busy || !apiKey}>
               <Icon name="flow" size={15} /> {busy ? 'Armando el algoritmo…' : 'Generar diagrama'}
             </button>

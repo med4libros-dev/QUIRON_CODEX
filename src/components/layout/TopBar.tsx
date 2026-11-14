@@ -33,7 +33,7 @@ export function TopBar() {
       </div>
       {view === 'study' && <LayoutControls />}
       {nightOn && (
-        <button className="night-chip" onClick={() => useSettings.getState().setNight('off')} title="Modo noche activo: toca para apagarlo (Ajustes → Noche y avisos)" aria-label="Apagar modo noche">
+        <button className="night-chip" onClick={() => useSettings.getState().setNight('off')} title="Modo noche activo: toca para apagarlo (Ajustes → Preferencias)" aria-label="Apagar modo noche">
           <Icon name="moon" size={14} /> <span className="hide-narrow">Noche</span>
         </button>
       )}
