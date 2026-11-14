@@ -20,6 +20,15 @@ export interface WardTask {
   text: string;
   kind: TaskKind;
   done: boolean;
+  /** Hora «HH:MM» para el recordatorio (opcional). */
+  at?: string;
+  /** Ya se avisó (para no repetir). */
+  notified?: boolean;
+}
+export interface WardVitals {
+  fc: string;
+  fr: string;
+  tas: string;
 }
 export interface WardPatient {
   id: string;
@@ -30,6 +39,7 @@ export interface WardPatient {
   topicId: string | null;
   dx: string;
   note: string;
+  vitals?: WardVitals;
   tasks: WardTask[];
   createdAt: number;
 }
@@ -44,7 +54,8 @@ export interface WardState {
   addPatient: (p?: Partial<WardPatient>) => string;
   updatePatient: (id: string, patch: Partial<WardPatient>) => void;
   removePatient: (id: string) => void;
-  addTask: (pid: string, text: string, kind: TaskKind) => void;
+  addTask: (pid: string, text: string, kind: TaskKind, at?: string) => void;
+  markNotified: (pid: string, tid: string) => void;
   toggleTask: (pid: string, tid: string) => void;
   removeTask: (pid: string, tid: string) => void;
 }
@@ -68,7 +79,9 @@ export const useWard = createStore<WardState>(
     },
     updatePatient: (id, patch) => set((s) => mapP(s, id, (p) => ({ ...p, ...patch }))),
     removePatient: (id) => set((s) => ({ patients: s.patients.filter((p) => p.id !== id) })),
-    addTask: (pid, text, kind) => set((s) => mapP(s, pid, (p) => ({ ...p, tasks: [...p.tasks, { id: uid(), text, kind, done: false }] }))),
+    addTask: (pid, text, kind, at) =>
+      set((s) => mapP(s, pid, (p) => ({ ...p, tasks: [...p.tasks, { id: uid(), text, kind, done: false, ...(at ? { at } : {}) }] }))),
+    markNotified: (pid, tid) => set((s) => mapP(s, pid, (p) => ({ ...p, tasks: p.tasks.map((t) => (t.id === tid ? { ...t, notified: true } : t)) }))),
     toggleTask: (pid, tid) => set((s) => mapP(s, pid, (p) => ({ ...p, tasks: p.tasks.map((t) => (t.id === tid ? { ...t, done: !t.done } : t)) }))),
     removeTask: (pid, tid) => set((s) => mapP(s, pid, (p) => ({ ...p, tasks: p.tasks.filter((t) => t.id !== tid) }))),
   }),

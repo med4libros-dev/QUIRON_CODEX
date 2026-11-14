@@ -20,6 +20,8 @@ export interface Question {
   origin: 'ia' | 'manual' | 'importada';
   /** Las generadas con IA empiezan «por revisar» hasta que el estudiante las valida. */
   reviewed: boolean;
+  /** «Me lo preguntaron»: salió en un examen real o te lo preguntó un adscrito. */
+  asked?: boolean;
   createdAt: number;
 }
 

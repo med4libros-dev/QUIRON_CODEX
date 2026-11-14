@@ -22,16 +22,34 @@ import { SearchModal } from './search/SearchModal';
 import { TtsBar } from './components/TtsBar';
 import { purgeExpiredShift } from './ward/store';
 import { HyView } from './hy/HyView';
+import { LogbookView } from './logbook/LogbookView';
+import { CompareView } from './features/pdf/CompareView';
+import { DiagramModal } from './ai/DiagramModal';
+import { HlQuizModal } from './ai/HlQuizModal';
+import { startReminders } from './lib/reminders';
+import { setNotifyFallback } from './lib/notify';
+import { useUI } from './store/ui';
+
+/** ¿Toca modo noche ahora? (rango que puede cruzar la medianoche, p. ej. 22→6). */
+export function nightActive(mode: 'off' | 'auto' | 'on', from: number, to: number, h = new Date().getHours()): boolean {
+  if (mode === 'on') return true;
+  if (mode === 'off') return false;
+  if (from === to) return false;
+  return from < to ? h >= from && h < to : h >= from || h < to;
+}
 
 export default function App() {
   const view = useSettings((s) => s.view);
   const theme = useSettings((s) => s.theme);
   const setDark = useSettings((s) => s.setDark);
   const look = useSettings((s) => s.look);
+  const night = useSettings((s) => s.night);
+  const nightFrom = useSettings((s) => s.nightFrom);
+  const nightTo = useSettings((s) => s.nightTo);
 
   // Vista guardada que ya no existe (p. ej. la antigua «Fuentes»): vuelve a Inicio.
   useEffect(() => {
-    const known = ['internado', 'study', 'notebooks', 'calendar', 'progress', 'hy', 'exam', 'ward'];
+    const known = ['internado', 'study', 'notebooks', 'calendar', 'progress', 'hy', 'exam', 'ward', 'logbook'];
     if (!known.includes(view)) useSettings.getState().setView('internado');
   }, [view]);
 
@@ -41,6 +59,24 @@ export default function App() {
     const t = setInterval(() => purgeExpiredShift(), 60_000);
     return () => clearInterval(t);
   }, []);
+
+  // Recordatorios del sistema (si están activados en Ajustes).
+  useEffect(() => {
+    setNotifyFallback((text) => useUI.getState().showToast(text));
+    return startReminders();
+  }, []);
+
+  // Modo noche: se revisa cada minuto por si cambia la hora.
+  useEffect(() => {
+    const apply = () => {
+      const on = nightActive(night, nightFrom, nightTo);
+      if (on) document.documentElement.dataset.night = 'on';
+      else delete document.documentElement.dataset.night;
+    };
+    apply();
+    const t = setInterval(apply, 60_000);
+    return () => clearInterval(t);
+  }, [night, nightFrom, nightTo]);
 
   useEffect(() => {
     const el = document.documentElement;
@@ -106,6 +142,11 @@ export default function App() {
             <WardView />
           </div>
         )}
+        {view === 'logbook' && (
+          <div className="view scroll">
+            <LogbookView />
+          </div>
+        )}
       </div>
       <TopicSheet />
       <TemarioModal />
@@ -113,11 +154,15 @@ export default function App() {
       <SoapModal />
       <MiniPlayer />
       <SearchModal />
+      <CompareView />
+      <DiagramModal />
+      <HlQuizModal />
       <TtsBar />
       <FlashcardModal />
       <FlashcardReview />
       <PearlMenu />
       <Toast />
+      <div className="night-veil" aria-hidden="true" />
     </div>
   );
 }

@@ -36,7 +36,7 @@ async function collect(): Promise<BackupData> {
   const local: Record<string, string> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.startsWith('alq:') && k !== LAST_KEY) local[k] = localStorage.getItem(k) ?? '';
+    if (k && k.startsWith('alq:') && k !== LAST_KEY && k !== ENC_FLAG) local[k] = localStorage.getItem(k) ?? '';
   }
   const kv: Record<string, string> = {};
   for (const k of await idb.keys('kv')) {
@@ -71,6 +71,101 @@ const fromB64 = (b64: string, type: string) => {
   return new Blob([bytes], { type });
 };
 
+/* ---------- Cifrado (AES-GCM 256 + PBKDF2-SHA256) ---------- */
+
+const ENC_FLAG = 'alq:backupEnc';
+const ITER = 250_000;
+/** La contraseña vive solo en memoria: se pide al abrir la app y nunca se guarda. */
+let password: string | null = null;
+
+interface EncryptedFile {
+  app: 'quiron-codex';
+  enc: 1;
+  kdf: 'PBKDF2-SHA256';
+  iter: number;
+  salt: string;
+  iv: string;
+  data: string;
+}
+
+export const encryptionOn = () => localStorage.getItem(ENC_FLAG) === '1';
+export const encryptionUnlocked = () => password !== null;
+/** Activa el cifrado con esta contraseña (o lo desactiva con null). */
+export function setEncryption(pw: string | null) {
+  if (pw) {
+    password = pw;
+    localStorage.setItem(ENC_FLAG, '1');
+  } else {
+    password = null;
+    localStorage.removeItem(ENC_FLAG);
+  }
+}
+/** Desbloquea en esta sesión sin cambiar la configuración. */
+export const unlockEncryption = (pw: string) => {
+  password = pw;
+};
+
+const bytesToB64 = (bytes: Uint8Array) => {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+};
+const b64ToBytes = (b64: string): Uint8Array<ArrayBuffer> => {
+  const bin = atob(b64);
+  const out = new Uint8Array(new ArrayBuffer(bin.length));
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+};
+
+async function deriveKey(pw: string, salt: Uint8Array<ArrayBuffer>, iter: number) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+
+export async function encryptText(plain: string, pw: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pw, salt, ITER);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plain)));
+  const f: EncryptedFile = { app: 'quiron-codex', enc: 1, kdf: 'PBKDF2-SHA256', iter: ITER, salt: bytesToB64(salt), iv: bytesToB64(iv), data: bytesToB64(ct) };
+  return JSON.stringify(f);
+}
+
+export class PasswordNeeded extends Error {
+  constructor(msg = 'Este respaldo está cifrado: escribe su contraseña.') {
+    super(msg);
+    this.name = 'PasswordNeeded';
+  }
+}
+
+/** Devuelve el JSON en claro; si el archivo está cifrado usa `pw` (o la de la sesión). */
+export async function decryptIfNeeded(text: string, pw?: string | null): Promise<string> {
+  let parsed: Partial<EncryptedFile>;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error('El archivo no es un respaldo válido.');
+  }
+  if (parsed.enc !== 1) return text;
+  const usePw = pw ?? password;
+  if (!usePw) throw new PasswordNeeded();
+  try {
+    const key = await deriveKey(usePw, b64ToBytes(parsed.salt!), parsed.iter ?? ITER);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(parsed.iv!) }, key, b64ToBytes(parsed.data!));
+    return new TextDecoder().decode(plain);
+  } catch {
+    throw new PasswordNeeded('Contraseña incorrecta.');
+  }
+}
+
+/** Serializa los datos, cifrados si el cifrado está activo. null = cifrado activo pero bloqueado. */
+async function serialize(data: BackupData): Promise<string | null> {
+  const json = JSON.stringify(data);
+  if (!encryptionOn()) return json;
+  if (!password) return null;
+  return encryptText(json, password);
+}
+
 const markBackup = () => localStorage.setItem(LAST_KEY, new Date().toISOString());
 export const lastBackup = () => localStorage.getItem(LAST_KEY);
 
@@ -86,12 +181,14 @@ export async function downloadBackup(includePdfs: boolean) {
     }
   }
   const stamp = new Date().toISOString().slice(0, 10);
-  downloadBlob(new Blob([JSON.stringify(data)], { type: 'application/json' }), `quiron-codex-respaldo-${stamp}.json`);
+  const out = await serialize(data);
+  if (out === null) throw new PasswordNeeded('El cifrado está activo: desbloquéalo con tu contraseña antes de descargar.');
+  downloadBlob(new Blob([out], { type: 'application/json' }), `quiron-codex-respaldo-${stamp}${encryptionOn() ? '-cifrado' : ''}.json`);
   markBackup();
 }
 
-export async function restoreFromFile(file: File) {
-  const data = JSON.parse(await file.text()) as BackupData;
+export async function restoreFromFile(file: File, pw?: string) {
+  const data = JSON.parse(await decryptIfNeeded(await file.text(), pw)) as BackupData;
   await applyData(data);
   for (const [id, p] of Object.entries(data.pdfs ?? {})) await idb.set('pdfs', id, fromB64(p.b64, p.type));
 }
@@ -151,7 +248,10 @@ export async function saveToFolder(): Promise<boolean> {
   const dir = await getFolder();
   if (!dir || (await folderStatus()) !== 'granted') return false;
   const data = await collect();
-  await writeFile(dir, DATA_FILE, JSON.stringify(data));
+  const out = await serialize(data);
+  // Cifrado activo y bloqueado: no se escribe nada (ni en claro) hasta que lo desbloquees.
+  if (out === null) return false;
+  await writeFile(dir, DATA_FILE, out);
   const pdfDir = await dir.getDirectoryHandle(PDF_DIR, { create: true });
   for (const id of await idb.keys('pdfs')) {
     try {
@@ -166,7 +266,7 @@ export async function saveToFolder(): Promise<boolean> {
 }
 
 /** Trae el progreso guardado en la carpeta (por ejemplo, el que dejó la otra computadora). */
-export async function loadFromFolder(): Promise<string> {
+export async function loadFromFolder(pw?: string): Promise<string> {
   const dir = await getFolder();
   if (!dir) throw new Error('Primero elige la carpeta de respaldo.');
   if ((await folderStatus()) !== 'granted' && !(await reconnectFolder())) throw new Error('Sin permiso para leer la carpeta.');
@@ -181,7 +281,7 @@ export async function loadFromFolder(): Promise<string> {
   const [cur, old] = await Promise.all([read(DATA_FILE), read(LEGACY_FILE)]);
   const file = cur && old ? (old.lastModified > cur.lastModified ? old : cur) : cur ?? old;
   if (!file) throw new Error('La carpeta no tiene un respaldo todavía.');
-  const data = JSON.parse(await file.text()) as BackupData;
+  const data = JSON.parse(await decryptIfNeeded(await file.text(), pw)) as BackupData;
   await applyData(data);
   try {
     const pdfDir = await dir.getDirectoryHandle(PDF_DIR);

@@ -7,10 +7,72 @@ import { SPECIALTIES, SPECIALTY, TOPICS, gpcSearchUrl } from '../../internship/c
 import { GUARD_FIELDS, useTopicStore } from '../../internship/topicStore';
 import type { SpecialtyId } from '../../internship/types';
 import { useUI } from '../../store/ui';
+import { useLibrary } from '../../store/library';
 import { CalculatorCard } from './CalculatorCard';
+import { VitalsTable } from '../../vitals/VitalsTable';
 import { DrugPanel } from '../../drugs/DrugPanel';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+type GpcStatus = 'missing' | 'attached' | 'reading' | 'read';
+const STATUS_LABEL: Record<GpcStatus, string> = { missing: 'Sin GPC', attached: 'Adjunta, sin leer', reading: 'Leyendo', read: 'Leída (≥80%)' };
+
+/** Mapa de tus GPC por especialidad: qué tienes, qué has leído y qué falta. */
+function GpcMap({ topics, onOpen }: { topics: typeof TOPICS; onOpen: (id: string) => void }) {
+  const info = useTopicStore((s) => s.info);
+  const docs = useLibrary((s) => s.docs);
+  const read = useLibrary((s) => s.read);
+  const status = (topicId: string): { st: GpcStatus; pct: number } => {
+    const atts = (info[topicId]?.attachments ?? []).filter((a) => docs.some((d) => d.id === a.docId));
+    if (!atts.length) return { st: 'missing', pct: 0 };
+    let best = 0;
+    for (const a of atts) {
+      const d = docs.find((x) => x.id === a.docId)!;
+      if (d.pageCount) best = Math.max(best, Math.min(1, (read[d.id]?.length ?? 0) / d.pageCount));
+    }
+    const pct = Math.round(best * 100);
+    return { st: pct >= 80 ? 'read' : pct > 0 ? 'reading' : 'attached', pct };
+  };
+  const bySp = SPECIALTIES.map((s) => ({ s, items: topics.filter((t) => t.specialty === s.id).map((t) => ({ t, ...status(t.id) })) })).filter((x) => x.items.length);
+  return (
+    <div className="gpc-map">
+      <div className="gpc-legend small">
+        {(Object.keys(STATUS_LABEL) as GpcStatus[]).map((k) => (
+          <span key={k}>
+            <i className={`gm-dot st-${k}`} /> {STATUS_LABEL[k]}
+          </span>
+        ))}
+      </div>
+      {bySp.map(({ s, items }) => {
+        const c = { missing: 0, attached: 0, reading: 0, read: 0 } as Record<GpcStatus, number>;
+        items.forEach((x) => c[x.st]++);
+        const have = items.length - c.missing;
+        return (
+          <section key={s.id} className="gm-sp" style={{ '--sp': s.color } as CSSProperties}>
+            <header>
+              <span className="sp-tag">{s.short}</span>
+              <b>{s.name}</b>
+              <span className="spacer" />
+              <span className="small muted tabular">
+                {have}/{items.length} con GPC · {c.read} leídas · {c.missing} faltan
+              </span>
+            </header>
+            <div className="gm-bar" aria-hidden="true">
+              {(['read', 'reading', 'attached', 'missing'] as GpcStatus[]).map((k) => (c[k] ? <i key={k} className={`st-${k}`} style={{ flex: c[k] }} /> : null))}
+            </div>
+            <div className="gm-tiles">
+              {items.map(({ t, st, pct }) => (
+                <button key={t.id} className={`gm-tile st-${st}`} onClick={() => onOpen(t.id)} title={`${t.title} — ${STATUS_LABEL[st]}${st !== 'missing' ? ` (${pct}% leído)` : ''}`}>
+                  {t.title}
+                </button>
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
 
 /** Temario completo con lo que tienes en cada tema (GPC, casos, flashcards, ficha de guardia). */
 export function TemarioModal() {
@@ -21,6 +83,7 @@ export function TemarioModal() {
   const cards = useCards((s) => s.cards);
   const [q, setQ] = useState('');
   const [sp, setSp] = useState<SpecialtyId | ''>('');
+  const [mode, setMode] = useState<'list' | 'map'>('list');
   const cardCount = useMemo(() => {
     const m = new Map<string, number>();
     for (const c of cards) if (c.topicId) m.set(c.topicId, (m.get(c.topicId) ?? 0) + 1);
@@ -45,7 +108,18 @@ export function TemarioModal() {
               </option>
             ))}
           </select>
+          <div className="seg" role="radiogroup" aria-label="Vista del temario">
+            <button className={mode === 'list' ? 'active' : ''} onClick={() => setMode('list')} aria-pressed={mode === 'list'}>
+              Lista
+            </button>
+            <button className={mode === 'map' ? 'active' : ''} onClick={() => setMode('map')} aria-pressed={mode === 'map'}>
+              <Icon name="map" size={14} /> Mapa GPC
+            </button>
+          </div>
         </div>
+        {mode === 'map' ? (
+          <GpcMap topics={list} onOpen={(id) => openTopic(id, 'docs')} />
+        ) : (
         <ul className="temario-list">
           {list.map((t) => {
             const i = info[t.id];
@@ -75,6 +149,7 @@ export function TemarioModal() {
           })}
           {!list.length && <li className="muted ts-empty">Sin resultados.</li>}
         </ul>
+        )}
       </div>
     </Modal>
   );
@@ -112,8 +187,13 @@ export function GuardQuick() {
           <button role="tab" aria-selected={tab === 'drugs'} className={tab === 'drugs' ? 'active' : ''} onClick={() => useUI.setState({ guardTab: 'drugs' })}>
             <Icon name="pill" size={14} /> Fármacos por peso
           </button>
+          <button role="tab" aria-selected={tab === 'vitals'} className={tab === 'vitals' ? 'active' : ''} onClick={() => useUI.setState({ guardTab: 'vitals' })}>
+            <Icon name="heart" size={14} /> Signos vitales
+          </button>
         </div>
-        {tab === 'drugs' ? (
+        {tab === 'vitals' ? (
+          <VitalsTable />
+        ) : tab === 'drugs' ? (
           <DrugPanel key={String(drugWeight)} />
         ) : (
         <>

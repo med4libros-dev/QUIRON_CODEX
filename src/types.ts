@@ -1,5 +1,5 @@
 export type Theme = 'light' | 'dark' | 'system';
-export type View = 'internado' | 'study' | 'notebooks' | 'calendar' | 'progress' | 'hy' | 'exam' | 'ward';
+export type View = 'internado' | 'study' | 'notebooks' | 'calendar' | 'progress' | 'hy' | 'exam' | 'ward' | 'logbook';
 
 /* ---------- Biblioteca / PDF ---------- */
 export type HighlightColor = 'yellow' | 'green' | 'pink' | 'blue' | 'orange' | 'purple' | 'red';
@@ -20,10 +20,14 @@ export interface Highlight {
 }
 
 /** Marcador de página del PDF. */
+export type KeyPageKind = 'algoritmo' | 'tabla' | 'dosis' | 'criterios';
+export const KEY_PAGE_LABEL: Record<KeyPageKind, string> = { algoritmo: 'Algoritmo', tabla: 'Tabla', dosis: 'Dosis', criterios: 'Criterios' };
 export interface Bookmark {
   id: string;
   page: number;
   label: string;
+  /** Página clave de la GPC (algoritmo, tabla…). Sin tipo = marcador normal. */
+  kind?: KeyPageKind;
   createdAt: number;
 }
 

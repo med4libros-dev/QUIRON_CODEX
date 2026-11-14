@@ -15,6 +15,7 @@ import { useUI } from '../store/ui';
 import { useSettings } from '../store/settings';
 import { useExam } from '../exam/store';
 import { masteryColor, topicMastery, weakTopics } from '../analytics/mastery';
+import { DrugOfDay, WeeklySummary } from '../home/HomeCards';
 import type { DayPlan, InternshipConfig, Lesson } from './types';
 
 const KIND_LABEL = { new: 'Tema nuevo', review: 'Repaso espaciado', final: 'Repaso integral' } as const;
@@ -231,8 +232,14 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
                 <p className="muted small">Ningún tema débil por ahora. Se calcula con tus simulacros y flashcards.</p>
               )}
               {weak.length > 0 && <p className="muted small">Agregué un repaso de refuerzo de 15 min para los {weak.length} más bajos esta semana.</p>}
+              {weak.length > 0 && (
+                <button className="btn ghost sm" onClick={() => useSettings.getState().setView('hy')} title="Mnemotecnias con IA desde tu GPC para estos temas">
+                  <Icon name="sparkles" size={14} /> Mnemotecnias
+                </button>
+              )}
             </section>
           )}
+          <WeeklySummary />
           <section className="card fc-card">
             <div className="card-head">
               <h4>Flashcards</h4>
@@ -252,7 +259,16 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
               </button>
             </div>
             {!cards.length && <p className="muted small">Selecciona texto en una GPC y elige «Flashcard».</p>}
+            {cards.some((c) => c.asked) && (
+              <button
+                className="btn ghost sm asked-deck"
+                onClick={() => useUI.getState().startReview({ cardIds: cards.filter((c) => c.asked).map((c) => c.id), title: 'Me lo preguntaron' })}
+              >
+                <Icon name="mic" size={14} /> Repasar preguntadas ({cards.filter((c) => c.asked).length})
+              </button>
+            )}
           </section>
+          <DrugOfDay />
           <section className="card">
             <div className="card-head">
               <h4>Casos vistos</h4>

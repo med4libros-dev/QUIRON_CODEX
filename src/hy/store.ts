@@ -26,6 +26,8 @@ export interface HyItem {
   /** Vino precargada con la app (datos clásicos de semiología). */
   seed?: boolean;
   starred: boolean;
+  /** «Me lo preguntaron». */
+  asked?: boolean;
   createdAt: number;
 }
 

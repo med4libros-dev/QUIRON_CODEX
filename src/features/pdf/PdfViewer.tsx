@@ -27,6 +27,8 @@ interface Props {
   tool: PdfTool;
   zoom: number;
   onPageChange: (page: number) => void;
+  /** false = no guarda la página como «retomar aquí» (p. ej. en el comparador). */
+  persistPage?: boolean;
 }
 
 type Size = { w: number; h: number };
@@ -57,7 +59,7 @@ function groupByPage<T extends { page: number }>(items: T[]): Map<number, T[]> {
  *  - El render ocurre fuera de pantalla y se copia de una vez: no hay parpadeo al hacer zoom.
  *  - Todas las anotaciones se guardan en coordenadas relativas a la página: sobreviven a cualquier zoom.
  */
-export function PdfViewer({ docId, tool, zoom, onPageChange }: Props) {
+export function PdfViewer({ docId, tool, zoom, onPageChange, persistPage = true }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageEls = useRef<(HTMLDivElement | null)[]>([]);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
@@ -159,7 +161,7 @@ export function PdfViewer({ docId, tool, zoom, onPageChange }: Props) {
         current.current = page;
         onPageChange(page);
         clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => setLastPage(docId, page), 500);
+        if (persistPage) saveTimer.current = setTimeout(() => setLastPage(docId, page), 500);
       }
     });
   };

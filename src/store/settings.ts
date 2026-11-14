@@ -20,6 +20,16 @@ export interface SettingsState {
   notebookScope: string | null;
   apiKey: string;
   model: string;
+  /** Modo noche: tonos cálidos sin azul. «auto» lo activa entre nightFrom y nightTo (horas). */
+  night: 'off' | 'auto' | 'on';
+  nightFrom: number;
+  nightTo: number;
+  /** Recordatorios del sistema (Windows) mientras la app está abierta. */
+  reminders: boolean;
+  /** Hora del aviso diario de flashcards/refuerzo. */
+  reminderHour: number;
+  setNight: (n: 'off' | 'auto' | 'on', from?: number, to?: number) => void;
+  setReminders: (on: boolean, hour?: number) => void;
   setTheme: (t: Theme) => void;
   setLook: (l: 'glass' | 'pistache') => void;
   setDark: (d: boolean) => void;
@@ -50,6 +60,13 @@ export const useSettings = createStore<SettingsState>(
     notebookScope: null,
     apiKey: '',
     model: 'claude-sonnet-5-5',
+    night: 'off',
+    nightFrom: 22,
+    nightTo: 6,
+    reminders: false,
+    reminderHour: 8,
+    setNight: (night, from, to) => set((s) => ({ night, nightFrom: from ?? s.nightFrom, nightTo: to ?? s.nightTo })),
+    setReminders: (reminders, hour) => set((s) => ({ reminders, reminderHour: hour ?? s.reminderHour })),
     setTheme: (theme) => set({ theme }),
     setLook: (look) => set({ look }),
     setDark: (dark) => set({ dark }),
@@ -67,8 +84,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model }) => ({
-      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model,
+    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour }) => ({
+      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour,
     }),
   },
 );

@@ -12,6 +12,7 @@ import { useLibrary } from '../../store/library';
 import { useNotes } from '../../store/notes';
 import { useSettings } from '../../store/settings';
 import type { Stroke } from '../../types';
+import { noteCompleteness } from '../../lib/completeness';
 import { NotebookDialog } from '../notebooks/NotebookDialog';
 import { SynthPanel } from '../synth/SynthPanel';
 import { InkCanvas } from './InkCanvas';
@@ -223,6 +224,7 @@ export function NotesPanel() {
             placeholder="Título de la nota"
             aria-label="Título de la nota"
           />
+          <CompletenessChip html={note.html} />
           <select
             className="select xs"
             value={note.notebookId ?? ''}
@@ -283,5 +285,33 @@ export function NotesPanel() {
         />
       )}
     </div>
+  );
+}
+
+/** Detector de huecos: apartados vacíos y % completo de la nota. */
+function CompletenessChip({ html }: { html: string }) {
+  const c = useMemo(() => noteCompleteness(html), [html]);
+  const [open, setOpen] = useState(false);
+  if (!c) return null;
+  const cls = c.pct >= 100 ? 'ok' : c.pct >= 50 ? 'mid' : 'low';
+  return (
+    <span className="gap-wrap">
+      <button
+        className={`gap-chip ${cls}`}
+        onClick={() => setOpen((v) => !v)}
+        title={c.empty.length ? `Apartados vacíos: ${c.empty.join(', ')}` : 'Todos los apartados tienen contenido'}
+        aria-expanded={open}
+      >
+        {c.pct}% · {c.filled}/{c.total}
+      </button>
+      {open && c.empty.length > 0 && (
+        <span className="gap-pop" role="status">
+          <b>Te falta:</b>
+          {c.empty.map((e) => (
+            <span key={e}>• {e}</span>
+          ))}
+        </span>
+      )}
+    </span>
   );
 }

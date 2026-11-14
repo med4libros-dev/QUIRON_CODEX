@@ -24,6 +24,8 @@ export interface Card {
   reps: number;
   lapses: number;
   lastReview?: string;
+  /** «Me lo preguntaron». */
+  asked?: boolean;
 }
 
 /** Calcula el siguiente repaso. Devuelve los campos a actualizar. */
@@ -74,4 +76,6 @@ export const useCards = createStore<CardsState>(
   { key: 'cards', storage: 'idb', pick: ({ cards }) => ({ cards }) },
 );
 
-export const dueCards = (cards: Card[], today = todayKey()) => cards.filter((c) => c.due <= today).sort((a, b) => a.due.localeCompare(b.due));
+/** Vencidas; las marcadas «me lo preguntaron» van primero. */
+export const dueCards = (cards: Card[], today = todayKey()) =>
+  cards.filter((c) => c.due <= today).sort((a, b) => Number(!!b.asked) - Number(!!a.asked) || a.due.localeCompare(b.due));

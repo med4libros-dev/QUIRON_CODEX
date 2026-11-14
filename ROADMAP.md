@@ -61,6 +61,20 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - **Escuchar**: lectura en voz alta de perlas y notas con las voces en español del sistema, sin internet.
 - **Fármacos por peso**: fichas que capturas de la GPC (mg/kg por dosis o por día, presentación, máximos); la app calcula mg y mL y avisa/ajusta si se rebasa tu máximo.
 
+### v0.5 · 19 mejoras del internado ✅ (entregada, noviembre 2026)
+- **Recordatorios** del sistema (plugin de notificaciones de Tauri; API Notification en navegador; aviso interno como respaldo) mientras la app está abierta.
+- **Bitácora**: procedimientos por rotación con conteo y meta, casos de todas las rotaciones, diario de reflexión privado.
+- **Ensayo del pase de visita** desde la tarjeta del Turno (guion solo con lo capturado + cronómetro).
+- **Mnemotecnias con IA** para temas débiles; **preguntas desde subrayados**; **diagrama del algoritmo** desde la GPC, editable y pegado en el lienzo.
+- **Resumen semanal** (domingo) exportable a PDF; **fármaco del día** de tus fichas.
+- **Respaldo cifrado** (AES-GCM 256 + PBKDF2 250 000 iteraciones; contraseña solo en memoria; respaldo automático en pausa si está bloqueado).
+- **Seguimiento de lectura** por página (8 s = leída) y **páginas clave**; **comparador** de dos guías con scroll proporcional.
+- **Plantillas por especialidad** (CG, PED, GO) y **detector de huecos** en notas.
+- **Modo noche** (velo ámbar sin azul, automático por horario).
+- **Signos vitales por edad** capturados por el usuario; Turno marca fuera de rango.
+- **Mapa de GPC** por especialidad (sin GPC / adjunta / leyendo / leída).
+- **«Me lo preguntaron»** en preguntas, perlas y flashcards como repaso prioritario.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

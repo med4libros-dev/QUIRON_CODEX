@@ -12,6 +12,10 @@ export interface LibraryState {
   inks: Record<string, Stroke[]>;
   stickies: Record<string, Sticky[]>;
   bookmarks: Record<string, Bookmark[]>;
+  /** Páginas leídas por PDF (te quedaste ≥ 8 s en ellas). */
+  read: Record<string, number[]>;
+  markRead: (docId: string, page: number) => void;
+  setBookmarkKind: (docId: string, id: string, kind: Bookmark['kind']) => void;
   /** Petición de navegación al visor (no se guarda). */
   nav: { docId: string; page: number; n: number } | null;
   /** Historial para deshacer anotaciones del PDF (no se guarda). */
@@ -61,6 +65,15 @@ export const useLibrary = createStore<LibraryState>(
       inks: {},
       stickies: {},
       bookmarks: {},
+      read: {},
+      markRead: (docId, page) =>
+        set((s) => {
+          const cur = s.read[docId] ?? [];
+          if (cur.includes(page)) return {};
+          return { read: { ...s.read, [docId]: [...cur, page] } };
+        }),
+      setBookmarkKind: (docId, id, kind) =>
+        set((s) => ({ bookmarks: { ...s.bookmarks, [docId]: (s.bookmarks[docId] ?? []).map((b) => (b.id === id ? { ...b, kind } : b)) } })),
       nav: null,
       history: [],
 
@@ -99,7 +112,9 @@ export const useLibrary = createStore<LibraryState>(
           delete stickies[id];
           const bookmarks = { ...s.bookmarks };
           delete bookmarks[id];
-          return { docs: s.docs.filter((d) => d.id !== id), highlights, inks, stickies, bookmarks, history: s.history.filter((h) => h.docId !== id) };
+          const read = { ...s.read };
+          delete read[id];
+          return { docs: s.docs.filter((d) => d.id !== id), highlights, inks, stickies, bookmarks, read, history: s.history.filter((h) => h.docId !== id) };
         });
       },
 
@@ -195,6 +210,6 @@ export const useLibrary = createStore<LibraryState>(
   {
     key: 'library',
     storage: 'idb',
-    pick: ({ docs, highlights, inks, stickies, bookmarks }) => ({ docs, highlights, inks, stickies, bookmarks }),
+    pick: ({ docs, highlights, inks, stickies, bookmarks, read }) => ({ docs, highlights, inks, stickies, bookmarks, read }),
   },
 );

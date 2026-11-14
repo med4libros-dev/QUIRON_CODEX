@@ -3,6 +3,7 @@ import { FilePick } from '../../components/FilePick';
 import { Icon, type IconName } from '../../components/Icon';
 import { PenControls } from '../../components/PenControls';
 import { useLibrary } from '../../store/library';
+import { useUI } from '../../store/ui';
 import { useSettings } from '../../store/settings';
 import { STICKY_COLORS, useTools } from '../../store/tools';
 import { HIGHLIGHT_META, HIGHLIGHT_ORDER, type DocMeta } from '../../types';
@@ -59,6 +60,17 @@ export function PdfWorkspace() {
 
   const currentPage = useRef(1);
   currentPage.current = page;
+  const readCount = useLibrary((s) => (activeDocId ? s.read[activeDocId]?.length ?? 0 : 0));
+  const hlCount = useLibrary((s) => (activeDocId ? s.highlights[activeDocId]?.length ?? 0 : 0));
+
+  // Seguimiento de lectura: una página cuenta como leída tras 8 s en ella.
+  useEffect(() => {
+    if (!doc) return;
+    const id = doc.id;
+    const p = page;
+    const t = setTimeout(() => useLibrary.getState().markRead(id, p), 8000);
+    return () => clearTimeout(t);
+  }, [doc?.id, page]);
 
   useEffect(() => {
     setPage(doc?.lastPage ?? 1);
@@ -221,6 +233,19 @@ export function PdfWorkspace() {
               />
               <span className="muted small tabular">/ {doc.pageCount || '…'}</span>
             </div>
+            {doc.pageCount > 0 && (
+              <span className="read-chip small tabular" title={`${readCount} de ${doc.pageCount} páginas leídas (una página cuenta tras 8 s en ella)`}>
+                <Icon name="eye" size={14} /> {Math.min(100, Math.round((readCount / doc.pageCount) * 100))}%
+              </span>
+            )}
+            <button
+              className="icon-btn"
+              onClick={() => useUI.getState().setHlQuiz(doc.id)}
+              disabled={!hlCount}
+              title={hlCount ? 'Preguntas rápidas con IA desde tus subrayados' : 'Subraya o resalta texto para generar preguntas'}
+            >
+              <Icon name="question" />
+            </button>
           </>
         )}
       </div>

@@ -167,6 +167,27 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - Los ids de refuerzo son `tema:w<lunes>`: estables en la semana; si se marcan, no reaparecen.
 - La generación usa la misma API key de la síntesis; el material va con marcadores `[p. N]` y la respuesta se valida (`sanitizeQuestion`) antes de entrar al banco.
 
+## v0.5 (módulos nuevos)
+
+| Módulo | Archivo | Persistencia |
+|---|---|---|
+| Bitácora (procedimientos, diario) | `src/logbook/store.ts`, `LogbookView.tsx` | IndexedDB `kv:logbook` |
+| Signos vitales por edad | `src/vitals/store.ts`, `VitalsTable.tsx`; `VitalsRow` en `WardView.tsx` | IndexedDB `kv:vitals`; signos del paciente en `qc:ward` |
+| Ensayo del pase de visita | `src/ward/RoundsModal.tsx` (`roundsScript` puro) | — |
+| Recordatorios | `src/lib/notify.ts`, `lib/reminders.ts`; plugin `tauri-plugin-notification` | Avisos ya enviados en `qc:remindedDaily`, `qc:shiftWarned`, `WardTask.notified` |
+| Modo noche | `nightActive` en `App.tsx`, `[data-night]` + `.night-veil` en CSS | `alq:settings` (`night`, `nightFrom`, `nightTo`) |
+| Respaldo cifrado | `encryptText` / `decryptIfNeeded` en `lib/backup.ts` | Bandera `alq:backupEnc` (no entra al respaldo); contraseña solo en memoria |
+| IA (mnemotecnias, diagrama, subrayados) | `src/ai/features.ts`, `MnemoGen.tsx`, `DiagramModal.tsx`, `HlQuizModal.tsx`; `lib/claude.ts` | Resultados a `hy`, `exam` o tinta del lienzo (`ink:<nota>:img`) |
+| Lectura y páginas clave | `markRead` / `setBookmarkKind` en `store/library.ts` | `kv:library` (`read`, `Bookmark.kind`) |
+| Comparador | `src/features/pdf/CompareView.tsx` (`PdfViewer persistPage={false}`) | — |
+| Plantillas y huecos | `TEMPLATE_SECTIONS` en `openLesson.ts`, `lib/completeness.ts` | — |
+| Inicio | `src/home/HomeCards.tsx` (fármaco del día, resumen semanal) | Derivado |
+| Mapa de GPC | `GpcMap` en `Temario.tsx` | Derivado |
+| «Me lo preguntaron» | `asked?` en `Question`, `HyItem`, `Card`; `components/AskedToggle.tsx` | En cada store |
+
+- El cifrado envuelve todo el JSON del respaldo: `{app, enc:1, kdf, iter, salt, iv, data}`. Si el cifrado está activo y bloqueado, ni la descarga ni la carpeta escriben nada en claro.
+- Todo lo que genera la IA usa solo el material del usuario (GPC con `[p. N]`, apuntes o subrayados) y se valida antes de guardarse; nada entra sin que el usuario lo elija o lo revise.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Icon } from '../../components/Icon';
 import { pdfRefHtml, useBridge } from '../../store/bridge';
 import { useLibrary } from '../../store/library';
-import type { Bookmark } from '../../types';
+import { KEY_PAGE_LABEL, type Bookmark, type KeyPageKind } from '../../types';
 
 const EMPTY: Bookmark[] = [];
 
@@ -13,6 +13,7 @@ export function BookmarksMenu({ docId, docName, currentPage, onClose }: { docId:
   const rename = useLibrary((s) => s.renameBookmark);
   const remove = useLibrary((s) => s.removeBookmark);
   const toggle = useLibrary((s) => s.toggleBookmark);
+  const setKind = useLibrary((s) => s.setBookmarkKind);
   const insert = useBridge((s) => s.insertIntoNote);
   const box = useRef<HTMLDivElement>(null);
   const marked = bookmarks.some((b) => b.page === currentPage);
@@ -65,6 +66,20 @@ export function BookmarksMenu({ docId, docName, currentPage, onClose }: { docId:
                 onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                 aria-label={`Nombre del marcador de la página ${b.page}`}
               />
+              <select
+                className={`bm-kind${b.kind ? ' on' : ''}`}
+                value={b.kind ?? ''}
+                onChange={(e) => setKind(docId, b.id, (e.target.value || undefined) as KeyPageKind | undefined)}
+                aria-label={`Tipo de página clave de la p. ${b.page}`}
+                title="Página clave: algoritmo, tabla, dosis o criterios"
+              >
+                <option value="">—</option>
+                {(Object.keys(KEY_PAGE_LABEL) as KeyPageKind[]).map((k) => (
+                  <option key={k} value={k}>
+                    {KEY_PAGE_LABEL[k]}
+                  </option>
+                ))}
+              </select>
               <button className="icon-btn xs" onClick={() => insert(pdfRefHtml(docId, docName, b.page, b.label))} title="Insertar en la nota (enlace a esta página)">
                 <Icon name="insert" size={15} />
               </button>

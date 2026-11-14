@@ -73,6 +73,19 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 - **Escuchar** (bocina) en Perlas HY y en cada nota.
 - **Guardia → Fármacos por peso**: crea fichas con la dosis de tu GPC y calcula por kg.
 
+### v0.5 (19 mejoras)
+- **Bitácora** (barra lateral): procedimientos con conteo observé/asistí/realicé y meta por procedimiento, todos tus casos y un **diario** privado del internado (una entrada por día).
+- **Turno**: pendientes con hora, signos vitales marcados ↑/↓ según **tu** tabla por edad (Guardia → Signos vitales) y **Ensayo** del pase de visita con cronómetro de 60–120 s.
+- **Ajustes** (barra lateral): **recordatorios** de Windows (flashcards y refuerzo del día, pendientes con hora, 30 min antes del fin del turno) y **modo noche** (sin luz azul, automático por horario).
+- **Respaldo → Cifrado con contraseña** (AES-256). La contraseña no se guarda: si la olvidas, el respaldo no se recupera.
+- **PDF**: % leído y «retomar p. X»; marcadores como página clave (algoritmo, tabla, dosis, criterios); botón **?** para preguntas rápidas con IA desde tus subrayados; **Comparar lado a lado** dos guías del tema con scroll sincronizado.
+- **Ficha del tema**: **Diagrama** del algoritmo con IA desde tu GPC (editable y se pega en el lienzo), % completo de tu nota.
+- **Notas**: plantillas por especialidad (Cirugía, Pediatría, GO) y detector de apartados vacíos (chip «% · n/m»).
+- **GPC → Mapa GPC**: qué guías tienes, cuáles has leído y cuáles faltan por especialidad.
+- **Inicio**: fármaco del día (de tus fichas), resumen de la semana exportable a PDF, «Repasar preguntadas».
+- **«Me lo preguntaron»** (botón con micrófono) en preguntas, perlas y flashcards: se repasan primero y tienen su propio simulacro y filtro.
+- **Perlas HY → Mnemotecnias con IA** para tus temas débiles: eliges cuáles se guardan.
+
 Roadmap del proyecto: [ROADMAP.md](ROADMAP.md).
 
 ## Uso rápido

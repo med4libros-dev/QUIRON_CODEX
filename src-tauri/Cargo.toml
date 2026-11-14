@@ -1,6 +1,6 @@
 [package]
 name = "quiron-codex"
-version = "0.4.0"
+version = "0.5.0"
 description = "Quirón Codex: estación de estudio para el internado médico y el ENARM"
 authors = ["Alexander Carrillo de la Cruz"]
 edition = "2021"
@@ -15,6 +15,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
+tauri-plugin-notification = "2"
 
 # Binario pequeño y rápido (importante en la Surface).
 [profile.release]

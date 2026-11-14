@@ -7,7 +7,9 @@ import { privacyWarnings, useTopicStore } from '../internship/topicStore';
 import { todayKey } from '../lib/date';
 import { prefillSoap } from '../soap/SoapModal';
 import { useUI } from '../store/ui';
-import { TASK_KINDS, purgeExpiredShift, useWard, type TaskKind, type WardPatient } from './store';
+import { TASK_KINDS, purgeExpiredShift, useWard, type TaskKind, type WardPatient, type WardVitals } from './store';
+import { VITAL_LABEL, checkVital, groupFor, parseAgeMonths, useVitals, type VitalKey } from '../vitals/store';
+import { RoundsModal } from './RoundsModal';
 
 const fmtLeft = (ms: number) => {
   if (ms <= 0) return 'terminado';
@@ -80,6 +82,7 @@ export function WardView() {
         <div className="ts-empty muted">Agrega a tus pacientes al empezar la guardia; al terminar puedes pasar los interesantes a tu bitácora de casos.</div>
       )}
       {ending && <EndShift onClose={() => setEnding(false)} />}
+      <RoundsModal />
     </div>
   );
 }
@@ -92,6 +95,7 @@ function PatientCard({ p }: { p: WardPatient }) {
   const removeTask = useWard((s) => s.removeTask);
   const [task, setTask] = useState('');
   const [kind, setKind] = useState<TaskKind>('lab');
+  const [at, setAt] = useState('');
   const u = (patch: Partial<WardPatient>) => update(p.id, patch);
   const warnings = privacyWarnings(`${p.dx} ${p.note}`).filter((w) => !/cama/i.test(w));
   const open = p.tasks.filter((t) => !t.done).length;
@@ -112,6 +116,7 @@ function PatientCard({ p }: { p: WardPatient }) {
           <Icon name="x" size={14} />
         </button>
       </div>
+      <VitalsRow p={p} />
       <TopicSelect value={p.topicId} onChange={(v) => u({ topicId: v })} className="select" />
       <input className="input" value={p.dx} onChange={(e) => u({ dx: e.target.value })} placeholder="Diagnóstico / motivo (texto libre)" aria-label="Diagnóstico" />
       <ul className="task-list">
@@ -121,6 +126,7 @@ function PatientCard({ p }: { p: WardPatient }) {
               <input type="checkbox" checked={t.done} onChange={() => toggleTask(p.id, t.id)} />
               <span className={`task-kind k-${t.kind}`}>{TASK_KINDS.find((k) => k.id === t.kind)?.label}</span>
               <span className="grow">{t.text}</span>
+              {t.at && <span className={`task-at${t.notified && !t.done ? ' due' : ''}`}>{t.at}</span>}
             </label>
             <button className="icon-btn xs" onClick={() => removeTask(p.id, t.id)} aria-label="Quitar pendiente">
               <Icon name="x" size={12} />
@@ -133,8 +139,9 @@ function PatientCard({ p }: { p: WardPatient }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!task.trim()) return;
-          addTask(p.id, task.trim(), kind);
+          addTask(p.id, task.trim(), kind, at || undefined);
           setTask('');
+          setAt('');
         }}
       >
         <select className="select xs" value={kind} onChange={(e) => setKind(e.target.value as TaskKind)} aria-label="Tipo de pendiente">
@@ -145,6 +152,7 @@ function PatientCard({ p }: { p: WardPatient }) {
           ))}
         </select>
         <input className="input sm grow" value={task} onChange={(e) => setTask(e.target.value)} placeholder="Pendiente (p. ej. «BH y QS de control»)" aria-label="Nuevo pendiente" />
+        <input className="input sm task-time" type="time" value={at} onChange={(e) => setAt(e.target.value)} aria-label="Hora del recordatorio (opcional)" title="Hora para el recordatorio (opcional)" />
         <button className="btn sm" type="submit" disabled={!task.trim()}>
           +
         </button>
@@ -165,6 +173,9 @@ function PatientCard({ p }: { p: WardPatient }) {
         >
           <Icon name="clipboard" size={14} /> Nota SOAP
         </button>
+        <button className="btn ghost sm" onClick={() => useUI.getState().setRounds(p.id)} title="Ensaya cómo presentarías a este paciente en el pase de visita">
+          <Icon name="mic" size={14} /> Ensayo
+        </button>
         <button className="btn ghost sm" onClick={() => useUI.getState().openDrugs(Number(p.weight.replace(',', '.')) || null)}>
           <Icon name="pill" size={14} /> Dosis
         </button>
@@ -173,6 +184,34 @@ function PatientCard({ p }: { p: WardPatient }) {
         </button>
       </div>
     </article>
+  );
+}
+
+const VKEYS: VitalKey[] = ['fc', 'fr', 'tas'];
+const VSHORT: Record<VitalKey, string> = { fc: 'FC', fr: 'FR', tas: 'TAS' };
+
+/** Signos vitales del paciente, marcados si salen del rango que tú capturaste para su edad. */
+function VitalsRow({ p }: { p: WardPatient }) {
+  const groups = useVitals((s) => s.groups);
+  const update = useWard((s) => s.updatePatient);
+  const v: WardVitals = p.vitals ?? { fc: '', fr: '', tas: '' };
+  const g = groupFor(groups, parseAgeMonths(p.age));
+  return (
+    <div className="vitals-row" title={g ? `Rangos de «${g.label}» (Guardia → Signos vitales)` : 'Captura la edad para comparar con tu tabla de signos vitales'}>
+      {VKEYS.map((k) => {
+        const n = v[k].trim() ? Number(v[k].replace(',', '.')) : null;
+        const st = checkVital(g, k, n);
+        return (
+          <label key={k} className={`vital${st === 'low' || st === 'high' ? ' out' : st === 'ok' ? ' in' : ''}`}>
+            <span>{VSHORT[k]}</span>
+            <input className="input xs num" inputMode="numeric" value={v[k]} onChange={(e) => update(p.id, { vitals: { ...v, [k]: e.target.value } })} aria-label={VITAL_LABEL[k]} />
+            {st === 'low' && <i aria-label="bajo">↓</i>}
+            {st === 'high' && <i aria-label="alto">↑</i>}
+          </label>
+        );
+      })}
+      {g && <span className="muted xsmall">{g.label}</span>}
+    </div>
   );
 }
 

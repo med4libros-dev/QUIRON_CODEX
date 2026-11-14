@@ -25,6 +25,55 @@ import { CalculatorCard } from './CalculatorCard';
 import { HyEditor, HyList } from '../../hy/HyView';
 import { useHy } from '../../hy/store';
 import { setSoapTopic } from '../../soap/SoapModal';
+import { useNotes } from '../../store/notes';
+import { noteCompleteness } from '../../lib/completeness';
+import { KEY_PAGE_LABEL, type Bookmark } from '../../types';
+
+const EMPTY_BM: Bookmark[] = [];
+
+/** % completo de la nota del tema (si ya existe). */
+function TopicCompleteness({ topicId }: { topicId: string }) {
+  const t = TOPIC[topicId];
+  const html = useNotes((s) => {
+    const book = s.notebooks.find((b) => b.name === SPECIALTY[t.specialty].name);
+    return book ? s.notes.find((n) => n.notebookId === book.id && n.title === t.title)?.html ?? null : null;
+  });
+  const c = useMemo(() => (html ? noteCompleteness(html) : null), [html]);
+  if (!c) return null;
+  return (
+    <span className={`gap-chip ${c.pct >= 100 ? 'ok' : c.pct >= 50 ? 'mid' : 'low'}`} title={c.empty.length ? `Apartados vacíos en tu nota: ${c.empty.join(', ')}` : 'Nota completa'}>
+      Nota {c.pct}%
+    </span>
+  );
+}
+
+/** Lectura de un PDF: % y página para retomar. */
+function ReadInfo({ docId, pageCount, lastPage }: { docId: string; pageCount: number; lastPage: number }) {
+  const read = useLibrary((s) => s.read[docId]?.length ?? 0);
+  const keyPages = (useLibrary((s) => s.bookmarks[docId]) ?? EMPTY_BM).filter((b) => b.kind);
+  return (
+    <div className="att-read">
+      {pageCount > 0 && (
+        <span className="small muted tabular">
+          {Math.min(100, Math.round((read / pageCount) * 100))}% leído
+          {lastPage > 1 && (
+            <>
+              {' · '}
+              <button className="linkish" onClick={() => (useUI.getState().closeTopic(), openPdfPage(docId, lastPage))}>
+                retomar p. {lastPage}
+              </button>
+            </>
+          )}
+        </span>
+      )}
+      {keyPages.map((b) => (
+        <button key={b.id} className={`key-chip k-${b.kind}`} onClick={() => (useUI.getState().closeTopic(), openPdfPage(docId, b.page))} title={b.label || `Página ${b.page}`}>
+          {KEY_PAGE_LABEL[b.kind!]} p. {b.page}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 const TABS: { id: TopicTab; label: string }[] = [
   { id: 'docs', label: 'Documentos' },
@@ -54,7 +103,11 @@ export function TopicSheet() {
         <div className="ts-sub">
           <span className="sp-tag">{sp.short}</span>
           <span className="muted small">{sp.name}</span>
+          <TopicCompleteness topicId={t.id} />
           <span className="spacer" />
+          <button className="btn ghost sm" onClick={() => useUI.getState().setDiagram(t.id)} title="Diagrama del tema con IA desde tu GPC (editable en el lienzo)">
+            <Icon name="flow" size={14} /> Diagrama
+          </button>
           <button
             className="btn ghost sm"
             onClick={() => {
@@ -130,6 +183,7 @@ function DocsTab({ topicId }: { topicId: string }) {
                 <span className="att-badge">{a.kind === 'otro' ? 'PDF' : a.kind}</span>
                 <div className="att-body">
                   <div className="ellipsis">{d?.name ?? 'Archivo eliminado'}</div>
+                  {d && <ReadInfo docId={d.id} pageCount={d.pageCount} lastPage={d.lastPage} />}
                   <select className="select xs" value={a.kind} onChange={(e) => setKind(topicId, a.id, e.target.value as AttachmentKind)} aria-label="Tipo de documento">
                     {(Object.keys(KIND_LABEL) as AttachmentKind[]).map((k) => (
                       <option key={k} value={k}>
@@ -159,6 +213,15 @@ function DocsTab({ topicId }: { topicId: string }) {
       ) : (
         <div className="ts-empty muted">Este tema aún no tiene documentos.</div>
       )}
+      {(() => {
+        const alive = atts.filter((a) => docs.some((d) => d.id === a.docId));
+        if (alive.length < 2) return null;
+        return (
+          <button className="btn sm" onClick={() => useUI.getState().setCompare({ a: alive[0].docId, b: alive[1].docId })} title="Abrir dos guías lado a lado con scroll sincronizado">
+            <Icon name="columns" size={15} /> Comparar lado a lado
+          </button>
+        );
+      })()}
       <div className="field-row">
         <FilePick onFiles={(f) => void upload(f)} className="btn primary sm" disabled={busy}>
           <Icon name="upload" size={15} /> {busy ? 'Subiendo…' : 'Subir PDF(s)'}

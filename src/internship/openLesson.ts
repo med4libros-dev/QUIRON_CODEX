@@ -6,9 +6,20 @@ import { SPECIALTY, TOPIC } from './curriculum';
 import { useTopicStore } from './topicStore';
 import type { Topic } from './types';
 
-/** Plantilla de apuntes para una lección (estructura clásica de estudio clínico). */
+/**
+ * Secciones de la plantilla por especialidad. Solo títulos (sin contenido clínico precargado):
+ * tú los llenas desde tu GPC. Las que no aplican se pueden borrar.
+ */
+export const TEMPLATE_SECTIONS: Record<string, string[]> = {
+  base: ['Definición y epidemiología', 'Fisiopatología', 'Cuadro clínico', 'Diagnóstico', 'Tratamiento', 'Complicaciones y pronóstico'],
+  cg: ['Definición y epidemiología', 'Anatomía quirúrgica relevante', 'Cuadro clínico', 'Diagnóstico (laboratorio e imagen)', 'Escalas y clasificación', 'Indicación quirúrgica y técnica', 'Manejo preoperatorio', 'Manejo postoperatorio', 'Complicaciones'],
+  ped: ['Definición y epidemiología', 'Grupo de edad y factores de riesgo', 'Cuadro clínico por edad', 'Diagnóstico', 'Tratamiento (dosis por kg)', 'Hidratación y nutrición', 'Signos de alarma para los padres', 'Criterios de referencia', 'Prevención y vacunación'],
+  go: ['Definición y epidemiología', 'Factores de riesgo', 'Cuadro clínico', 'Diagnóstico', 'Manejo según semanas de gestación', 'Vía de resolución del embarazo', 'Tratamiento', 'Complicaciones maternas y fetales', 'Seguimiento y puerperio'],
+};
+
+/** Plantilla de apuntes para una lección (estructura clásica de estudio clínico, adaptada a la especialidad). */
 function lessonTemplate(t: Topic): string {
-  const sections = ['Definición y epidemiología', 'Fisiopatología', 'Cuadro clínico', 'Diagnóstico', 'Tratamiento', 'Complicaciones y pronóstico'];
+  const sections = TEMPLATE_SECTIONS[t.specialty] ?? TEMPLATE_SECTIONS.base;
   return (
     `<p><em>${escapeHtml(SPECIALTY[t.specialty].name)} · Lección del internado</em></p>` +
     sections.map((s) => `<h3>${s}</h3><p><br></p>`).join('') +

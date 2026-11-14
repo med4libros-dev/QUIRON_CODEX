@@ -1,3 +1,4 @@
+import { AskedToggle } from '../components/AskedToggle';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
@@ -161,6 +162,8 @@ function ReviewSession({ ids, title, minutes, onClose }: { ids: string[]; title:
           <span className="chip">{reviewed} repasadas</span>
           <span className="chip">{queue.length} por ver</span>
           {minutes && <span className={`chip timer${left < 60 ? ' warn' : ''}`}>⏱ {mm}:{ss}</span>}
+          <span className="spacer" />
+          {card && !timeUp && <AskedToggle on={!!card.asked} onToggle={() => useCards.getState().updateCard(card.id, { asked: !card.asked })} label />}
         </div>
         {timeUp || !card ? (
           <div className="review-end">

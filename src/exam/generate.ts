@@ -5,6 +5,7 @@ import { pagesOf } from '../lib/pageIndex';
 import { useLibrary } from '../store/library';
 import { useNotes } from '../store/notes';
 import { sanitizeQuestion, type Question } from './store';
+import { callClaude, parseJson } from '../lib/claude';
 
 /**
  * Generador de casos clínicos tipo ENARM a partir de TU material:
@@ -21,9 +22,9 @@ Redacta casos clínicos con este formato estricto:
 Reglas: usa EXCLUSIVAMENTE el material proporcionado; no inventes dosis, cifras ni criterios que no estén en él. Varía el tipo de pregunta. Escribe en español de México.
 Responde SOLO con JSON válido: {"questions":[...]} sin texto adicional ni bloques de código.`;
 
-const MAX_CHARS = 60_000;
+export const MAX_CHARS = 60_000;
 
-async function materialFor(topicId: string): Promise<{ text: string; docId: string | null; docName: string }> {
+export async function materialFor(topicId: string): Promise<{ text: string; docId: string | null; docName: string }> {
   const docId = preferredDoc(topicId, 'GER');
   if (docId) {
     const pages = await pagesOf(docId);
@@ -40,49 +41,21 @@ async function materialFor(topicId: string): Promise<{ text: string; docId: stri
   return { text: text.slice(0, MAX_CHARS), docId: null, docName: 'Apuntes' };
 }
 
-function parseJson(raw: string): unknown {
-  const s = raw.replace(/^```(?:json)?\s*|\s*```$/g, '');
-  const a = s.indexOf('{');
-  const b = s.lastIndexOf('}');
-  if (a < 0 || b <= a) throw new Error('La respuesta no traía JSON.');
-  return JSON.parse(s.slice(a, b + 1));
-}
-
 export async function generateQuestions(
   topicId: string,
   count: number,
   apiKey: string,
   model: string,
 ): Promise<Omit<Question, 'id' | 'createdAt'>[]> {
-  if (!apiKey.trim()) throw new Error('Agrega tu API key de Anthropic (Estudio → Síntesis → Motor de IA) para generar casos.');
   const t = TOPIC[topicId];
   const mat = await materialFor(topicId);
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey.trim(),
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 8000,
-      system: SYSTEM,
-      messages: [
-        {
-          role: 'user',
-          content: `Tema: ${t.title}\nGenera ${count} casos clínicos distintos.\n\n## Material (${mat.docName})\n${mat.text}`,
-        },
-      ],
-    }),
+  const text = await callClaude({
+    apiKey,
+    model,
+    system: SYSTEM,
+    maxTokens: 8000,
+    user: `Tema: ${t.title}\nGenera ${count} casos clínicos distintos.\n\n## Material (${mat.docName})\n${mat.text}`,
   });
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new Error(`La API respondió ${res.status}. ${detail.slice(0, 200)}`);
-  }
-  const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-  const text = (data.content ?? []).filter((c) => c.type === 'text').map((c) => c.text ?? '').join('');
   const parsed = parseJson(text) as { questions?: unknown[] };
   const out: Omit<Question, 'id' | 'createdAt'>[] = [];
   for (const raw of parsed.questions ?? []) {

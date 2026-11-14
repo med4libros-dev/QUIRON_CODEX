@@ -11,6 +11,8 @@ import { useSettings } from '../store/settings';
 import { useUI } from '../store/ui';
 import { HY_KINDS, useHy, type HyItem, type HyKind } from './store';
 import { speak, ttsSupported } from '../lib/tts';
+import { AskedToggle } from '../components/AskedToggle';
+import { MnemoGen } from '../ai/MnemoGen';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const KIND_LABEL = Object.fromEntries(HY_KINDS.map((k) => [k.id, k.label])) as Record<HyKind, string>;
@@ -23,6 +25,7 @@ export function HyView() {
   const [kind, setKind] = useState<HyKind | ''>('');
   const [sp, setSp] = useState<SpecialtyId | ''>('');
   const [starOnly, setStarOnly] = useState(false);
+  const [askedOnly, setAskedOnly] = useState(false);
   const [quiz, setQuiz] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -33,9 +36,10 @@ export function HyView() {
         (!kind || i.kind === kind) &&
         (!sp || (i.topicId && TOPIC[i.topicId]?.specialty === sp)) &&
         (!starOnly || i.starred) &&
+        (!askedOnly || i.asked) &&
         (!n || norm(`${i.title} ${i.text} ${i.explain} ${i.topicId ? TOPIC[i.topicId]?.title ?? '' : ''}`).includes(n)),
     );
-  }, [items, q, kind, sp, starOnly]);
+  }, [items, q, kind, sp, starOnly, askedOnly]);
 
   const doImport = async (f: File) => {
     try {
@@ -88,6 +92,7 @@ export function HyView() {
       {quiz && <QuickQuiz items={list} onClose={() => setQuiz(false)} />}
 
       <HyEditor />
+      <MnemoGen />
 
       <div className="field-row tight hy-filters">
         <input className="input grow" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar (p. ej. «colangitis», «Charcot», «embarazo»)…" aria-label="Buscar perlas" />
@@ -109,6 +114,9 @@ export function HyView() {
         </select>
         <button className={`btn ghost sm${starOnly ? ' active' : ''}`} onClick={() => setStarOnly((v) => !v)} aria-pressed={starOnly}>
           ★ Favoritas
+        </button>
+        <button className={`btn ghost sm${askedOnly ? ' active' : ''}`} onClick={() => setAskedOnly((v) => !v)} aria-pressed={askedOnly} title="Solo lo que te preguntaron">
+          <Icon name="mic" size={13} /> Preguntadas
         </button>
         <span className="muted small tabular">{list.length}</span>
       </div>
@@ -262,6 +270,7 @@ function HyRow({ item }: { item: HyItem }) {
         </div>
       </div>
       <div className="hy-actions">
+        <AskedToggle on={!!item.asked} onToggle={() => useHy.setState((st) => ({ items: st.items.map((x) => (x.id === item.id ? { ...x, asked: !x.asked } : x)) }))} />
         <button className="icon-btn xs" onClick={toNote} title="Enviar a la nota del tema" aria-label="Enviar a la nota">
           <Icon name="text" size={14} />
         </button>
@@ -296,7 +305,8 @@ function HyRow({ item }: { item: HyItem }) {
 
 /** Tarjeta al azar: ves el nombre (o el tema) y tratas de recordar la perla. */
 function QuickQuiz({ items, onClose }: { items: HyItem[]; onClose: () => void }) {
-  const [order] = useState(() => [...items].sort(() => Math.random() - 0.5));
+  // Lo que te preguntaron sale primero.
+  const [order] = useState(() => [...items].map((x) => ({ x, k: Math.random() - (x.asked ? 1 : 0) })).sort((a, b) => a.k - b.k).map((o) => o.x));
   const [i, setI] = useState(0);
   const [shown, setShown] = useState(false);
   const it = order[i % order.length];

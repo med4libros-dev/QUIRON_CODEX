@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon, type IconName } from '../Icon';
 import emblem from '../../assets/quiron-emblem.png';
 import { BackupDialog } from '../../features/backup/BackupDialog';
+import { PrefsDialog } from '../../features/prefs/PrefsDialog';
 import { folderStatus } from '../../lib/backup';
 import { useSettings } from '../../store/settings';
 import { useUI } from '../../store/ui';
@@ -16,6 +17,7 @@ const ITEMS: { view: View; icon: IconName; label: string }[] = [
   { view: 'hy', icon: 'star', label: 'Perlas HY' },
   { view: 'exam', icon: 'target', label: 'Simulacros' },
   { view: 'ward', icon: 'bed', label: 'Turno' },
+  { view: 'logbook', icon: 'journal', label: 'Bitácora' },
 ];
 
 const NEXT: Record<Theme, Theme> = { light: 'dark', dark: 'system', system: 'light' };
@@ -30,6 +32,7 @@ export function NavRail() {
   const look = useSettings((s) => s.look);
   const setLook = useSettings((s) => s.setLook);
   const [backupOpen, setBackupOpen] = useState(false);
+  const [prefsOpen, setPrefsOpen] = useState(false);
   const [needsReconnect, setNeedsReconnect] = useState(false);
 
   useEffect(() => {
@@ -76,6 +79,10 @@ export function NavRail() {
         <span>Respaldo</span>
         {needsReconnect && <i className="rail-dot" />}
       </button>
+      <button className="rail-btn" onClick={() => setPrefsOpen(true)} title="Ajustes: modo noche y recordatorios">
+        <Icon name="bell" size={20} />
+        <span>Ajustes</span>
+      </button>
       <button
         className="rail-btn"
         onClick={() => setTheme(NEXT[theme])}
@@ -93,6 +100,7 @@ export function NavRail() {
         <span>{look === 'glass' ? 'Cristal' : 'Mate'}</span>
       </button>
       {backupOpen && <BackupDialog onClose={() => setBackupOpen(false)} />}
+      {prefsOpen && <PrefsDialog onClose={() => setPrefsOpen(false)} />}
     </nav>
   );
 }

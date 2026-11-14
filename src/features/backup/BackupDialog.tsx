@@ -4,6 +4,10 @@ import { Modal } from '../../components/Modal';
 import {
   chooseFolder,
   downloadBackup,
+  encryptionOn,
+  encryptionUnlocked,
+  setEncryption,
+  unlockEncryption,
   folderStatus,
   folderSupported,
   forgetFolder,
@@ -27,6 +31,11 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [encOn, setEncOn] = useState(encryptionOn());
+  const [unlocked, setUnlocked] = useState(encryptionUnlocked());
+  const pwArg = () => pw || undefined;
 
   const refresh = async () => {
     try {
@@ -107,7 +116,7 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
                   disabled={busy}
                   onClick={() =>
                     run(async () => {
-                      const when = await loadFromFolder();
+                      const when = await loadFromFolder(pwArg());
                       setTimeout(() => location.reload(), 900);
                       return `(respaldo del ${fmtDate(when)}). Recargando…`;
                     }, 'Progreso traído de la carpeta')
@@ -125,6 +134,67 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
               <Icon name="folder" size={15} /> Elegir carpeta de respaldo
             </button>
           )}
+        </section>
+
+        <section className="enc-section">
+          <h4>
+            <Icon name="lock" size={15} /> Cifrado con contraseña
+          </h4>
+          <p className="muted small">
+            Cifra tus respaldos (archivo y carpeta) con AES-256. La contraseña no se guarda en ningún lado: se pide en cada sesión y
+            <b> si la olvidas, el respaldo no se puede recuperar</b>. Los PDFs sueltos de la carpeta no se cifran (son tus guías).
+          </p>
+          {encOn ? (
+            <p className="small">
+              {unlocked ? <span className="ok-text">● Cifrado activo y desbloqueado en esta sesión.</span> : <span className="warn-text">● Cifrado activo pero bloqueado: el respaldo automático está en pausa hasta que escribas la contraseña.</span>}
+            </p>
+          ) : (
+            <p className="small muted">● Sin cifrar.</p>
+          )}
+          <div className="field-row">
+            <input className="input sm" type="password" placeholder="Contraseña" value={pw} onChange={(e) => setPw(e.target.value)} aria-label="Contraseña del respaldo" />
+            {!encOn && <input className="input sm" type="password" placeholder="Repítela" value={pw2} onChange={(e) => setPw2(e.target.value)} aria-label="Repetir contraseña" />}
+          </div>
+          <div className="field-row">
+            {!encOn ? (
+              <button
+                className="btn primary sm"
+                disabled={busy || pw.length < 8 || pw !== pw2}
+                title={pw.length < 8 ? 'Mínimo 8 caracteres' : pw !== pw2 ? 'Las contraseñas no coinciden' : ''}
+                onClick={() =>
+                  run(async () => {
+                    setEncryption(pw);
+                    setEncOn(true);
+                    setUnlocked(true);
+                    setPw2('');
+                  }, 'Cifrado activado. Los próximos respaldos irán cifrados.')
+                }
+              >
+                Activar cifrado
+              </button>
+            ) : (
+              <>
+                {!unlocked && (
+                  <button className="btn primary sm" disabled={busy || !pw} onClick={() => run(async () => { unlockEncryption(pw); setUnlocked(true); }, 'Desbloqueado para esta sesión.')}>
+                    Desbloquear
+                  </button>
+                )}
+                <button
+                  className="btn ghost sm"
+                  disabled={busy}
+                  onClick={() => {
+                    if (!confirm('¿Desactivar el cifrado? Los próximos respaldos se guardarán sin contraseña.')) return;
+                    setEncryption(null);
+                    setEncOn(false);
+                    setUnlocked(false);
+                  }}
+                >
+                  Desactivar
+                </button>
+              </>
+            )}
+          </div>
+          <p className="muted small">Para restaurar un respaldo cifrado, escribe su contraseña aquí arriba y luego usa «Restaurar archivo» o «Traer progreso».</p>
         </section>
 
         <section>
@@ -150,7 +220,7 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
                 e.target.value = '';
                 if (f)
                   void run(async () => {
-                    await restoreFromFile(f);
+                    await restoreFromFile(f, pwArg());
                     setTimeout(() => location.reload(), 900);
                     return 'Recargando…';
                   }, 'Respaldo restaurado.');

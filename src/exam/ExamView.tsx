@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
+import { AskedToggle } from '../components/AskedToggle';
 import { TopicSelect } from '../flashcards/FlashcardUI';
 import { useCards } from '../flashcards/store';
 import { SPECIALTIES, SPECIALTY, TOPIC } from '../internship/curriculum';
@@ -15,7 +16,7 @@ import { generateQuestions } from './generate';
 import { questionStats, useExam, type Question } from './store';
 
 const LETTERS = 'ABCDEF';
-type Source = 'week' | 'weak' | 'pick' | 'all';
+type Source = 'week' | 'weak' | 'pick' | 'asked' | 'all';
 
 /** Temas que estudiaste en los últimos 7 días (lecciones marcadas como hechas). */
 function topicsThisWeek(done: Record<string, string>): string[] {
@@ -43,6 +44,7 @@ export function ExamView() {
   const weak = useMemo(() => weakTopics(topicMastery(cards, questions, attempts), 8), [cards, questions, attempts]);
   const topicsFor = (s: Source) => (s === 'week' ? week : s === 'weak' ? weak : s === 'pick' ? picked : null);
   const pool = useMemo(() => {
+    if (source === 'asked') return questions.filter((q) => q.asked);
     const ts = topicsFor(source);
     return questions.filter((q) => (ts === null ? true : q.topicId !== null && ts.includes(q.topicId)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,7 +69,8 @@ export function ExamView() {
     // Prioridad: nunca vistas → falladas la última vez → el resto; luego al azar dentro de cada grupo.
     const rank = (q: Question) => {
       const s = stats.get(q.id);
-      return !s ? 0 : !s.last ? 1 : 2;
+      // «Me lo preguntaron» va primero dentro de cada grupo.
+      return (!s ? 0 : !s.last ? 1 : 2) - (q.asked ? 0.5 : 0);
     };
     const ids = [...pool]
       .map((q) => ({ q, r: rank(q), k: Math.random() }))
@@ -75,7 +78,7 @@ export function ExamView() {
       .slice(0, count)
       .map((x) => x.q.id);
     if (!ids.length) return;
-    const label = source === 'week' ? 'Lo de esta semana' : source === 'weak' ? 'Temas débiles' : source === 'pick' ? 'Temas elegidos' : 'Todo el banco';
+    const label = source === 'week' ? 'Lo de esta semana' : source === 'weak' ? 'Temas débiles' : source === 'pick' ? 'Temas elegidos' : source === 'asked' ? 'Me lo preguntaron' : 'Todo el banco';
     setRun({ ids, title: `Simulacro · ${label}`, minutes: Math.max(5, ids.length), mode });
   };
 
@@ -127,6 +130,7 @@ export function ExamView() {
                   ['week', `Lo de esta semana (${week.length})`],
                   ['weak', `Temas débiles (${weak.length})`],
                   ['pick', 'Elegir temas'],
+                  ['asked', `Me lo preguntaron (${questions.filter((q) => q.asked).length})`],
                   ['all', 'Todo el banco'],
                 ] as const
               ).map(([id, label]) => (
@@ -296,11 +300,11 @@ function Bank() {
   const remove = useExam((s) => s.removeQuestion);
   const importQuestions = useExam((s) => s.importQuestions);
   const addQuestions = useExam((s) => s.addQuestions);
-  const [filter, setFilter] = useState<'all' | 'pending'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'asked'>('all');
   const [topic, setTopic] = useState<string | null>(null);
   const [editing, setEditing] = useState<Question | 'new' | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const list = questions.filter((q) => (filter === 'all' || !q.reviewed) && (!topic || q.topicId === topic));
+  const list = questions.filter((q) => (filter === 'all' || (filter === 'pending' ? !q.reviewed : q.asked)) && (!topic || q.topicId === topic));
   return (
     <section className="card">
       <div className="field-row tight">
@@ -310,6 +314,9 @@ function Bank() {
           </button>
           <button className={filter === 'pending' ? 'active' : ''} onClick={() => setFilter('pending')}>
             Por revisar
+          </button>
+          <button className={filter === 'asked' ? 'active' : ''} onClick={() => setFilter('asked')}>
+            Me lo preguntaron
           </button>
         </div>
         <TopicSelect value={topic} onChange={setTopic} className="select grow" />
@@ -351,6 +358,7 @@ function Bank() {
                   {q.cite && ` · 📑 p. ${q.cite.page}`}
                 </div>
               </div>
+              <AskedToggle on={!!q.asked} onToggle={() => update(q.id, { asked: !q.asked })} />
               {!q.reviewed ? (
                 <button className="btn sm" onClick={() => update(q.id, { reviewed: true })} title="Ya la revisé y es correcta">
                   <Icon name="check" size={14} /> Validar
@@ -439,7 +447,7 @@ function QuestionEditor({
 }
 
 /** Aplicación de un bloque: una pregunta a la vez, cronómetro, marcar para revisar, resultados con explicaciones. */
-function Runner({ ids, title, minutes, mode, onClose }: { ids: string[]; title: string; minutes: number; mode: 'exam' | 'study'; onClose: () => void }) {
+export function Runner({ ids, title, minutes, mode, onClose }: { ids: string[]; title: string; minutes: number; mode: 'exam' | 'study'; onClose: () => void }) {
   const questions = useExam((s) => s.questions);
   const addAttempt = useExam((s) => s.addAttempt);
   const byId = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
@@ -552,6 +560,7 @@ function Runner({ ids, title, minutes, mode, onClose }: { ids: string[]; title: 
           <button className="btn" disabled={i === 0} onClick={() => setI(i - 1)}>
             ← Anterior
           </button>
+          {q && <AskedToggle on={!!q.asked} onToggle={() => useExam.getState().updateQuestion(q.id, { asked: !q.asked })} label />}
           {!finished && (
             <button className={`btn ghost${flags[i] ? ' active' : ''}`} onClick={() => setFlags(flags.map((f, k) => (k === i ? !f : f)))}>
               ⚑ {flags[i] ? 'Marcada' : 'Marcar'}

@@ -28,11 +28,23 @@ export interface UIState {
   temarioOpen: boolean;
   guardQuickOpen: boolean;
   /** Pestaña de la Vista de Guardia y peso precargado para el cálculo de dosis. */
-  guardTab: 'topics' | 'drugs';
+  guardTab: 'topics' | 'drugs' | 'vitals';
   drugWeight: number | null;
   openDrugs: (weight?: number | null) => void;
   searchOpen: boolean;
   setSearchOpen: (v: boolean) => void;
+  /** Comparador de dos guías (ids de documento). */
+  compare: { a: string; b: string } | null;
+  setCompare: (c: { a: string; b: string } | null) => void;
+  /** Ensayo del pase de visita para un paciente del turno. */
+  rounds: string | null;
+  setRounds: (pid: string | null) => void;
+  /** Diagrama del tema (id de tema). */
+  diagram: string | null;
+  setDiagram: (topicId: string | null) => void;
+  /** Preguntas desde subrayados (id de documento). */
+  hlQuiz: string | null;
+  setHlQuiz: (docId: string | null) => void;
   soapOpen: boolean;
   setSoapOpen: (v: boolean) => void;
   pearl: Pearl | null;
@@ -58,6 +70,14 @@ export const useUI = createStore<UIState>((set) => ({
   openDrugs: (weight = null) => set({ guardQuickOpen: true, guardTab: 'drugs', drugWeight: weight, topicSheet: null }),
   searchOpen: false,
   setSearchOpen: (searchOpen) => set({ searchOpen }),
+  compare: null,
+  setCompare: (compare) => set({ compare, topicSheet: null }),
+  rounds: null,
+  setRounds: (rounds) => set({ rounds }),
+  diagram: null,
+  setDiagram: (diagram) => set({ diagram, topicSheet: null }),
+  hlQuiz: null,
+  setHlQuiz: (hlQuiz) => set({ hlQuiz }),
   soapOpen: false,
   setSoapOpen: (soapOpen) => set({ soapOpen, topicSheet: null, guardQuickOpen: false }),
   pearl: null,
@@ -69,5 +89,5 @@ export const useUI = createStore<UIState>((set) => ({
   setCardDraft: (cardDraft) => set({ cardDraft }),
   startReview: (review) => set({ review }),
   setTemarioOpen: (temarioOpen) => set({ temarioOpen }),
-  setGuardQuickOpen: (guardQuickOpen) => set(guardQuickOpen ? { guardQuickOpen, guardTab: 'topics' } : { guardQuickOpen }),
+  setGuardQuickOpen: (guardQuickOpen) => set(guardQuickOpen ? { guardQuickOpen, guardTab: 'topics' as const } : { guardQuickOpen }),
 }));
