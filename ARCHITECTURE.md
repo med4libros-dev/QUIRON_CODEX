@@ -146,14 +146,26 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 |---|---|---|
 | Nota médica (SOAP/ingreso/postqx/egreso) | `src/soap/templates.ts`, `SoapModal.tsx` | Plantillas: localStorage `alq:soap`. Datos del paciente: solo memoria |
 | Perlas HY | `src/hy/store.ts`, `HyView.tsx` | IndexedDB `kv:hy` |
-| Hub NotebookLM | `src/sources/store.ts`, `SourcesView.tsx`, `SourcesDrawer.tsx` | IndexedDB `kv:sources` |
 | Mini reproductor | `src/features/music/store.ts`, `MiniPlayer.tsx` | Preferencias en `alq:music`; carpeta recordada en `kv:music:dir` (handle, no se respalda) |
 | Estilo cristal + paleta Parnaso | tokens bajo `[data-look='glass'][data-theme=…]` en `global.css`; `settings.look`; `--accent-2` = pizarra | localStorage `alq:settings` |
 
 - **Identidad**: el producto se llama Quirón Codex. Por compatibilidad se mantienen los identificadores internos de almacenamiento (`indexedDB 'alquimia'`, claves `alq:*`): cambiarlos borraría el progreso existente.
 - **Escritorio (Tauri 2)**: `src-tauri/` (Rust mínimo: solo el plugin *opener*). La ventana carga el mismo `dist/` de Vite; `withGlobalTauri` expone `window.__TAURI__.opener`, que `lib/platform.ts` usa para abrir enlaces externos en el navegador. `dragDropEnabled: false` para que arrastrar PDFs siga funcionando con HTML5. WebView2 conserva IndexedDB/localStorage en el perfil de la app (origen distinto del navegador → migración por Respaldo). Compilación: `.github/workflows/instalador-windows.yml` (windows-latest + tauri-action) o `construir-escritorio.bat`.
-- NotebookLM no tiene API pública para cuentas personales: la consulta copia la pregunta y abre el cuaderno; el fragmento vuelve pegado con su cita.
 - El desenfoque (`backdrop-filter`) se aplica solo a barras, tarjetas y ventanas; las páginas del PDF, las hojas y el editor siguen opacos para no costar GPU al desplazarse.
+
+## Fase 3b (módulos nuevos)
+
+| Módulo | Archivo | Persistencia |
+|---|---|---|
+| Simulacros (banco, intentos, generador) | `src/exam/store.ts`, `generate.ts`, `ExamView.tsx` | IndexedDB `kv:exam` |
+| Dominio por tema + refuerzo | `src/analytics/mastery.ts`, `MasteryMap.tsx`, `applyReinforcement` en `planner.ts` | Derivado (sin guardar) |
+| Turno | `src/ward/store.ts`, `WardView.tsx` | localStorage `qc:ward` (fuera de respaldos, caduca) |
+| Búsqueda global | `src/search/SearchModal.tsx`, `lib/pageIndex.ts` | Índice por página en `kv:search:<docId>` como objeto (no se respalda; se reconstruye) |
+| Voz | `src/lib/tts.ts`, `components/TtsBar.tsx` | Velocidad en `alq:tts` |
+| Fármacos por peso | `src/drugs/store.ts` (`computeDose` puro), `DrugPanel.tsx` | IndexedDB `kv:drugs` |
+
+- Los ids de refuerzo son `tema:w<lunes>`: estables en la semana; si se marcan, no reaparecen.
+- La generación usa la misma API key de la síntesis; el material va con marcadores `[p. N]` y la respuesta se valida (`sanitizeQuestion`) antes de entrar al banco.
 
 ## Modelo de datos (resumen)
 

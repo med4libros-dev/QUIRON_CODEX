@@ -89,6 +89,7 @@ export const useLibrary = createStore<LibraryState>(
 
       removeDoc: async (id) => {
         await idb.del('pdfs', id);
+        void idb.del('kv', `search:${id}`);
         set((s) => {
           const highlights = { ...s.highlights };
           const inks = { ...s.inks };

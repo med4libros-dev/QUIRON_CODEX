@@ -10,6 +10,7 @@ import { useBridge } from '../store/bridge';
 import { useSettings } from '../store/settings';
 import { useUI } from '../store/ui';
 import { HY_KINDS, useHy, type HyItem, type HyKind } from './store';
+import { speak, ttsSupported } from '../lib/tts';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const KIND_LABEL = Object.fromEntries(HY_KINDS.map((k) => [k.id, k.label])) as Record<HyKind, string>;
@@ -53,6 +54,11 @@ export function HyView() {
           <p className="muted small">Mnemotecnias, tríadas, signos y datos de 1 línea que el ENARM pregunta y se olvidan a las 2 semanas.</p>
         </div>
         <div className="spacer" />
+        {ttsSupported() && (
+          <button className="btn ghost" onClick={() => speak(list.map((i) => ({ title: i.title || KIND_LABEL[i.kind], text: [i.text, i.explain].filter(Boolean).join('. ') })), 'Perlas HY')} disabled={!list.length} title="Escuchar las perlas de la lista">
+            <Icon name="speaker" size={16} /> Escuchar
+          </button>
+        )}
         <button className={`btn${quiz ? ' primary' : ' ghost'}`} onClick={() => setQuiz((v) => !v)} disabled={!list.length}>
           <Icon name="sparkles" size={16} /> Repaso relámpago
         </button>

@@ -79,3 +79,25 @@ export async function extractPagesText(docId: string, from: number, to: number):
     destroy();
   }
 }
+
+/** Texto de cada página (índice 0 = página 1). Para búsqueda global y generación de preguntas. */
+export async function extractAllPages(docId: string, maxPages = 2000, onProgress?: (done: number, total: number) => void): Promise<string[]> {
+  const { promise, destroy } = openPdf(await loadPdfData(docId));
+  try {
+    const doc = await promise;
+    const n = Math.min(doc.numPages, maxPages);
+    const out: string[] = [];
+    for (let i = 1; i <= n; i++) {
+      const page = await doc.getPage(i);
+      const tc = await page.getTextContent();
+      let s = '';
+      for (const it of tc.items) if (isText(it)) s += it.str + (it.hasEOL ? '\n' : ' ');
+      out.push(s.replace(/[ \t]+/g, ' ').trim());
+      page.cleanup();
+      if (onProgress && i % 10 === 0) onProgress(i, n);
+    }
+    return out;
+  } finally {
+    destroy();
+  }
+}

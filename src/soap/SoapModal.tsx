@@ -39,6 +39,10 @@ export async function copyText(text: string): Promise<boolean> {
 /** Abre la nota con un tema ya elegido (desde la ficha del tema). */
 export const setSoapTopic = (topicId: string) => useSoapDraft.setState({ topicId });
 
+/** Precarga la nota desde la lista del turno (datos solo en memoria). */
+export const prefillSoap = (p: { topicId: string | null; values: Record<string, string> }) =>
+  useSoapDraft.setState((s) => ({ topicId: p.topicId ?? s.topicId, values: Object.fromEntries(Object.entries(p.values).filter(([, v]) => v)) }));
+
 const nowParts = () => {
   const d = new Date();
   return {

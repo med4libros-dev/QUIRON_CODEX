@@ -16,7 +16,7 @@ export interface Pearl {
   y: number;
 }
 
-export type TopicTab = 'docs' | 'guard' | 'cases' | 'cards' | 'hy' | 'sources';
+export type TopicTab = 'docs' | 'guard' | 'cases' | 'cards' | 'hy';
 
 /** Estado de interfaz global (no se guarda): ventanas que se abren desde cualquier parte. */
 export interface UIState {
@@ -27,9 +27,13 @@ export interface UIState {
   review: { cardIds: string[]; title: string; minutes?: number } | null;
   temarioOpen: boolean;
   guardQuickOpen: boolean;
+  /** Pestaña de la Vista de Guardia y peso precargado para el cálculo de dosis. */
+  guardTab: 'topics' | 'drugs';
+  drugWeight: number | null;
+  openDrugs: (weight?: number | null) => void;
+  searchOpen: boolean;
+  setSearchOpen: (v: boolean) => void;
   soapOpen: boolean;
-  sourcesDrawer: boolean;
-  setSourcesDrawer: (v: boolean) => void;
   setSoapOpen: (v: boolean) => void;
   pearl: Pearl | null;
   setPearl: (p: Pearl | null) => void;
@@ -49,9 +53,12 @@ export const useUI = createStore<UIState>((set) => ({
   review: null,
   temarioOpen: false,
   guardQuickOpen: false,
+  guardTab: 'topics',
+  drugWeight: null,
+  openDrugs: (weight = null) => set({ guardQuickOpen: true, guardTab: 'drugs', drugWeight: weight, topicSheet: null }),
+  searchOpen: false,
+  setSearchOpen: (searchOpen) => set({ searchOpen }),
   soapOpen: false,
-  sourcesDrawer: false,
-  setSourcesDrawer: (sourcesDrawer) => set({ sourcesDrawer }),
   setSoapOpen: (soapOpen) => set({ soapOpen, topicSheet: null, guardQuickOpen: false }),
   pearl: null,
   setPearl: (pearl) => set({ pearl }),
@@ -62,5 +69,5 @@ export const useUI = createStore<UIState>((set) => ({
   setCardDraft: (cardDraft) => set({ cardDraft }),
   startReview: (review) => set({ review }),
   setTemarioOpen: (temarioOpen) => set({ temarioOpen }),
-  setGuardQuickOpen: (guardQuickOpen) => set({ guardQuickOpen }),
+  setGuardQuickOpen: (guardQuickOpen) => set(guardQuickOpen ? { guardQuickOpen, guardTab: 'topics' } : { guardQuickOpen }),
 }));

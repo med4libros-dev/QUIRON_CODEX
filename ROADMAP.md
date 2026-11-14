@@ -47,11 +47,19 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 ### Fase 3a · Herramientas del internado ✅ (entregada, noviembre 2026)
 - **Nota médica en 1 clic** (barra lateral → Nota SOAP): evolución (SOAP), ingreso, postquirúrgica y egreso con los apartados de la NOM-004 (fecha/hora, signos vitales, evolución, resultados, diagnóstico, pronóstico, plan, firma). Criterios, manejo y datos de alarma salen de *tu* ficha de guardia; los datos del paciente no se guardan en disco. Plantillas editables.
 - **Perlas HY**: repositorio de mnemotecnias, tríadas, signos y fármacos de elección por tema; 20 epónimos clásicos de semiología de base; repaso relámpago, favoritas, convertir en flashcard, enviar a la nota, exportar/importar para compartir con compañeros; acción «Perla HY» en el menú de perlas del PDF.
-- **Fuentes · NotebookLM**: hub de cuadernos (Gemini / NotebookLM) con búsqueda, vínculo a especialidad y temas, consulta (copia la pregunta y abre el cuaderno), fragmentos guardados con su cita y referencias cruzadas en la ficha de cada tema. Panel rápido desde la barra superior.
 - **Estilo «Cristal líquido» con paleta «Dark Academia / Parnaso»** (por defecto, oscuro: espresso #1C1917, ámbar #F59E0B/#FB923C, pizarra #6366F1/#818CF8, texto pergamino; versión clara en pergamino). «Mate» conserva el estilo Pistache original.
 - **Mini reproductor** de música local (carpeta completa, .mp3/.wav/.flac/.ogg).
 - **App de escritorio para Windows (Tauri 2)**: instalador .msi/.exe con el logo del centauro, enlaces externos al navegador predeterminado, compilación en GitHub Actions o local (`construir-escritorio.bat`). Ajustes táctiles para la Surface (objetivos de 44–56 px con dedo/lápiz, deslizadores que no arrastran la página).
 - **Nuevo nombre: Quirón Codex** (antes Alquimia). Los datos se conservan; el respaldo lee también los archivos con el nombre anterior.
+
+### Fase 3b · Examen, hospital y repaso ✅ (entregada, noviembre 2026)
+- Se retiró el hub de NotebookLM (a petición del usuario).
+- **Simulacros ENARM**: casos con viñeta, distractores y explicación de cada opción, generados con Claude desde la GER adjunta (citando la página) o tus apuntes; entran «por revisar». Bloques de 10–100 preguntas, 1 min por pregunta, modo examen o estudio, prioridad a las nunca vistas y falladas, desglose por especialidad, banco editable con exportar/importar.
+- **Mapa de debilidades + plan adaptativo**: dominio por tema (simulacros + flashcards) en Progreso; los 3 temas más bajos reciben un repaso de refuerzo de 15 min en la semana sin regenerar el plan.
+- **Turno**: lista temporal de pacientes (cama, sexo, edad, peso, tema, pendientes por tipo), fuera de los respaldos, caduca al terminar el turno; conecta con Nota SOAP, dosis por peso y la bitácora de casos.
+- **Búsqueda global (Ctrl+K)**: temas, notas, texto de los PDF por página (índice guardado fuera de los respaldos), perlas, fragmentos, casos, flashcards y preguntas.
+- **Escuchar**: lectura en voz alta de perlas y notas con las voces en español del sistema, sin internet.
+- **Fármacos por peso**: fichas que capturas de la GPC (mg/kg por dosis o por día, presentación, máximos); la app calcula mg y mL y avisa/ajusta si se rebasa tu máximo.
 
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
@@ -59,7 +67,7 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - Capas (borrador / limpio), lazo para mover y escalar trazos, recortes del PDF pegados en el lienzo.
 - Búsqueda en todas las notas (texto) y etiquetas.
 
-### Fase 4 · Active recall: flashcards y mini-exámenes
+### Fase 4 · Active recall avanzado (parcialmente cubierto por la Fase 3b)
 - **Flashcards con FSRS**: se crean desde resaltados, perlas ENARM y huecos (cloze) del texto; tienen una cola diaria integrada a la lección del día.
 - **Mini-examen del día** tipo ENARM: caso clínico corto, 4–5 opciones, retroalimentación inmediata y la **cita de la GPC con su página**. Se generan con Claude a partir del texto de la guía vinculada (opcional, con API key) y se guardan en un banco local editable. Sin internet usa solo el banco.
 - Estadísticas de desempeño por especialidad y tema; los temas débiles reciben más repaso.

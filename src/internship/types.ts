@@ -58,6 +58,8 @@ export interface Lesson {
   parts: number;
   /** Si se reprogramó (Modo supervivencia): fecha original. */
   movedFrom?: string;
+  /** Repaso de refuerzo agregado por tus resultados (tema débil). */
+  adaptive?: boolean;
 }
 
 export interface DayPlan {

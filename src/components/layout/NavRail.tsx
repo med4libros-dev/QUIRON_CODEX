@@ -13,8 +13,9 @@ const ITEMS: { view: View; icon: IconName; label: string }[] = [
   { view: 'notebooks', icon: 'notebook', label: 'Cuadernos' },
   { view: 'calendar', icon: 'calendar', label: 'Calendario' },
   { view: 'progress', icon: 'chart', label: 'Progreso' },
-  { view: 'sources', icon: 'link', label: 'Fuentes' },
   { view: 'hy', icon: 'star', label: 'Perlas HY' },
+  { view: 'exam', icon: 'target', label: 'Simulacros' },
+  { view: 'ward', icon: 'bed', label: 'Turno' },
 ];
 
 const NEXT: Record<Theme, Theme> = { light: 'dark', dark: 'system', system: 'light' };

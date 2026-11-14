@@ -3,7 +3,7 @@ import { Icon } from '../components/Icon';
 import { WEEKDAYS, addDays, addMonths, fmt, formatMinutes, fromKey, startOfMonth, startOfWeek, toKey, todayKey } from '../lib/date';
 import { SPECIALTIES, SPECIALTY, TOPIC, TOPICS, gpcSearchUrl } from './curriculum';
 import { openTopicNote } from './openLesson';
-import { applyAdjustments, diffDays, generatePlan, survivalMoves, type PlanResult } from './planner';
+import { applyAdjustments, applyReinforcement, diffDays, generatePlan, survivalMoves, type PlanResult } from './planner';
 import { SetupWizard } from './SetupWizard';
 import { useInternship } from './store';
 import { useTopicStore } from './topicStore';
@@ -12,6 +12,9 @@ import { TopicSelect, expressDeck } from '../flashcards/FlashcardUI';
 import { CasesTab } from '../features/topics/TopicSheet';
 import { Modal } from '../components/Modal';
 import { useUI } from '../store/ui';
+import { useSettings } from '../store/settings';
+import { useExam } from '../exam/store';
+import { masteryColor, topicMastery, weakTopics } from '../analytics/mastery';
 import type { DayPlan, InternshipConfig, Lesson } from './types';
 
 const KIND_LABEL = { new: 'Tema nuevo', review: 'Repaso espaciado', final: 'Repaso integral' } as const;
@@ -32,8 +35,13 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
   const survival = useInternship((s) => s.survival);
   const basePlan = useMemo(() => generatePlan(config, TOPICS), [config]);
   // El plan anual no se regenera: los ajustes (Modo supervivencia) se superponen.
-  const plan = useMemo(() => applyAdjustments(basePlan, shifts), [basePlan, shifts]);
   const cards = useCards((s) => s.cards);
+  const questions = useExam((s) => s.questions);
+  const attempts = useExam((s) => s.attempts);
+  const mastery = useMemo(() => topicMastery(cards, questions, attempts), [cards, questions, attempts]);
+  const weak = useMemo(() => weakTopics(mastery, 3), [mastery]);
+  // Plan anual intacto + supervivencia + refuerzo de tus temas débiles (adaptativo).
+  const plan = useMemo(() => applyReinforcement(applyAdjustments(basePlan, shifts), weak, todayKey(), done), [basePlan, shifts, weak, done]);
   const due = dueCards(cards);
   const info = useTopicStore((s) => s.info);
   const recentCases = useMemo(
@@ -195,6 +203,36 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
         </div>
 
         <aside className="intern-side">
+          {mastery.size > 0 && (
+            <section className="card weak-card">
+              <div className="card-head">
+                <h4>Temas débiles</h4>
+                <span className="spacer" />
+                <button className="btn ghost sm" onClick={() => useSettings.getState().setView('progress')}>
+                  Ver mapa
+                </button>
+              </div>
+              {weakTopics(mastery, 5).length ? (
+                <ul className="weak-list">
+                  {weakTopics(mastery, 5).map((id) => {
+                    const m = mastery.get(id)!;
+                    return (
+                      <li key={id}>
+                        <button onClick={() => useUI.getState().openTopic(id, 'cards')}>
+                          <i style={{ background: masteryColor(m.score) }} />
+                          <span className="ellipsis grow">{TOPIC[id]?.title}</span>
+                          <b className="tabular">{m.score}%</b>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="muted small">Ningún tema débil por ahora. Se calcula con tus simulacros y flashcards.</p>
+              )}
+              {weak.length > 0 && <p className="muted small">Agregué un repaso de refuerzo de 15 min para los {weak.length} más bajos esta semana.</p>}
+            </section>
+          )}
           <section className="card fc-card">
             <div className="card-head">
               <h4>Flashcards</h4>
@@ -377,7 +415,7 @@ function SurvivalCard({
               <li key={lesson.id}>
                 <span className="ellipsis">{TOPIC[lesson.topicId].title}</span>
                 <span className="muted small">
-                  {KIND_LABEL[lesson.kind]} · {lesson.minutes} min
+                  {lesson.adaptive ? 'Refuerzo' : KIND_LABEL[lesson.kind]} · {lesson.minutes} min
                 </span>
                 <span className="chip">→ {fmt(fromKey(to), { weekday: 'short', day: 'numeric' })}</span>
               </li>
@@ -484,7 +522,7 @@ function LessonRow({ lesson, done, onToggle, note }: { lesson: Lesson; done: boo
           {kinds.has('GER') && <span className="badge ger">GER</span>}
         </button>
         <div className="lesson-meta">
-          {KIND_LABEL[lesson.kind]} · {detail} · {lesson.minutes} min
+          {lesson.adaptive ? 'Refuerzo · tema débil' : KIND_LABEL[lesson.kind]} · {detail} · {lesson.minutes} min
           {t.yield === 3 && <span className="hy"> · Prioridad alta</span>}
           {note && <span> · {note}</span>}
           {lesson.movedFrom && <span> · reprogramada del {fmt(fromKey(lesson.movedFrom), { weekday: 'short', day: 'numeric' })}</span>}

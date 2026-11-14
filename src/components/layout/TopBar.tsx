@@ -7,12 +7,11 @@ import { Icon } from '../Icon';
 import emblem from '../../assets/quiron-emblem.png';
 import type { View } from '../../types';
 
-const TITLES: Record<View, string> = { internado: 'Inicio', study: 'Estudio', notebooks: 'Cuadernos', calendar: 'Calendario', progress: 'Progreso', sources: 'Fuentes · NotebookLM', hy: 'Perlas HY' };
+const TITLES: Record<View, string> = { internado: 'Inicio', study: 'Estudio', notebooks: 'Cuadernos', calendar: 'Calendario', progress: 'Progreso', hy: 'Perlas HY', exam: 'Simulacros', ward: 'Turno' };
 
 export function TopBar() {
   const view = useSettings((s) => s.view);
   const activeDocId = useSettings((s) => s.activeDocId);
-  const drawer = useUI((s) => s.sourcesDrawer);
   const docName = useLibrary((s) => s.docs.find((d) => d.id === activeDocId)?.name);
 
   return (
@@ -32,13 +31,8 @@ export function TopBar() {
         )}
       </div>
       {view === 'study' && <LayoutControls />}
-      <button
-        className={`btn ghost sm nlm-btn${drawer ? ' active' : ''}`}
-        onClick={() => useUI.getState().setSourcesDrawer(!drawer)}
-        aria-pressed={drawer}
-        title="NotebookLM: accesos directos a tus fuentes y captura de fragmentos"
-      >
-        <Icon name="link" size={15} /> <span className="hide-narrow">NotebookLM</span>
+      <button className="btn ghost sm search-btn" onClick={() => useUI.getState().setSearchOpen(true)} title="Buscar en todo (Ctrl+K)" aria-label="Buscar en todo">
+        <Icon name="search" size={15} /> <span className="hide-narrow">Buscar</span> <kbd className="hide-narrow">Ctrl K</kbd>
       </button>
       <Pomodoro />
     </header>

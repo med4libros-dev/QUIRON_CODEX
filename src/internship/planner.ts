@@ -342,3 +342,43 @@ export function survivalMoves(
   }
   return moves;
 }
+
+/* ---------- Refuerzo adaptativo ---------- */
+
+/**
+ * Agrega repasos de refuerzo (15 min) para tus temas débiles en los próximos 7 días,
+ * en días con espacio libre y sin guardia. Los ids son estables por semana: si lo marcas
+ * como hecho, no vuelve a aparecer esa semana.
+ */
+export function applyReinforcement(plan: PlanResult, weak: string[], today: string, done: Record<string, string>, minutes = 15): PlanResult {
+  if (!weak.length) return plan;
+  const d0 = fromKey(today);
+  const monday = toKey(addDays(d0, -((d0.getDay() + 6) % 7)));
+  const days = new Map(plan.days);
+  const spare = (d: DayPlan) => d.capacity - d.lessons.reduce((a, l) => a + (done[l.id] ? 0 : l.minutes), 0);
+  for (const topicId of weak) {
+    const id = `${topicId}:w${monday}`;
+    // ¿Ya está colocado (o hecho) esta semana?
+    if (done[id]) {
+      const k = done[id];
+      const d = days.get(k);
+      if (d && !d.lessons.some((l) => l.id === id)) days.set(k, { ...d, lessons: [...d.lessons, { id, topicId, minutes, kind: 'review', part: 1, parts: 1, adaptive: true }] });
+      continue;
+    }
+    // El primer día con espacio; si la semana está llena, el día con más holgura (se excede ≤ 15 min).
+    let target: DayPlan | null = null;
+    let best: DayPlan | null = null;
+    for (let i = 0; i < 7; i++) {
+      const d = days.get(toKey(addDays(d0, i)));
+      if (!d || d.guardia || d.postGuardia || d.capacity <= 0) continue;
+      if (spare(d) >= minutes) {
+        target = d;
+        break;
+      }
+      if (!best || spare(d) > spare(best)) best = d;
+    }
+    const d = target ?? best;
+    if (d) days.set(d.date, { ...d, lessons: [...d.lessons, { id, topicId, minutes, kind: 'review', part: 1, parts: 1, adaptive: true }] });
+  }
+  return { ...plan, days };
+}

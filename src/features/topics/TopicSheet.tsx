@@ -19,12 +19,11 @@ import { fmt, fromKey, todayKey } from '../../lib/date';
 import { useLibrary } from '../../store/library';
 import { openPdfPage } from '../../store/navigate';
 import { useSettings } from '../../store/settings';
+import { speak, ttsSupported } from '../../lib/tts';
 import { useUI, type TopicTab } from '../../store/ui';
 import { CalculatorCard } from './CalculatorCard';
 import { HyEditor, HyList } from '../../hy/HyView';
 import { useHy } from '../../hy/store';
-import { notebooksForTopic, useSources } from '../../sources/store';
-import { SnippetList, openNotebook } from '../../sources/SourcesView';
 import { setSoapTopic } from '../../soap/SoapModal';
 
 const TABS: { id: TopicTab; label: string }[] = [
@@ -33,7 +32,6 @@ const TABS: { id: TopicTab; label: string }[] = [
   { id: 'cases', label: 'Casos vistos' },
   { id: 'cards', label: 'Flashcards' },
   { id: 'hy', label: 'Perlas HY' },
-  { id: 'sources', label: 'Fuentes' },
 ];
 
 const KIND_LABEL: Record<AttachmentKind, string> = {
@@ -89,7 +87,6 @@ export function TopicSheet() {
         {sheet.tab === 'cases' && <CasesTab topicId={t.id} />}
         {sheet.tab === 'cards' && <CardsTab topicId={t.id} />}
         {sheet.tab === 'hy' && <HyTab topicId={t.id} />}
-        {sheet.tab === 'sources' && <SourcesTab topicId={t.id} />}
       </div>
     </Modal>
   );
@@ -373,50 +370,16 @@ function HyTab({ topicId }: { topicId: string }) {
   const items = useHy((s) => s.items).filter((i) => i.topicId === topicId);
   return (
     <div className="ts-pane">
-      <HyEditor topicId={topicId} />
-      <HyList items={items} compact />
-    </div>
-  );
-}
-
-function SourcesTab({ topicId }: { topicId: string }) {
-  const t = TOPIC[topicId];
-  const notebooks = notebooksForTopic(useSources((s) => s.notebooks), topicId, t.specialty);
-  const snippets = useSources((s) => s.snippets).filter((x) => x.topicId === topicId);
-  return (
-    <div className="ts-pane">
-      {notebooks.length ? (
-        <ul className="att-list">
-          {notebooks.map((n) => (
-            <li key={n.id} className="att">
-              <span className="src-emoji">{n.emoji || '📓'}</span>
-              <div className="att-body">
-                <div className="ellipsis">{n.title}</div>
-                <span className="muted small">{n.topicIds.includes(topicId) ? 'Vinculado a este tema' : 'De la especialidad'}</span>
-              </div>
-              <button className="btn sm" onClick={() => openNotebook(n)}>
-                Abrir <Icon name="external" size={13} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="ts-empty muted">Sin cuadernos de NotebookLM para este tema. Agrégalos en Fuentes.</div>
-      )}
       <div className="field-row tight">
+        <HyEditor topicId={topicId} />
         <span className="spacer" />
-        <button
-          className="btn ghost sm"
-          onClick={() => {
-            useUI.getState().closeTopic();
-            useSettings.getState().setView('sources');
-          }}
-        >
-          <Icon name="link" size={14} /> Ir a Fuentes
-        </button>
+        {ttsSupported() && items.length > 0 && (
+          <button className="btn ghost sm" onClick={() => speak(items.map((i) => ({ title: i.title, text: [i.text, i.explain].filter(Boolean).join('. ') })), TOPIC[topicId].title)}>
+            <Icon name="speaker" size={14} /> Escuchar
+          </button>
+        )}
       </div>
-      <h5 className="ts-h">Fragmentos de este tema ({snippets.length})</h5>
-      {snippets.length ? <SnippetList snippets={snippets} showNotebook /> : <p className="muted small">Guarda fragmentos de NotebookLM en Fuentes y asígnales este tema.</p>}
+      <HyList items={items} compact />
     </div>
   );
 }

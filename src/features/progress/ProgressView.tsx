@@ -1,3 +1,4 @@
+import { MasteryMap } from '../../analytics/MasteryMap';
 import { useMemo, useState } from 'react';
 import { Icon, type IconName } from '../../components/Icon';
 import { addDays, fmt, formatMinutes, monthBounds, startOfWeek, toKey, weekBounds } from '../../lib/date';
@@ -51,6 +52,7 @@ export function ProgressView() {
         <div className="spacer" />
         <span className="muted small">{fmt(now, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
       </header>
+      <MasteryMap />
 
       <div className="stat-grid">
         {stats.map((s) => (

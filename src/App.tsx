@@ -15,9 +15,12 @@ import { FlashcardModal, FlashcardReview } from './flashcards/FlashcardUI';
 import { TopicSheet } from './features/topics/TopicSheet';
 import { GuardQuick, TemarioModal } from './features/topics/Temario';
 import { SoapModal } from './soap/SoapModal';
-import { SourcesDrawer } from './sources/SourcesDrawer';
 import { MiniPlayer } from './features/music/MiniPlayer';
-import { SourcesView } from './sources/SourcesView';
+import { ExamView } from './exam/ExamView';
+import { WardView } from './ward/WardView';
+import { SearchModal } from './search/SearchModal';
+import { TtsBar } from './components/TtsBar';
+import { purgeExpiredShift } from './ward/store';
 import { HyView } from './hy/HyView';
 
 export default function App() {
@@ -25,6 +28,19 @@ export default function App() {
   const theme = useSettings((s) => s.theme);
   const setDark = useSettings((s) => s.setDark);
   const look = useSettings((s) => s.look);
+
+  // Vista guardada que ya no existe (p. ej. la antigua «Fuentes»): vuelve a Inicio.
+  useEffect(() => {
+    const known = ['internado', 'study', 'notebooks', 'calendar', 'progress', 'hy', 'exam', 'ward'];
+    if (!known.includes(view)) useSettings.getState().setView('internado');
+  }, [view]);
+
+  // La lista del turno caduca sola, aunque no abras la vista «Turno».
+  useEffect(() => {
+    purgeExpiredShift();
+    const t = setInterval(() => purgeExpiredShift(), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const el = document.documentElement;
@@ -75,14 +91,19 @@ export default function App() {
             <ProgressView />
           </div>
         )}
-        {view === 'sources' && (
-          <div className="view scroll">
-            <SourcesView />
-          </div>
-        )}
         {view === 'hy' && (
           <div className="view scroll">
             <HyView />
+          </div>
+        )}
+        {view === 'exam' && (
+          <div className="view scroll">
+            <ExamView />
+          </div>
+        )}
+        {view === 'ward' && (
+          <div className="view scroll">
+            <WardView />
           </div>
         )}
       </div>
@@ -90,8 +111,9 @@ export default function App() {
       <TemarioModal />
       <GuardQuick />
       <SoapModal />
-      <SourcesDrawer />
       <MiniPlayer />
+      <SearchModal />
+      <TtsBar />
       <FlashcardModal />
       <FlashcardReview />
       <PearlMenu />

@@ -9,7 +9,7 @@ const tauri = () => (window as unknown as { __TAURI__?: TauriGlobal }).__TAURI__
 
 export const isDesktop = () => typeof window !== 'undefined' && !!tauri();
 
-/** Abre un enlace externo (NotebookLM, GPC…) fuera de la app. */
+/** Abre un enlace externo (búsqueda de GPC…) fuera de la app. */
 export function openExternal(url: string) {
   const t = tauri();
   if (t?.opener) {
@@ -37,7 +37,7 @@ export function installExternalLinkHandler() {
   document.documentElement.dataset.desktop = 'true';
 }
 
-/** ¿Hay conexión? (NotebookLM y la búsqueda de GPC la necesitan; todo lo demás funciona sin internet.) */
+/** ¿Hay conexión? (la búsqueda de GPC la necesita; todo lo demás funciona sin internet.) */
 const subscribe = (cb: () => void) => {
   window.addEventListener('online', cb);
   window.addEventListener('offline', cb);

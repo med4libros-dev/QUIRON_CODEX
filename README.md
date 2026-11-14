@@ -24,7 +24,7 @@ El proyecto ya está configurado con **Tauri 2** (`src-tauri/`). Genera un insta
 - **Con GitHub (recomendado):** sube el proyecto a un repositorio y entra a *Actions → «Instalador de Windows» → Run workflow*. En ~10 min descargas los instaladores desde el resultado (o, si publicas una etiqueta `v0.3.0`, quedan en un borrador de *Release*). No instalas nada en tu PC.
 - **En tu PC:** doble clic en `construir-escritorio.bat` (necesita Node.js, Rust y «Visual Studio Build Tools» con C++ una sola vez). Los instaladores quedan en `src-tauri\target\release\bundle`.
 - **Tu progreso:** la app de escritorio guarda sus datos aparte del navegador. Para pasarlos: en el navegador, *Respaldo → Elegir carpeta* (OneDrive); en la app, *Respaldo → misma carpeta → Traer progreso*.
-- Todo funciona sin internet. NotebookLM y la búsqueda de GPC se abren en tu navegador cuando hay conexión.
+- Todo funciona sin internet. La búsqueda de GPC se abre en tu navegador cuando hay conexión.
 
 ## Usarla en tu Surface
 
@@ -62,9 +62,16 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### Fase 3a
 - **Nota SOAP** (barra lateral): elige tipo de nota y tema, llena signos vitales y hallazgos, copia. Los datos del paciente no se guardan.
 - **Perlas HY**: mnemotecnias y datos de alto rendimiento por tema; exporta/importa para compartir.
-- **Fuentes / NotebookLM**: tus cuadernos de NotebookLM con búsqueda, consulta y fragmentos guardados. Panel rápido con el botón «NotebookLM» de la barra superior.
 - **Música**: botón redondo abajo a la izquierda → «Elegir carpeta».
 - **Estilo**: botón «Cristal / Mate» en la barra lateral.
+
+### Fase 3b
+- **Simulacros** (barra lateral): genera casos tipo ENARM desde tu GER (necesita tu API key de Anthropic) o escríbelos; resuélvelos en bloques cronometrados.
+- **Progreso → Mapa de debilidades**; en Inicio verás tus temas débiles y repasos de «Refuerzo» en el plan.
+- **Turno**: tus pacientes del día con pendientes; se borra al terminar el turno.
+- **Ctrl+K**: busca en todo, incluso dentro de tus PDF.
+- **Escuchar** (bocina) en Perlas HY y en cada nota.
+- **Guardia → Fármacos por peso**: crea fichas con la dosis de tu GPC y calcula por kg.
 
 Roadmap del proyecto: [ROADMAP.md](ROADMAP.md).
 

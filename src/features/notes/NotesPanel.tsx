@@ -6,6 +6,8 @@ import { exportToWord } from '../../lib/exportWord';
 import { useBridge } from '../../store/bridge';
 import { idb } from '../../lib/idb';
 import { loadInkImages } from '../../lib/inkImages';
+import { htmlToText } from '../../lib/html';
+import { chunkText, speak, ttsSupported } from '../../lib/tts';
 import { useLibrary } from '../../store/library';
 import { useNotes } from '../../store/notes';
 import { useSettings } from '../../store/settings';
@@ -135,6 +137,19 @@ export function NotesPanel() {
         </button>
         {note && (
           <>
+            {ttsSupported() && (
+              <button
+                className="icon-btn"
+                onClick={() => {
+                  const fresh = useNotes.getState().notes.find((n) => n.id === note.id);
+                  speak(chunkText(htmlToText(fresh?.html ?? '')).map((text) => ({ text })), fresh?.title || 'Nota');
+                }}
+                title="Escuchar esta nota"
+                aria-label="Escuchar esta nota"
+              >
+                <Icon name="speaker" size={16} />
+              </button>
+            )}
             <button className="btn ghost sm" onClick={() => void exportPdf()} disabled={exporting} title="Exportar nota a PDF (texto + escritura a mano)">
               <Icon name="download" size={15} /> PDF
             </button>

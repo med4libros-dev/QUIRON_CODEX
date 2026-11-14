@@ -8,6 +8,7 @@ import { GUARD_FIELDS, useTopicStore } from '../../internship/topicStore';
 import type { SpecialtyId } from '../../internship/types';
 import { useUI } from '../../store/ui';
 import { CalculatorCard } from './CalculatorCard';
+import { DrugPanel } from '../../drugs/DrugPanel';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -87,6 +88,8 @@ export function GuardQuick() {
   const [q, setQ] = useState('');
   const [topicId, setTopicId] = useState<string | null>(null);
   const [calcId, setCalcId] = useState('');
+  const tab = useUI((s) => s.guardTab);
+  const drugWeight = useUI((s) => s.drugWeight);
   if (!open) return null;
   const needle = norm(q.trim());
   const withCard = TOPICS.filter((t) => {
@@ -102,6 +105,18 @@ export function GuardQuick() {
   return (
     <Modal title="Vista de Guardia" onClose={() => setOpen(false)} width={760}>
       <div className="guard-quick">
+        <div className="seg gq-tabs" role="tablist">
+          <button role="tab" aria-selected={tab === 'topics'} className={tab === 'topics' ? 'active' : ''} onClick={() => useUI.setState({ guardTab: 'topics' })}>
+            Fichas y escalas
+          </button>
+          <button role="tab" aria-selected={tab === 'drugs'} className={tab === 'drugs' ? 'active' : ''} onClick={() => useUI.setState({ guardTab: 'drugs' })}>
+            <Icon name="pill" size={14} /> Fármacos por peso
+          </button>
+        </div>
+        {tab === 'drugs' ? (
+          <DrugPanel key={String(drugWeight)} />
+        ) : (
+        <>
         <div className="field-row tight">
           <input
             className="input grow"
@@ -170,6 +185,8 @@ export function GuardQuick() {
               <CalculatorCard key={c.id} calc={c} defaultOpen={calcs.length === 1} />
             ))}
           </div>
+        )}
+        </>
         )}
       </div>
     </Modal>
