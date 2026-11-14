@@ -3,7 +3,7 @@ import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
 import { CALCULATORS, calculatorsForTopic } from '../../clinical/calculators';
 import { useCards } from '../../flashcards/store';
-import { SPECIALTIES, SPECIALTY, TOPICS } from '../../internship/curriculum';
+import { SPECIALTIES, SPECIALTY, TOPICS, gpcSearchUrl } from '../../internship/curriculum';
 import { GUARD_FIELDS, useTopicStore } from '../../internship/topicStore';
 import type { SpecialtyId } from '../../internship/types';
 import { useUI } from '../../store/ui';
@@ -29,8 +29,11 @@ export function TemarioModal() {
   const needle = norm(q.trim());
   const list = TOPICS.filter((t) => (!sp || t.specialty === sp) && (!needle || norm(t.title).includes(needle)));
   return (
-    <Modal title="Temario" onClose={() => setOpen(false)} width={720}>
+    <Modal title="Temario y GPC" onClose={() => setOpen(false)} width={760}>
       <div className="temario">
+        <p className="muted small temario-help">
+          Toca un tema para abrir su ficha: ahí subes la <b>GRR</b> y la <b>GER</b>. El botón <b>GPC ↗</b> busca la guía oficial en IMSS, gob.mx e ISSSTE.
+        </p>
         <div className="field-row tight">
           <input className="input grow" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tema…" aria-label="Buscar tema" autoFocus />
           <select className="select" value={sp} onChange={(e) => setSp(e.target.value as SpecialtyId | '')} aria-label="Especialidad">
@@ -63,6 +66,9 @@ export function TemarioModal() {
                   {!!i?.cases.length && <span className="badge">{i.cases.length} caso{i.cases.length === 1 ? '' : 's'}</span>}
                   {!!cardCount.get(t.id) && <span className="badge">{cardCount.get(t.id)} fc</span>}
                 </button>
+                <a className="btn ghost sm gpc-link" href={gpcSearchUrl(t)} target="_blank" rel="noopener noreferrer" title="Buscar la GPC oficial (IMSS, gob.mx, ISSSTE)">
+                  GPC <Icon name="external" size={12} />
+                </a>
               </li>
             );
           })}

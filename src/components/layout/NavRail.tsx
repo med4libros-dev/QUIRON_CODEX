@@ -53,7 +53,11 @@ export function NavRail() {
           <span>{it.label}</span>
         </button>
       ))}
-      <button className="rail-btn guard-btn" onClick={() => useUI.getState().setGuardQuickOpen(true)} title="Vista de Guardia: fichas de bolsillo y calculadoras (G)">
+      <button className="rail-btn guard-btn" onClick={() => useUI.getState().setTemarioOpen(true)} title="GPC y temario: sube tu GRR/GER o búscala en sitios oficiales">
+        <Icon name="list" size={20} />
+        <span>GPC</span>
+      </button>
+      <button className="rail-btn" onClick={() => useUI.getState().setGuardQuickOpen(true)} title="Vista de Guardia: fichas de bolsillo y calculadoras (G)">
         <Icon name="shield" size={20} />
         <span>Guardia</span>
       </button>

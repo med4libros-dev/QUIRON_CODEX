@@ -4386,3 +4386,37 @@ input[type='range'] {
   user-select: none;
   -webkit-user-select: none;
 }
+.temario-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.temario-list li > button {
+  flex: 1;
+  min-width: 0;
+}
+.temario-list .gpc-link {
+  flex: none;
+  margin-right: 4px;
+}
+.temario-help {
+  margin: 0 0 10px;
+}
+/* Pantallas bajas (Surface con la barra de título de la app): la barra lateral se compacta. */
+@media (max-height: 900px) {
+  .rail-btn {
+    padding: 6px 0 5px;
+    gap: 2px;
+    font-size: 10px;
+  }
+  .rail-logo,
+  [data-look='glass'] .rail-logo {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 6px;
+  }
+}
+/* Si aun así no cabe, la barra se desplaza (con una barra fina visible). */
+.rail {
+  scrollbar-width: thin;
+}
