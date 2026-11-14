@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Quiron Codex",
+  "version": "0.3.0",
+  "identifier": "mx.quironcodex.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Quirón Codex",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 600,
+        "center": true,
+        "resizable": true,
+        "maximized": true,
+        "dragDropEnabled": false,
+        "backgroundColor": "#1c1917"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "publisher": "Alexander Carrillo de la Cruz",
+    "category": "Education",
+    "shortDescription": "Quirón Codex",
+    "longDescription": "Estación de estudio para el internado médico y el ENARM: lector de GPC, notas a mano y texto, planificador anual, guardia y flashcards. Funciona sin internet.",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "windows": {
+      "webviewInstallMode": { "type": "embedBootstrapper" },
+      "wix": { "language": "es-ES" },
+      "nsis": { "languages": ["Spanish"], "installMode": "currentUser" }
+    }
+  }
+}

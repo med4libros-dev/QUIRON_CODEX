@@ -1,0 +1,25 @@
+[package]
+name = "quiron-codex"
+version = "0.3.0"
+description = "Quirón Codex: estación de estudio para el internado médico y el ENARM"
+authors = ["Alexander Carrillo de la Cruz"]
+edition = "2021"
+
+[lib]
+name = "quiron_codex_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+
+# Binario pequeño y rápido (importante en la Surface).
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

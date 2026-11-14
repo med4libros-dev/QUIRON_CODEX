@@ -1,0 +1,11 @@
+node_modules
+dist
+*.local
+.DS_Store
+graphify-out/
+# Contiene tu clave de 21st: nunca subirla
+.mcp.json
+src-tauri/target
+src-tauri/gen/schemas
+_to_delete/
+*.zip

@@ -1,0 +1,168 @@
+# Quirón Codex — Arquitectura
+
+Estación de estudio personal para medicina. **Local-first**: todo vive en el navegador (sin servidor, sin cuenta) y funciona sin internet, salvo el motor de síntesis con IA, que es opcional.
+
+## Stack y por qué
+
+| Capa | Elección | Razón |
+|---|---|---|
+| UI | React 19 + TypeScript | Componentes tipados y renderizado concurrente. |
+| Build | Vite 6 | Arranque instantáneo; el worker de pdf.js se sirve como archivo aparte. |
+| PDF | pdf.js (`pdfjs-dist` 6) | Es el estándar de facto. El parseo ocurre en un Web Worker y la UI no se congela. |
+| Estado | Store propio (`lib/createStore.ts`, ~100 líneas) | API tipo Zustand, sin dependencias. Usa selectores y guardado diferido. |
+| Persistencia | IndexedDB + localStorage | Los PDFs y la tinta van en IndexedDB (binario, cientos de MB); la configuración, en localStorage. |
+| Exportar | `pdf-lib` | Genera el PDF en el navegador con texto real seleccionable, más la tinta como imagen. |
+| Tinta | Canvas 2D propio | Usa la presión del lápiz, eventos *coalesced* y doble capa. No necesita librerías. |
+
+## Estructura
+
+```
+src/
+├── main.tsx                 Punto de entrada; pide almacenamiento persistente
+├── App.tsx                  Shell: tema, rail, top bar y vistas
+├── internship/              Módulo Internado: temario, planificador anual, dashboard, asistente
+├── types.ts                 Modelo de datos (Doc, Highlight, Note, Stroke, Session, Goal…)
+├── styles/global.css        Sistema visual, tokens claro/oscuro
+├── lib/
+│   ├── createStore.ts       Store reactivo + persistencia diferida + flush al cerrar
+│   ├── idb.ts               IndexedDB: kv · pdfs · ink
+│   ├── pdf.ts               Carga de pdf.js, extracción de texto por área y por páginas
+│   ├── ink.ts               Render de trazos (presión → grosor), exportar hoja a PNG
+│   ├── exportPdf.ts         Nota (HTML + tinta) → PDF con pdf-lib
+│   ├── exportWord.ts        Nota → Word (.doc)
+│   ├── html.ts              Sanitizar HTML pegado/IA; HTML → bloques/texto
+│   ├── synth/local.ts       Síntesis extractiva offline
+│   ├── synth/claude.ts      Síntesis con Claude (opcional, con API key)
+│   ├── backup.ts            Respaldo: archivo .json y carpeta automática (File System Access)
+│   ├── stats.ts             Métricas: enfoque, sesiones, metas, racha
+│   ├── date.ts · sound.ts · pointer.ts · id.ts
+├── store/
+│   ├── settings.ts          Tema, vista, proporción del split, doc/nota activos, IA
+│   ├── library.ts           PDFs, resaltados/subrayados, tinta, post-its, marcadores → IndexedDB
+│   ├── notes.ts             Notas (texto) y cuadernos       → IndexedDB
+│   ├── tools.ts             Instrumentos: color/grosor por pluma, lápiz, rotulador, marcatextos
+│   ├── bridge.ts            Puente PDF → nota (insertar marcadores como enlaces)
+│   ├── planner.ts           Materias, sesiones, metas, registros de foco → localStorage
+│   └── pomodoro.ts          Temporizador basado en timestamp → localStorage
+├── components/
+│   ├── Icon · Modal · FilePick · PenControls (instrumento + paleta + grosor)
+│   └── layout/ NavRail · TopBar · SplitPane · LayoutControls
+└── features/
+    ├── pdf/       PdfWorkspace (barra) · PdfViewer (páginas + capas) · StickyNote · BookmarksMenu · FileManager
+    ├── notes/     NotesPanel (ámbito PDF/cuaderno) · TextEditor (tipo Word) · InkCanvas
+    ├── notebooks/ NotebooksView · NotebookDialog
+    ├── synth/     SynthPanel
+    ├── calendar/  CalendarView (semana/mes) · SessionDialog · SubjectsDialog
+    ├── progress/  ProgressView (estadísticas, metas, mapa de calor, materias)
+    └── pomodoro/  Pomodoro (UI) · usePomodoroTicker (reloj global)
+```
+
+## Flujo de la pantalla de estudio
+
+```
+┌───────── NavRail ─┬──────────────────── TopBar (título · Pomodoro) ────────────────────┐
+│ Estudio           │ PdfWorkspace                     ┃ NotesPanel                       │
+│ Calendario        │  barra: biblioteca · herramientas┃  pestañas: Texto · Lienzo · Síntesis
+│ Progreso          │         · colores · zoom · página┃  selector de nota · exportar PDF │
+│                   │  PdfViewer (páginas diferidas)   ┃  TextEditor | InkCanvas | SynthPanel
+│ Tema              │  + FileManager (panel lateral)   ┃                                  │
+└───────────────────┴────────────────────── SplitPane (arrastrable) ───────────────────────┘
+```
+
+- Cada nota pertenece a un PDF (`docId`) o es **general** (`docId = null`). Al cambiar de PDF cambian también sus notas.
+- **Distribución**: intercambiar lados y «solo PDF / solo notas» se resuelven con CSS (`order` y `hidden`), sin desmontar componentes. Un panel oculto conserva su último ancho para no re-renderizar páginas.
+- La vista de Estudio **se mantiene montada** al ir a Calendario o Progreso, así que el PDF no se recarga.
+
+## Rendimiento con PDFs pesados
+
+1. **Render diferido**: un `IntersectionObserver` (margen de 700 px) decide qué páginas dibujar. Al salir de la vista, una página libera su canvas y llama a `page.cleanup()`. En la prueba con 800 páginas quedaron 3 canvases vivos tras recorrer el documento completo.
+2. **Render fuera de pantalla**: se dibuja en un canvas oculto y se copia de una vez, así no hay parpadeo al hacer zoom. Los renders pendientes se cancelan con `task.cancel()`.
+3. **DPR limitado a 2×**: nitidez en pantallas Surface sin multiplicar la memoria.
+4. **Página actual por búsqueda binaria** sobre `offsetTop`, en `requestAnimationFrame`.
+5. **Resaltados normalizados** (0–1): no se recalculan con el zoom.
+6. **El texto y la tinta se guardan por separado**: escribir no reserializa los trazos. La tinta se carga solo al abrir la nota.
+7. **Escrituras diferidas** (200–700 ms) y *flush* en `pagehide`/`visibilitychange`.
+
+## Módulo Internado
+
+- `internship/curriculum.ts`: 6 especialidades y 139 temas con prioridad y minutos estimados; búsqueda de GPC restringida a dominios oficiales.
+- `internship/planner.ts`: función pura `generatePlan(config, temas)` → plan día por día (~10 ms por año). Las reglas están documentadas en ROADMAP.md.
+- `internship/store.ts`: configuración del plan y lecciones completadas (`alq:internship`, incluida en el respaldo).
+- Los IDs de lección son estables (`tema:parte`, `tema:rN`, `tema:fN`), así que ajustar el plan conserva lo marcado.
+- `openLesson.ts`: integra con Estudio (cuaderno por especialidad + nota del tema con plantilla).
+
+## Respaldo y portabilidad
+
+- `lib/backup.ts` reúne localStorage (`alq:*`), IndexedDB `kv` e `ink`, y opcionalmente los PDFs.
+- **Carpeta automática**: el usuario elige una carpeta (ideal: OneDrive). Se escriben `quiron-codex-datos.json` y `pdfs/<id>.pdf` (solo los PDFs nuevos) cada 2 minutos y al ocultar la ventana. El acceso a la carpeta se guarda en IndexedDB; el navegador pide reconfirmar el permiso por sesión.
+- Al restaurar se congela la persistencia (`freezePersistence`) para que la app abierta no sobrescriba lo restaurado antes de recargar.
+- `Quiron Codex.html`: compilación de un solo archivo (JS, CSS y el worker de pdf.js incrustados como Blob) que funciona abierta directamente desde el disco (`file://`).
+
+## Lápiz (Surface Pen)
+
+- Presión real → grosor. El mouse se detecta (presión fija 0.5) y usa grosor constante.
+- `getCoalescedEvents()` recupera todos los puntos del lápiz (más de 120 Hz) para trazos suaves.
+- Botón borrador del lápiz (`button 5` / `buttons & 32`) → borra por trazo.
+- **Solo lápiz** (activado por defecto, también en el PDF): los toques con dedo o palma no dibujan ni anotan; el dedo desplaza.
+- Coordenadas lógicas de hoja A4 (1000 × 1414): los trazos no se deforman al redimensionar el panel.
+- Deshacer/rehacer (Ctrl+Z / Ctrl+Y), hojas rayadas, cuadriculadas o lisas, marcatextos translúcido.
+
+## Síntesis
+
+- **Local** (por defecto, gratis y offline): pondera tus resaltados (×3), tus notas (×2) y el texto del PDF (×1). Extrae conceptos clave, ideas principales, resaltados agrupados por categoría de color y preguntas tipo *cloze*.
+- **Claude** (opcional): envía el mismo material a la API de Anthropic con tu clave y devuelve HTML saneado. Tiene instrucciones de no inventar nada fuera del material.
+- El resultado se guarda como nota (marcada ✦) y se exporta a PDF.
+
+## Capas de una página del PDF
+
+```
+canvas del PDF (pdf.js) → capa de texto seleccionable (TextLayer, solo páginas visibles) → resaltados/subrayados (div %) → tinta guardada (canvas) → trazo en vivo (canvas)
+→ capa de interacción (según herramienta) → post-its → cinta de marcador
+```
+Toda anotación usa coordenadas relativas a la página: se mantiene en su lugar con cualquier zoom o ancho de panel.
+
+## Cuadernos
+
+Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcional). El panel de notas muestra un **ámbito**: las notas del PDF abierto o las de un cuaderno. Si el PDF tiene materia y existe un cuaderno de esa materia, las notas nuevas se archivan ahí automáticamente.
+
+## Fase 2 (módulos nuevos)
+
+| Módulo | Archivo | Persistencia |
+|---|---|---|
+| Documentos, casos y ficha de guardia por tema | `src/internship/topicStore.ts` | IndexedDB `kv:topics` |
+| Flashcards + programación SM-2 | `src/flashcards/store.ts`, `FlashcardUI.tsx` | IndexedDB `kv:cards` |
+| Escalas y calculadoras | `src/clinical/calculators.ts` (declarativas: campos + `compute`) | — |
+| Menú de perlas y avisos | `src/features/pearls/PearlMenu.tsx`, `src/store/ui.ts` | — |
+| Recortes en el lienzo | `src/lib/crop.ts`, `src/lib/inkImages.ts` | IndexedDB `ink:<noteId>:img` |
+| Modo supervivencia | `survivalMoves` y `applyAdjustments` en `planner.ts`; `survival`/`shifts` en el store del internado | localStorage `alq:internship` |
+
+- El plan anual sigue siendo determinista: `applyAdjustments(generatePlan(config), shifts)` superpone las lecciones movidas sin regenerar nada. Los días no afectados son los mismos objetos.
+- El puente `bridge.ts` ahora apunta a una nota concreta (`noteId`) y puede añadir al final (`append`), pedir una pestaña (`requestTab`) o avisar cambios del lienzo (`inkRev`).
+- El respaldo ya copiaba todas las claves de `kv` e `ink`: las de la Fase 2 entran sin cambios.
+
+## Fase 3a (módulos nuevos)
+
+| Módulo | Archivo | Persistencia |
+|---|---|---|
+| Nota médica (SOAP/ingreso/postqx/egreso) | `src/soap/templates.ts`, `SoapModal.tsx` | Plantillas: localStorage `alq:soap`. Datos del paciente: solo memoria |
+| Perlas HY | `src/hy/store.ts`, `HyView.tsx` | IndexedDB `kv:hy` |
+| Hub NotebookLM | `src/sources/store.ts`, `SourcesView.tsx`, `SourcesDrawer.tsx` | IndexedDB `kv:sources` |
+| Mini reproductor | `src/features/music/store.ts`, `MiniPlayer.tsx` | Preferencias en `alq:music`; carpeta recordada en `kv:music:dir` (handle, no se respalda) |
+| Estilo cristal + paleta Parnaso | tokens bajo `[data-look='glass'][data-theme=…]` en `global.css`; `settings.look`; `--accent-2` = pizarra | localStorage `alq:settings` |
+
+- **Identidad**: el producto se llama Quirón Codex. Por compatibilidad se mantienen los identificadores internos de almacenamiento (`indexedDB 'alquimia'`, claves `alq:*`): cambiarlos borraría el progreso existente.
+- **Escritorio (Tauri 2)**: `src-tauri/` (Rust mínimo: solo el plugin *opener*). La ventana carga el mismo `dist/` de Vite; `withGlobalTauri` expone `window.__TAURI__.opener`, que `lib/platform.ts` usa para abrir enlaces externos en el navegador. `dragDropEnabled: false` para que arrastrar PDFs siga funcionando con HTML5. WebView2 conserva IndexedDB/localStorage en el perfil de la app (origen distinto del navegador → migración por Respaldo). Compilación: `.github/workflows/instalador-windows.yml` (windows-latest + tauri-action) o `construir-escritorio.bat`.
+- NotebookLM no tiene API pública para cuentas personales: la consulta copia la pregunta y abre el cuaderno; el fragmento vuelve pegado con su cita.
+- El desenfoque (`backdrop-filter`) se aplica solo a barras, tarjetas y ventanas; las páginas del PDF, las hojas y el editor siguen opacos para no costar GPU al desplazarse.
+
+## Modelo de datos (resumen)
+
+`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
+
+## Próximos pasos sugeridos
+
+- **Exportar el PDF anotado** (incrustar resaltados, tinta y post-its en el propio PDF con pdf-lib).
+- **Sincronización entre dispositivos**: los stores ya pasan por `createStore`. Basta con agregar un adaptador (por ejemplo Supabase o un servidor propio) que replique `kv`, `pdfs` e `ink`.
+- **Búsqueda dentro del PDF** con `getTextContent()` e índice por página.
+- **Fuente Unicode incrustada** al exportar (para griego y símbolos sin transliterar).
+- **PWA instalable** (service worker) para abrirla como app en Windows.

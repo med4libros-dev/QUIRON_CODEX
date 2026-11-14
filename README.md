@@ -1,0 +1,109 @@
+# Quirón Codex · estación de estudio para medicina
+
+Lector de PDF con resaltado, subrayado, escritura a mano, post-its y marcadores; notas tipo Word y a mano (optimizadas para Surface Pen) organizadas en cuadernos; calendario de estudio, progreso, Pomodoro y hojas de repaso exportables a PDF y Word. Todo se guarda **en tu navegador**, sin cuenta y sin nube.
+
+> Antes se llamaba **Alquimia**. Tu progreso se conserva: los datos viven en el navegador con la misma clave interna, y el respaldo sigue leyendo los archivos `alquimia-datos.json` anteriores.
+
+## Cómo abrirla
+
+### Opción fácil: `Quiron Codex.html` (sin instalar nada)
+Doble clic en **`Quiron Codex.html`** y se abre en tu navegador. Funciona sin internet. Usa siempre **Microsoft Edge** o Chrome y abre siempre el mismo archivo: tu progreso queda guardado en ese navegador.
+
+### Opción de desarrollo: `iniciar.bat`
+Para modificar el código: instala **Node.js LTS** (<https://nodejs.org>) y haz doble clic en `iniciar.bat` (se abre en `http://localhost:5173`).
+
+```bash
+npm install     # solo la primera vez
+npm run dev     # abre la app
+npm run build   # versión optimizada en /dist
+```
+
+### Opción app de escritorio (Windows, sin navegador)
+El proyecto ya está configurado con **Tauri 2** (`src-tauri/`). Genera un instalador `.msi` y uno `.exe` que instalan **Quirón Codex** con su ícono en el menú Inicio; usa el motor WebView2 que ya trae Windows 11 y ocupa pocos MB.
+
+- **Con GitHub (recomendado):** sube el proyecto a un repositorio y entra a *Actions → «Instalador de Windows» → Run workflow*. En ~10 min descargas los instaladores desde el resultado (o, si publicas una etiqueta `v0.3.0`, quedan en un borrador de *Release*). No instalas nada en tu PC.
+- **En tu PC:** doble clic en `construir-escritorio.bat` (necesita Node.js, Rust y «Visual Studio Build Tools» con C++ una sola vez). Los instaladores quedan en `src-tauri\target\release\bundle`.
+- **Tu progreso:** la app de escritorio guarda sus datos aparte del navegador. Para pasarlos: en el navegador, *Respaldo → Elegir carpeta* (OneDrive); en la app, *Respaldo → misma carpeta → Traer progreso*.
+- Todo funciona sin internet. NotebookLM y la búsqueda de GPC se abren en tu navegador cuando hay conexión.
+
+## Usarla en tu Surface
+
+1. Esta carpeta está en **OneDrive › Escritorio**: si tu Surface usa la misma cuenta de Microsoft, `Quiron Codex.html` ya aparece ahí. Si no, cópiala con una USB o envíatela.
+2. Ábrela con **Edge**. Para que parezca una app: menú **⋯ › Más herramientas › Anclar a la barra de tareas** (o arrastra el archivo a la barra de tareas).
+3. Pantalla completa con **F11**. En modo tableta funciona igual.
+4. **Solo lápiz** viene activado: la mano y la palma no escriben ni anotan; con el dedo solo desplazas la página. Puedes apagarlo con el botón «Solo lápiz» (en el lienzo y en la barra de herramientas del PDF).
+5. El **botón borrador** del Surface Pen (la parte de atrás) borra trazos en cualquier herramienta.
+
+## Tu progreso: dónde se guarda y cómo respaldarlo
+
+- Se guarda **solo y al instante** en el navegador: PDFs, resaltados, post-its, marcadores, notas, cuadernos, calendario, metas y minutos de Pomodoro. Sigue ahí aunque cierres o apagues la computadora.
+- Solo se pierde si borras los datos de navegación de Edge, o si abres el archivo en otro navegador u otra computadora (cada uno guarda por separado).
+- **Respaldo automático (recomendado)**: botón **Respaldo** del menú izquierdo → «Elegir carpeta de respaldo». Elige una carpeta de **OneDrive** (por ejemplo `OneDrive/QuironCodex-respaldo`). Quirón Codex guarda tu progreso ahí cada 2 minutos y al cerrar la ventana.
+  - Al reabrir la app, Edge puede pedir permiso otra vez: verás un punto naranja en «Respaldo» → «Reconectar carpeta».
+- **Pasar el progreso a la Surface**: en la Surface abre `Quiron Codex.html` → Respaldo → elige **la misma carpeta de OneDrive** → «Traer progreso». Para volver a la PC, haz lo mismo al revés. Usa una computadora a la vez y trae el progreso antes de empezar.
+- **Respaldo en archivo**: Respaldo → «Descargar con PDFs» genera un solo archivo `.json`; «Restaurar archivo» lo carga en cualquier computadora.
+
+## Inicio: tu año de internado
+
+La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquema de guardias y cuánto tiempo puedes estudiar. Con eso reparte el temario (139 temas de 6 especialidades) en todo el año:
+
+- **Lección de hoy**: temas nuevos y repasos espaciados del día. **Empezar** / **Estudiar** abren los apuntes del tema (con plantilla clínica) en el cuaderno de su especialidad. **GPC** busca la guía solo en sitios oficiales (IMSS, gob.mx, ISSSTE).
+- **Pendientes**: lo que quedó sin marcar en las últimas 3 semanas.
+- **Calendario**: cada día muestra la rotación (barra de color) y las guardias (punto). Toca un día para ver su lección.
+- **Ajustar plan**: cambia rotaciones, guardias o tiempos; el plan se recalcula al instante y conserva lo que ya marcaste.
+
+### Fase 2
+- **Temario** (Inicio) → ficha de cada tema: sube la **GRR** y la **GER** (se reconocen por el nombre), vista de guardia, casos y flashcards.
+- **Perlas**: en Estudio, selecciona texto con el mouse o encierra una zona con la herramienta **Recorte (R)** usando el lápiz. Elige Apunte, Flashcard, Lienzo o Guardia.
+- **Guardia** (barra lateral): fichas de bolsillo y calculadoras. Las dosis las copias tú desde la GPC; la app no trae dosis precargadas.
+- **Hoy no doy más / Postguardia** (lección de hoy): reprograma lo pendiente y te deja 10 min de flashcards. Botón Deshacer.
+- **Casos vistos**: 3 líneas sin datos identificables.
+
+### Fase 3a
+- **Nota SOAP** (barra lateral): elige tipo de nota y tema, llena signos vitales y hallazgos, copia. Los datos del paciente no se guardan.
+- **Perlas HY**: mnemotecnias y datos de alto rendimiento por tema; exporta/importa para compartir.
+- **Fuentes / NotebookLM**: tus cuadernos de NotebookLM con búsqueda, consulta y fragmentos guardados. Panel rápido con el botón «NotebookLM» de la barra superior.
+- **Música**: botón redondo abajo a la izquierda → «Elegir carpeta».
+- **Estilo**: botón «Cristal / Mate» en la barra lateral.
+
+Roadmap del proyecto: [ROADMAP.md](ROADMAP.md).
+
+## Uso rápido
+
+**PDF (barra izquierda)**
+
+| Herramienta | Tecla | Qué hace |
+|---|---|---|
+| Navegar | **V** | Leer y desplazarte |
+| Resaltar área | **H** | Arrastra sobre el texto. 7 colores con significado: concepto clave, definición, perla ENARM, duda, fisiopatología, fármacos y alarma |
+| Subrayar | **U** | Arrastra a lo largo de la línea. Ajusta el color y el grosor |
+| Escribir / dibujar | **D** | Pluma, lápiz, rotulador o marcatextos. Cada uno guarda su propio color (paleta o cualquier color) y su grosor |
+| Post-it | **N** | Toca la página para pegarlo. Se arrastra, se minimiza y cambia de color |
+| Borrar | **E** | Arrastra sobre trazos o toca un resaltado. El botón borrador del lápiz funciona siempre |
+| Marcador | **B** | Marca la página actual (cinta verde). La lista ☰ permite saltar, renombrar e **insertar en la nota** |
+| Deshacer | **Ctrl+Z** | Deshace la última anotación del PDF |
+
+Con el dedo desplazas la página; con el lápiz o el mouse anotas.
+
+**Distribución de la pantalla** (arriba a la derecha, en Estudio)
+
+- **PDF · ▥ · Notas**: amplía solo el PDF, vuelve a la pantalla dividida o amplía solo las notas (**Alt+1 / Alt+2 / Alt+3**).
+- **⇄ Intercambiar**: pone las notas a la izquierda y el PDF a la derecha, o al revés (**Alt+S**).
+- Arrastra el separador para ajustar los tamaños (doble clic lo restablece). El PDF y la nota no se recargan al cambiar de modo.
+
+**Notas**
+
+- **Texto**: editor tipo Word con estilos (Título 1–3, cita), fuente, tamaño, negrita, cursiva, subrayado, tachado, superíndice y subíndice, color de texto y de resaltado, alineación, viñetas, numeración, listas de verificación, sangrías (Tab), tablas, línea, fecha y deshacer/rehacer. Los enlaces 📑 a páginas del PDF se abren con un clic.
+- **Lienzo**: escritura a mano con los mismos instrumentos. **Solo lápiz** evita que la palma dibuje; hojas rayadas, cuadriculadas o lisas.
+- **Síntesis**: genera una hoja de repaso con tus resaltados, notas, post-its y páginas del PDF.
+- Exporta cada nota a **PDF** o a **Word**.
+
+**Cuadernos**: agrupa notas por materia («Uno por materia» los crea todos) o por tema (por ejemplo «Choque séptico»). En el panel de notas puedes ver las notas del PDF abierto o las de un cuaderno, y mover una nota con el selector «Cuaderno».
+
+**Calendario**: escribe en «+ Añadir tema» y presiona Enter. Arrastra las sesiones entre días. **Pomodoro**: está arriba a la derecha; haz clic en el tiempo para elegir materia y duración. **Tema**: botón inferior del menú (claro, oscuro o automático).
+
+## Síntesis con IA (opcional)
+
+En **Síntesis → Claude (IA)** pega tu API key de Anthropic. La clave se guarda solo en este navegador, y el material se envía a la API únicamente cuando presionas **Generar**. Sin clave, el motor **Local** funciona offline.
+
+Más detalles técnicos en [ARCHITECTURE.md](ARCHITECTURE.md).

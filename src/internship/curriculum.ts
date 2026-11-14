@@ -1,0 +1,197 @@
+import type { Specialty, SpecialtyId, Topic } from './types';
+
+/**
+ * Temario base del internado (punto de partida editable).
+ * La prioridad (yield) es una sugerencia para distribuir el tiempo, no una estadística oficial del ENARM.
+ */
+export const SPECIALTIES: Specialty[] = [
+  { id: 'mi', name: 'Medicina Interna', short: 'MI', color: '#5b8c51' },
+  { id: 'cg', name: 'Cirugía General', short: 'CG', color: '#b0703a' },
+  { id: 'go', name: 'Ginecología y Obstetricia', short: 'GO', color: '#b4587c' },
+  { id: 'ped', name: 'Pediatría', short: 'PED', color: '#4a86a8' },
+  { id: 'urg', name: 'Urgencias', short: 'URG', color: '#c0533f' },
+  { id: 'sp', name: 'Salud Pública y Medicina Familiar', short: 'SP', color: '#7b6bb0' },
+];
+export const SPECIALTY: Record<SpecialtyId, Specialty> = Object.fromEntries(SPECIALTIES.map((s) => [s.id, s])) as Record<
+  SpecialtyId,
+  Specialty
+>;
+
+const MIN: Record<1 | 2 | 3, number> = { 3: 75, 2: 55, 1: 40 };
+
+type Row = [title: string, yld: 1 | 2 | 3, gpc?: string];
+
+const RAW: Record<SpecialtyId, Row[]> = {
+  mi: [
+    ['Hipertensión arterial sistémica', 3],
+    ['Diabetes mellitus tipo 2: diagnóstico y tratamiento', 3],
+    ['Cetoacidosis diabética y estado hiperosmolar', 3],
+    ['Dislipidemias', 2],
+    ['Síndrome coronario agudo', 3],
+    ['Insuficiencia cardiaca', 3],
+    ['Fibrilación auricular', 2],
+    ['Valvulopatías', 1],
+    ['Endocarditis infecciosa', 1],
+    ['Tromboembolia pulmonar', 2],
+    ['Asma en el adulto', 2],
+    ['EPOC', 3, 'enfermedad pulmonar obstructiva crónica'],
+    ['Neumonía adquirida en la comunidad', 3],
+    ['Tuberculosis pulmonar', 3],
+    ['Enfermedad renal crónica', 3],
+    ['Lesión renal aguda', 2],
+    ['Trastornos del sodio y del potasio', 3, 'hiponatremia hipercalemia'],
+    ['Trastornos ácido-base', 2],
+    ['Cirrosis hepática y sus complicaciones', 3],
+    ['Hepatitis virales', 2],
+    ['Hemorragia digestiva alta', 2],
+    ['Enfermedad ácido-péptica y H. pylori', 2],
+    ['Hipotiroidismo e hipertiroidismo', 2],
+    ['Anemias: ferropénica y megaloblástica', 2],
+    ['VIH: diagnóstico y tratamiento antirretroviral inicial', 2],
+    ['Artritis reumatoide', 2],
+    ['Lupus eritematoso sistémico', 1],
+    ['Gota', 1],
+    ['Enfermedad vascular cerebral', 3],
+    ['Epilepsia en el adulto', 1],
+    ['Infección de vías urinarias en el adulto', 2],
+    ['Dengue', 2],
+  ],
+  cg: [
+    ['Abdomen agudo: abordaje', 3],
+    ['Apendicitis aguda', 3],
+    ['Colecistitis y colelitiasis', 3],
+    ['Coledocolitiasis y colangitis', 2],
+    ['Pancreatitis aguda', 3],
+    ['Oclusión intestinal', 2],
+    ['Hernias de la pared abdominal', 2],
+    ['Enfermedad diverticular', 2],
+    ['Hemorroides y patología anorrectal', 1],
+    ['Cáncer colorrectal', 2],
+    ['Cáncer gástrico', 1],
+    ['Valoración preoperatoria y riesgo quirúrgico', 2],
+    ['Líquidos y electrolitos en el paciente quirúrgico', 2],
+    ['Infección del sitio quirúrgico', 2],
+    ['Heridas y cicatrización', 1],
+    ['Trauma abdominal', 2],
+    ['Pie diabético', 2],
+    ['Insuficiencia venosa y trombosis venosa profunda', 2],
+    ['Enfermedad arterial periférica', 1],
+    ['Nódulo tiroideo y cáncer de tiroides', 1],
+    ['Hiperplasia prostática y cáncer de próstata', 2],
+    ['Litiasis urinaria', 2],
+    ['Fracturas frecuentes: cadera y radio distal', 2],
+    ['Lumbalgia', 1],
+  ],
+  go: [
+    ['Control prenatal', 3],
+    ['Trastornos hipertensivos del embarazo: preeclampsia y eclampsia', 3],
+    ['Diabetes gestacional', 3],
+    ['Aborto, embarazo ectópico y enfermedad trofoblástica', 3],
+    ['Placenta previa y desprendimiento prematuro de placenta', 3],
+    ['Hemorragia posparto', 3],
+    ['Amenaza de parto pretérmino', 3],
+    ['Ruptura prematura de membranas', 3],
+    ['Trabajo de parto y atención del parto', 2],
+    ['Puerperio normal y patológico', 2],
+    ['Infección de vías urinarias en el embarazo', 2],
+    ['Isoinmunización materno-fetal', 1],
+    ['Cesárea: indicaciones', 1],
+    ['Planificación familiar y anticoncepción', 3],
+    ['Cervicovaginitis', 2],
+    ['Cáncer cervicouterino y tamizaje', 3],
+    ['Patología mamaria y cáncer de mama', 3],
+    ['Miomatosis uterina', 2],
+    ['Endometriosis', 1],
+    ['Sangrado uterino anormal', 2],
+    ['Síndrome de ovario poliquístico', 2],
+    ['Climaterio y menopausia', 2],
+    ['Infertilidad', 1],
+    ['Enfermedad pélvica inflamatoria', 2],
+    ['Cáncer de endometrio y de ovario', 1],
+  ],
+  ped: [
+    ['Atención inmediata y reanimación del recién nacido', 3],
+    ['Ictericia neonatal', 2],
+    ['Sepsis neonatal', 2],
+    ['Dificultad respiratoria del recién nacido', 2],
+    ['Tamiz neonatal', 2],
+    ['Crecimiento y desarrollo', 2],
+    ['Esquema nacional de vacunación', 3, 'vacunación infantil'],
+    ['Lactancia materna y alimentación complementaria', 2],
+    ['Desnutrición y obesidad infantil', 2],
+    ['Enfermedad diarreica aguda y deshidratación', 3],
+    ['Faringoamigdalitis y otitis media aguda', 3],
+    ['Neumonía en pediatría', 3],
+    ['Bronquiolitis', 2],
+    ['Crisis asmática en pediatría', 2],
+    ['Laringotraqueítis (crup)', 2],
+    ['Exantemas infecciosos', 3],
+    ['Infección de vías urinarias en pediatría', 2],
+    ['Crisis convulsivas febriles', 2],
+    ['Meningitis bacteriana', 2],
+    ['Cardiopatías congénitas', 1],
+    ['Enfermedad de Kawasaki', 1],
+    ['Leucemia linfoblástica aguda', 1],
+    ['Maltrato infantil', 1],
+    ['Intoxicaciones en pediatría', 1],
+    ['Displasia del desarrollo de la cadera', 1],
+    ['Fiebre sin foco', 1],
+  ],
+  urg: [
+    ['Evaluación primaria del paciente traumatizado (ABCDE)', 3, 'atención inicial del paciente politraumatizado'],
+    ['Reanimación cardiopulmonar y soporte vital avanzado', 3],
+    ['Choque: hipovolémico, cardiogénico y distributivo', 3],
+    ['Sepsis y choque séptico', 3],
+    ['Traumatismo craneoencefálico', 3],
+    ['Trauma de tórax', 2],
+    ['Manejo de la vía aérea', 2],
+    ['Arritmias en urgencias', 2],
+    ['Crisis hipertensiva', 2],
+    ['Edema agudo pulmonar', 2],
+    ['Anafilaxia', 2],
+    ['Intoxicaciones frecuentes', 2],
+    ['Picadura de alacrán y mordedura de serpiente', 2],
+    ['Quemaduras', 2],
+    ['Estado epiléptico', 2],
+    ['Hipoglucemia', 2],
+    ['Dolor torácico: abordaje', 3],
+    ['Cefalea: abordaje en urgencias', 1],
+    ['Síncope', 1],
+    ['Insuficiencia respiratoria aguda', 2],
+    ['Lesión medular aguda', 1],
+    ['Golpe de calor e hipotermia', 1],
+  ],
+  sp: [
+    ['Epidemiología básica y medidas de frecuencia', 2],
+    ['Pruebas diagnósticas: sensibilidad, especificidad y valores predictivos', 3],
+    ['Diseños de estudio y niveles de evidencia', 2],
+    ['Vigilancia epidemiológica', 1],
+    ['Expediente clínico (NOM-004)', 1],
+    ['Detección de diabetes, hipertensión y obesidad', 2],
+    ['Tabaquismo y adicciones', 1],
+    ['Salud del adulto mayor', 2],
+    ['Vacunación en el adulto', 1],
+    ['Ética médica y consentimiento informado', 1],
+  ],
+};
+
+export const TOPICS: Topic[] = (Object.keys(RAW) as SpecialtyId[]).flatMap((sp) =>
+  RAW[sp].map(([title, yld, gpc], i) => ({
+    id: `${sp}-${String(i + 1).padStart(2, '0')}`,
+    specialty: sp,
+    title,
+    minutes: MIN[yld],
+    yield: yld,
+    gpc,
+  })),
+);
+export const TOPIC: Record<string, Topic> = Object.fromEntries(TOPICS.map((t) => [t.id, t]));
+
+/**
+ * Búsqueda de la GPC del tema restringida a dominios oficiales.
+ * (El Catálogo Maestro de CENETEC dejó de estar disponible en 2025; los PDFs del IMSS siguen publicados.)
+ */
+export function gpcSearchUrl(t: Topic): string {
+  const q = `"Guía de Práctica Clínica" ${t.gpc ?? t.title} (site:imss.gob.mx OR site:gob.mx OR site:issste.gob.mx)`;
+  return `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+}
