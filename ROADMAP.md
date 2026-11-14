@@ -77,6 +77,7 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 
 ### v0.5.1 · Pulido visual ✅ (noviembre 2026)
 - Barra lateral de 17 a 11 botones (menús «Herramientas» y «Ajustes»); franja de 4 indicadores en Inicio con cuenta regresiva al ENARM; tarjetas plegables; ámbar reservado para la acción principal; prioridad como punto; tablas en modo lectura con edición explícita; estados vacíos con ejemplo y acción; aviso de modo noche; transiciones de 120 ms (respetan «reducir movimiento»).
+- v0.5.2: «Lección de hoy» como tarjeta principal: anillo de avance del día, bloque «Sigue» con el próximo tema, resumen de lecciones, ornamento y estado de día completo.
 
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.

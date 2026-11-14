@@ -91,6 +91,7 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 - **Inicio**: franja con flashcards de hoy, temas débiles, pendientes del turno y días para el ENARM (toca para poner la fecha). Las tarjetas de la derecha se pliegan con la flecha y se recuerda tu elección.
 - Menos ámbar: queda para la acción principal y lo urgente; «Prioridad alta» ahora es un punto junto al tema.
 - Bitácora y signos vitales se ven como tabla limpia; se editan con «Editar metas» / «Editar rangos».
+- **Lección de hoy** rediseñada: anillo con los minutos que llevas, «Sigue» con el próximo tema en grande y el botón Empezar a la vista; al terminar el día, el anillo se pone verde.
 - Turno con tarjetas más anchas cuando hay pocos pacientes, estados vacíos con ejemplo y botón, números en la tipografía del Codex, aviso de **Noche** en la barra superior (tócalo para apagarlo) y transiciones suaves entre vistas.
 
 Roadmap del proyecto: [ROADMAP.md](ROADMAP.md).

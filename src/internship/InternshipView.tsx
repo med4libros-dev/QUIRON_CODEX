@@ -490,40 +490,77 @@ function DayCard({
   const mins = lessons.reduce((a, l) => a + l.minutes, 0);
   const doneMins = lessons.filter((l) => done[l.id]).reduce((a, l) => a + l.minutes, 0);
   const first = lessons.find((l) => l.kind === 'new' && !done[l.id]) ?? lessons.find((l) => !done[l.id]);
+  const pct = mins ? doneMins / mins : 0;
+  const complete = lessons.length > 0 && !first;
+  const nNew = lessons.filter((l) => l.kind === 'new').length;
+  const nRev = lessons.length - nNew;
+  const R = 36;
+  const C = 2 * Math.PI * R;
+  const ft = first ? TOPIC[first.topicId] : null;
   return (
-    <section className="card day-card">
-      <div className="card-head">
-        <div>
+    <section className={`card day-card${complete ? ' complete' : ''}`}>
+      <div className="day-hero">
+        {lessons.length > 0 && (
+          <div className="day-progress ring" role="img" aria-label={`${formatMinutes(doneMins)} de ${formatMinutes(mins)} estudiados`}>
+            <svg viewBox="0 0 88 88" aria-hidden="true">
+              <circle className="ring-track" cx="44" cy="44" r={R} />
+              <circle className="ring-fill" cx="44" cy="44" r={R} strokeDasharray={C} strokeDashoffset={C * (1 - pct)} />
+            </svg>
+            <div className="ring-center">
+              {complete ? <Icon name="check" size={26} /> : <b className="tabular">{Math.round(doneMins)}</b>}
+              <small>{complete ? `${mins} min` : `de ${mins} min`}</small>
+            </div>
+          </div>
+        )}
+        <div className="day-hero-main">
           <h4>{isToday ? 'Lección de hoy' : 'Lección del día'}</h4>
           <div className="day-title">{fmt(fromKey(date), { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+          {lessons.length > 0 && (
+            <div className="day-sub muted small">
+              {lessons.length} lección{lessons.length === 1 ? '' : 'es'}
+              {nNew > 0 && ` · ${nNew} tema${nNew === 1 ? '' : 's'} nuevo${nNew === 1 ? '' : 's'}`}
+              {nRev > 0 && ` · ${nRev} repaso${nRev === 1 ? '' : 's'}`}
+            </div>
+          )}
+          {first && ft && (
+            <button className="up-next" onClick={() => useUI.getState().openTopic(ft.id, 'docs')} title="Ficha del tema">
+              <span className="up-label">Sigue</span>
+              <span className="up-title">
+                <span className="sp-tag" style={{ '--sp': SPECIALTY[ft.specialty].color } as CSSProperties}>
+                  {SPECIALTY[ft.specialty].short}
+                </span>
+                {ft.title}
+              </span>
+              <span className="muted small">
+                {first.adaptive ? 'Refuerzo · tema débil' : KIND_LABEL[first.kind]} · {lessonDetail(first)} · {first.minutes} min
+              </span>
+            </button>
+          )}
+          {complete && <p className="day-done-msg">Lo de hoy está hecho. Si te queda energía, repasa flashcards; si no, descansa: también es parte del plan.</p>}
         </div>
-        <span className="spacer" />
-        {onBackToToday && (
-          <button className="btn ghost sm" onClick={onBackToToday}>
-            Volver a hoy
-          </button>
-        )}
-        {onSurvival && (
-          <button className="btn survival-btn" onClick={onSurvival} title="Suspende la lectura de hoy, reprograma lo pendiente en tus días libres y deja solo 10 min de flashcards">
-            <Icon name="battery" size={15} /> Hoy no doy más<span className="hide-narrow"> / Postguardia</span>
-          </button>
-        )}
-        {first && (
-          <button className="btn primary" onClick={() => openTopicNote(TOPIC[first.topicId], { prefer: first.kind === 'new' ? 'GER' : 'GRR' })}>
-            <Icon name="play" size={15} /> Empezar
-          </button>
-        )}
+        <div className="day-hero-actions">
+          {first && (
+            <button className="btn primary big" onClick={() => openTopicNote(TOPIC[first.topicId], { prefer: first.kind === 'new' ? 'GER' : 'GRR' })}>
+              <Icon name="play" size={16} /> Empezar
+            </button>
+          )}
+          {onSurvival && (
+            <button className="btn survival-btn" onClick={onSurvival} title="Suspende la lectura de hoy, reprograma lo pendiente en tus días libres y deja solo 10 min de flashcards">
+              <Icon name="battery" size={15} /> Hoy no doy más<span className="hide-narrow"> / Postguardia</span>
+            </button>
+          )}
+          {onBackToToday && (
+            <button className="btn ghost sm" onClick={onBackToToday}>
+              Volver a hoy
+            </button>
+          )}
+        </div>
       </div>
       {plan?.guardia && <p className="guardia-note">Día de guardia: solo repasos breves. Descansa cuando puedas.</p>}
       {lessons.length > 0 ? (
         <>
-          <div className="day-progress">
-            <div className="bar">
-              <span style={{ width: `${mins ? (doneMins / mins) * 100 : 0}%` }} />
-            </div>
-            <span className="muted small tabular">
-              {formatMinutes(doneMins)} de {formatMinutes(mins)}
-            </span>
+          <div className="ornament" aria-hidden="true">
+            <span>✦</span>
           </div>
           <ul className="lesson-list">
             {lessons.map((l) => (
@@ -538,19 +575,22 @@ function DayCard({
   );
 }
 
+function lessonDetail(lesson: Lesson) {
+  return lesson.kind === 'new'
+    ? lesson.parts > 1
+      ? `Parte ${lesson.part} de ${lesson.parts}`
+      : 'Tema completo'
+    : lesson.kind === 'review'
+      ? `Repaso ${lesson.part} de ${lesson.parts}`
+      : 'Repaso integral';
+}
+
 function LessonRow({ lesson, done, onToggle, note }: { lesson: Lesson; done: boolean; onToggle: () => void; note?: string }) {
   const t = TOPIC[lesson.topicId];
   const atts = useTopicStore((s) => s.info[lesson.topicId]?.attachments);
   const kinds = new Set((atts ?? []).map((a) => a.kind));
   const sp = SPECIALTY[t.specialty];
-  const detail =
-    lesson.kind === 'new'
-      ? lesson.parts > 1
-        ? `Parte ${lesson.part} de ${lesson.parts}`
-        : 'Tema completo'
-      : lesson.kind === 'review'
-        ? `Repaso ${lesson.part} de ${lesson.parts}`
-        : 'Repaso integral';
+  const detail = lessonDetail(lesson);
   return (
     <li className={`lesson${done ? ' done' : ''} kind-${lesson.kind}`} style={{ '--sp': sp.color } as CSSProperties}>
       <button className="lesson-check" onClick={onToggle} aria-pressed={done} aria-label={done ? 'Marcar como pendiente' : 'Marcar como hecha'}>
