@@ -294,7 +294,7 @@ export function PdfWorkspace() {
 
       <div className="pdf-body">
         {doc ? (
-          <PdfViewer key={doc.id} docId={doc.id} tool={tool} zoom={zoom} onPageChange={setPage} />
+          <PdfViewer key={doc.id} docId={doc.id} tool={tool} zoom={zoom} onPageChange={setPage} onZoom={setZoom} />
         ) : hydrated ? (
           <EmptyLibrary docs={docs} busy={busy} onUpload={(f) => void upload(f)} onOpen={setActiveDoc} />
         ) : null}

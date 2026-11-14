@@ -10,7 +10,9 @@ import {
   type RefObject,
 } from 'react';
 import { uid } from '../../lib/id';
-import { ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, liveOpacity, type LiveStyle } from '../../lib/ink';
+import { useSettings } from '../../store/settings';
+import { usePinchZoom } from '../../lib/usePinchZoom';
+import { ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, liveOpacity, stabilize, type LiveStyle } from '../../lib/ink';
 import { capturePointer } from '../../lib/pointer';
 import { cropPage } from '../../lib/crop';
 import { TextLayer, extractTextInRect, loadPdfData, openPdf, type PDFDocumentProxy, type PDFPageProxy } from '../../lib/pdf';
@@ -27,6 +29,8 @@ interface Props {
   tool: PdfTool;
   zoom: number;
   onPageChange: (page: number) => void;
+  /** Zoom con dos dedos / Ctrl + rueda. */
+  onZoom?: (z: number) => void;
   /** false = no guarda la página como «retomar aquí» (p. ej. en el comparador). */
   persistPage?: boolean;
 }
@@ -59,7 +63,7 @@ function groupByPage<T extends { page: number }>(items: T[]): Map<number, T[]> {
  *  - El render ocurre fuera de pantalla y se copia de una vez: no hay parpadeo al hacer zoom.
  *  - Todas las anotaciones se guardan en coordenadas relativas a la página: sobreviven a cualquier zoom.
  */
-export function PdfViewer({ docId, tool, zoom, onPageChange, persistPage = true }: Props) {
+export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage = true }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageEls = useRef<(HTMLDivElement | null)[]>([]);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
@@ -129,6 +133,9 @@ export function PdfViewer({ docId, tool, zoom, onPageChange, persistPage = true 
     const el = scrollRef.current;
     if (el && restored.current) el.scrollTop = ratio.current * el.scrollHeight;
   }, [scale]);
+
+  // Pellizco / Ctrl + rueda: va después del efecto anterior para que mande el punto bajo los dedos.
+  usePinchZoom(scrollRef, zoom, (z) => onZoom?.(z), { min: 0.5, max: 3 });
 
   useEffect(() => {
     if (nav && nav.docId === docId) pageEls.current[nav.page - 1]?.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -253,7 +260,7 @@ type Gesture =
   | { kind: 'rect'; id: number; x: number; y: number }
   | { kind: 'draw'; id: number; pts: number[][]; rect: DOMRect; drawn: number; st: LiveStyle }
   | { kind: 'erase'; id: number; rect: DOMRect }
-  | { kind: 'pan'; id: number; y: number };
+  | { kind: 'pan'; id: number; y: number; x: number };
 
 const PdfPage = memo(function PdfPage({
   pdf,
@@ -386,7 +393,19 @@ const PdfPage = memo(function PdfPage({
   };
 
   // Tinta guardada sobre la página (sobre papel blanco: "tinta" = casi negro).
+  const committed = useRef<string | null>(null);
+  const prevStrokes = useRef(strokes);
+  const prevKey = useRef('');
   useEffect(() => {
+    // Trazo recién soltado: ya está pintado en la capa de tinta, no se redibuja toda la página.
+    const prev = prevStrokes.current;
+    const key = `${visible}|${cssW}|${cssH}`;
+    const id = committed.current;
+    const appended = !!id && key === prevKey.current && strokes.length === prev.length + 1 && strokes[strokes.length - 1].id === id && prev.every((s, i) => s === strokes[i]);
+    prevStrokes.current = strokes;
+    prevKey.current = key;
+    committed.current = null;
+    if (appended) return;
     const ctx = prepare(inkRef.current);
     if (ctx) for (const s of strokes) drawStroke(ctx, s, '#111827');
     if (gesture.current?.kind !== 'draw') {
@@ -426,7 +445,7 @@ const PdfPage = memo(function PdfPage({
     const ctx = ctx2d(liveRef.current);
     if (ctx) g.drawn = drawLiveSegments(ctx, g.pts, g.drawn, g.st, g.st.color);
     const tip = tipRef.current && ctx2d(tipRef.current);
-    if (tip) drawLiveTip(tip, g.pts, predicted, g.st, g.st.color, LW, logicalH);
+    if (tip) drawLiveTip(tip, g.pts, predicted, g.st, g.st.color);
   };
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -434,7 +453,7 @@ const PdfPage = memo(function PdfPage({
     const r = e.currentTarget.getBoundingClientRect();
     // Con «Solo lápiz», la mano/palma solo desplaza la página; el lápiz y el mouse anotan.
     if (e.pointerType === 'touch' && penOnly) {
-      gesture.current = { kind: 'pan', id: e.pointerId, y: e.clientY };
+      gesture.current = { kind: 'pan', id: e.pointerId, y: e.clientY, x: e.clientX };
       return;
     }
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -454,8 +473,6 @@ const PdfPage = memo(function PdfPage({
     } else if (tool === 'draw') {
       const st: LiveStyle = { tool: drawTool, color: pen.color === 'auto' ? '#111827' : pen.color, size: pen.size, pressure: e.pointerType === 'pen' };
       gesture.current = { kind: 'draw', id: e.pointerId, pts: [toLogical(e, r)], rect: r, drawn: 0, st };
-      prepare(liveRef.current);
-      prepare(tipRef.current);
       const op = String(liveOpacity(drawTool));
       if (liveRef.current) liveRef.current.style.opacity = op;
       if (tipRef.current) tipRef.current.style.opacity = op;
@@ -471,8 +488,12 @@ const PdfPage = memo(function PdfPage({
     if (!g || g.id !== e.pointerId) return;
     if (g.kind === 'pan') {
       const sc = rootRef.current;
-      if (sc) sc.scrollTop -= e.clientY - g.y;
+      if (sc && !sc.dataset.pinching) {
+        sc.scrollTop -= e.clientY - g.y;
+        sc.scrollLeft -= e.clientX - g.x;
+      }
       g.y = e.clientY;
+      g.x = e.clientX;
       return;
     }
     if (g.kind === 'rect') {
@@ -497,12 +518,10 @@ const PdfPage = memo(function PdfPage({
         eraseAt(pt[0], pt[1], pt[0] / LW, pt[1] / logicalH);
         continue;
       }
-      const last = g.pts[g.pts.length - 1];
-      pt[0] = Math.round((last[0] + (pt[0] - last[0]) * 0.75) * 10) / 10;
-      pt[1] = Math.round((last[1] + (pt[1] - last[1]) * 0.75) * 10) / 10;
-      if (g.kind === 'draw') g.pts.push(pt);
+      stabilize(g.pts[g.pts.length - 1], pt);
+      g.pts.push(pt);
     }
-    if (g.kind === 'draw') paintLive(typeof native.getPredictedEvents === 'function' ? native.getPredictedEvents().map((ev) => toLogical(ev, g.rect)) : []);
+    if (g.kind === 'draw') paintLive(useSettings.getState().inkPredict && typeof native.getPredictedEvents === 'function' ? native.getPredictedEvents().map((ev) => toLogical(ev, g.rect)) : []);
   };
 
   // «pointerrawupdate» llega en cuanto el lápiz reporta, sin esperar al siguiente cuadro como pointermove.
@@ -528,7 +547,14 @@ const PdfPage = memo(function PdfPage({
     if (!g || g.id !== e.pointerId) return;
     gesture.current = null;
     if (g.kind === 'draw') {
-      lib().addPdfStroke(docId, { id: uid(), page: index + 1, tool: drawTool, color: pen.color, size: pen.size, points: g.pts });
+      const stroke = { id: uid(), page: index + 1, tool: drawTool, color: pen.color, size: pen.size, points: g.pts };
+      const base = inkRef.current && ctx2d(inkRef.current);
+      if (base) {
+        drawStroke(base, stroke, '#111827');
+        committed.current = stroke.id;
+        for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, LW, logicalH);
+      }
+      lib().addPdfStroke(docId, stroke);
       return;
     }
     if (g.kind !== 'rect') return;

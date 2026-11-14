@@ -14,8 +14,9 @@ import { Icon } from '../../components/Icon';
 import { capturePointer } from '../../lib/pointer';
 import { idb } from '../../lib/idb';
 import { uid } from '../../lib/id';
-import { PAGE_H, PAGE_W, ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, inkColor, liveOpacity, type LiveStyle } from '../../lib/ink';
+import { PAGE_H, PAGE_W, ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, inkColor, liveOpacity, stabilize, type LiveStyle } from '../../lib/ink';
 import { PenControls } from '../../components/PenControls';
+import { usePinchZoom } from '../../lib/usePinchZoom';
 import { loadInkImages, saveInkImages, type InkImage } from '../../lib/inkImages';
 import { useBridge } from '../../store/bridge';
 import { useTools } from '../../store/tools';
@@ -44,6 +45,8 @@ export function InkCanvas({ note }: { note: Note }) {
   const [erasing, setErasing] = useState(false);
   const tool: InkTool = erasing ? 'eraser' : drawTool;
   const penOnly = useTools((s) => s.penOnly);
+  const inkZoom = useSettings((s) => s.inkZoom);
+  const setInkZoom = useSettings((s) => s.setInkZoom);
   const setPenOnly = useTools((s) => s.setPenOnly);
   const [, setHistoryTick] = useState(0);
   const undo = useRef<Stroke[][]>([]);
@@ -188,7 +191,14 @@ export function InkCanvas({ note }: { note: Note }) {
     return m;
   }, [strokes]);
 
+  usePinchZoom(scrollRef, inkZoom, setInkZoom, { min: 0.5, max: 3 });
   const pages = Math.max(1, note.inkPages);
+  const INK_ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+  const zoomStep = (dir: 1 | -1) => {
+    const i = INK_ZOOMS.findIndex((v) => v >= inkZoom - 0.001);
+    const idx = (i === -1 ? INK_ZOOMS.length - 1 : i) + dir;
+    setInkZoom(INK_ZOOMS[Math.min(INK_ZOOMS.length - 1, Math.max(0, idx))]);
+  };
   const color = setting.color;
   const size = setting.size;
 
@@ -214,6 +224,17 @@ export function InkCanvas({ note }: { note: Note }) {
           <Icon name="redo" />
         </button>
         <div className="spacer" />
+        <div className="group ink-zoom" role="group" aria-label="Zoom del lienzo">
+          <button className="icon-btn" onClick={() => zoomStep(-1)} title="Alejar (o pellizca con dos dedos / Ctrl + rueda)" aria-label="Alejar lienzo">
+            <Icon name="zoomOut" />
+          </button>
+          <button className="btn ghost tabular zoom-label" onClick={() => setInkZoom(1)} title="Ajustar al ancho">
+            {Math.round(inkZoom * 100)}%
+          </button>
+          <button className="icon-btn" onClick={() => zoomStep(1)} title="Acercar (o pellizca con dos dedos / Ctrl + rueda)" aria-label="Acercar lienzo">
+            <Icon name="zoomIn" />
+          </button>
+        </div>
         <button
           className={`btn ghost sm${penOnly ? ' active' : ''}`}
           onClick={() => setPenOnly(!penOnly)}
@@ -236,7 +257,7 @@ export function InkCanvas({ note }: { note: Note }) {
           <Icon name="trash" />
         </button>
       </div>
-      <div className="ink-scroll" ref={scrollRef}>
+      <div className="ink-scroll" ref={scrollRef} style={{ '--ink-zoom': inkZoom } as CSSProperties}>
         {strokes === null ? (
           <div className="loading">Cargando lienzo…</div>
         ) : (
@@ -292,7 +313,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
   const tipRef = useRef<HTMLCanvasElement>(null);
   const [cssW, setCssW] = useState(0);
   const cur = useRef<{ id: number; pts: number[][]; erase: boolean; rect: DOMRect; drawn: number; st: LiveStyle; color: string } | null>(null);
-  const pan = useRef<{ id: number; y: number } | null>(null);
+  const pan = useRef<{ id: number; y: number; x: number } | null>(null);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -307,7 +328,8 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
   /** Ajusta el canvas a la resolución del dispositivo y deja el contexto en coordenadas lógicas. */
   const prepare = (c: HTMLCanvasElement | null) => {
     if (!c || !cssW) return null;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Con zoom alto se limita la resolución interna (≤ 3200 px de ancho) para no gastar memoria ni batería.
+    const dpr = Math.min(window.devicePixelRatio || 1, 2, 3200 / cssW);
     const w = Math.round(cssW * dpr);
     const h = Math.round(((cssW * PAGE_H) / PAGE_W) * dpr);
     if (c.width !== w || c.height !== h) {
@@ -322,7 +344,21 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     return ctx;
   };
 
+  // Al soltar el lápiz el trazo ya se dibujó en la base: no hace falta redibujar toda la hoja
+  // (ese redibujo completo trababa el inicio del siguiente trazo al escribir rápido).
+  const committed = useRef<string | null>(null);
+  const prevStrokes = useRef<Stroke[]>(strokes);
+  const prevKey = useRef('');
+
   useEffect(() => {
+    const prev = prevStrokes.current;
+    const key = `${cssW}|${dark}`;
+    const id = committed.current;
+    const appended = !!id && key === prevKey.current && strokes.length === prev.length + 1 && strokes[strokes.length - 1].id === id && prev.every((s, i) => s === strokes[i]);
+    prevStrokes.current = strokes;
+    prevKey.current = key;
+    committed.current = null;
+    if (appended) return;
     const ctx = prepare(baseRef.current);
     if (!ctx) return;
     const ink = inkColor();
@@ -350,12 +386,12 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     const ctx = ctx2d(liveRef.current);
     if (ctx) c.drawn = drawLiveSegments(ctx, c.pts, c.drawn, c.st, c.color);
     const tip = tipRef.current && ctx2d(tipRef.current);
-    if (tip) drawLiveTip(tip, c.pts, predicted, c.st, c.color, PAGE_W, PAGE_H);
+    if (tip) drawLiveTip(tip, c.pts, predicted, c.st, c.color);
   };
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (penOnly && e.pointerType === 'touch') {
-      pan.current = { id: e.pointerId, y: e.clientY };
+      pan.current = { id: e.pointerId, y: e.clientY, x: e.clientX };
       return;
     }
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -371,8 +407,6 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       onErase(index, p[0], p[1], true);
       return;
     }
-    prepare(liveRef.current);
-    prepare(tipRef.current);
     const op = String(liveOpacity(strokeTool));
     if (liveRef.current) liveRef.current.style.opacity = op;
     if (tipRef.current) tipRef.current.style.opacity = op;
@@ -382,8 +416,13 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
   const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const pn = pan.current;
     if (pn && pn.id === e.pointerId) {
-      if (scrollRef.current) scrollRef.current.scrollTop -= e.clientY - pn.y;
+      const sc = scrollRef.current;
+      if (sc && !sc.dataset.pinching) {
+        sc.scrollTop -= e.clientY - pn.y;
+        sc.scrollLeft -= e.clientX - pn.x;
+      }
       pn.y = e.clientY;
+      pn.x = e.clientX;
       return;
     }
     // Con pointerrawupdate (lápiz sin esperar al cuadro) la tinta ya se dibujó ahí.
@@ -403,14 +442,12 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
         continue;
       }
       // Estabilización ligera: suaviza el temblor sin agregar retraso perceptible.
-      const last = c.pts[c.pts.length - 1];
-      p[0] = Math.round((last[0] + (p[0] - last[0]) * 0.75) * 10) / 10;
-      p[1] = Math.round((last[1] + (p[1] - last[1]) * 0.75) * 10) / 10;
+      stabilize(c.pts[c.pts.length - 1], p);
       c.pts.push(p);
     }
     if (c.erase) return;
     // Puntos que el sistema predice para los próximos milisegundos: adelantan la punta y borran la sensación de retraso.
-    const predicted = typeof native.getPredictedEvents === 'function' ? native.getPredictedEvents().map((ev) => toLocal(ev, c.rect)) : [];
+    const predicted = useSettings.getState().inkPredict && typeof native.getPredictedEvents === 'function' ? native.getPredictedEvents().map((ev) => toLocal(ev, c.rect)) : [];
     paintLive(predicted);
   };
 
@@ -439,8 +476,15 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     if (!c || c.id !== e.pointerId) return;
     cur.current = null;
     if (c.erase) return;
-    // El trazo en vivo y la punta se borran cuando el definitivo ya está dibujado (efecto de abajo): sin parpadeo.
-    onStroke({ id: uid(), page: index, tool: strokeTool, color, size, points: c.pts });
+    // El trazo definitivo se pinta en la base aquí mismo (solo él) y se limpian las capas en vivo: sin parpadeo ni redibujo.
+    const stroke: Stroke = { id: uid(), page: index, tool: strokeTool, color, size, points: c.pts };
+    const base = baseRef.current && ctx2d(baseRef.current);
+    if (base) {
+      drawStroke(base, stroke, inkColor());
+      committed.current = stroke.id;
+      for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, PAGE_W, PAGE_H);
+    }
+    onStroke(stroke);
   };
 
   const line = (cssW / PAGE_W) * 44;

@@ -31,6 +31,12 @@ export interface SettingsState {
   /** Ahorro de batería: «auto» se activa al desconectar el cargador. */
   saver: 'auto' | 'on' | 'off';
   setSaver: (v: 'auto' | 'on' | 'off') => void;
+  /** Punta predictiva del lápiz (experimental): adelanta el trazo unos milisegundos. */
+  inkPredict: boolean;
+  setInkPredict: (v: boolean) => void;
+  /** Zoom del lienzo de notas (1 = ancho de la hoja). */
+  inkZoom: number;
+  setInkZoom: (z: number) => void;
   /** Fecha del ENARM (YYYY-MM-DD) para la cuenta regresiva de Inicio. */
   enarmDate: string | null;
   setEnarmDate: (d: string | null) => void;
@@ -72,6 +78,10 @@ export const useSettings = createStore<SettingsState>(
     reminders: false,
     reminderHour: 8,
     enarmDate: null,
+    inkPredict: false,
+    setInkPredict: (inkPredict) => set({ inkPredict }),
+    inkZoom: 1,
+    setInkZoom: (inkZoom) => set({ inkZoom: Math.min(3, Math.max(0.5, Math.round(inkZoom * 100) / 100)) }),
     saver: 'auto',
     setSaver: (saver) => set({ saver }),
     setEnarmDate: (enarmDate) => set({ enarmDate }),
@@ -94,8 +104,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver }) => ({
-      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver,
+    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict }) => ({
+      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict,
     }),
   },
 );

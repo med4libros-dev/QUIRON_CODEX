@@ -108,6 +108,10 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 - **Datos más seguros**: el respaldo en la carpeta se verifica, te avisa si falla (punto en Ajustes), puedes **deshacer la última restauración** y te avisa si el almacenamiento está casi lleno o si un cambio no se pudo guardar. Los PDF dañados ya no entran a la biblioteca.
 - Objetivos táctiles más grandes, mensajes y nombres unificados.
 
+### v0.6.7
+- **Zoom con dos dedos / Ctrl + rueda** en el PDF y en el lienzo de notas (botones − / % / + en el lienzo).
+- **Escritura rápida**: el trazo recién soltado se pinta solo él (antes se redibujaba toda la hoja y trababa el inicio del siguiente); suavizado adaptable; punta predictiva opcional en Preferencias → Lápiz.
+
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 

@@ -23,6 +23,7 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
   const apiKey = useSettings((s) => s.apiKey);
   const model = useSettings((s) => s.model);
   const saver = useSettings((s) => s.saver);
+  const inkPredict = useSettings((s) => s.inkPredict);
   const [keyDraft, setKeyDraft] = useState('');
 
   return (
@@ -113,6 +114,16 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
             </div>
           )}
           {msg && <p className="small warn-text">{msg}</p>}
+        </section>
+
+        <section>
+          <h4>
+            <Icon name="pen" size={15} /> Lápiz
+          </h4>
+          <label className="check">
+            <input type="checkbox" checked={inkPredict} onChange={(e) => useSettings.getState().setInkPredict(e.target.checked)} /> Punta predictiva (experimental)
+          </label>
+          <p className="muted small">Adelanta el trazo unos milisegundos con la predicción de Windows. Pruébala: si la punta «baila» en trazos rápidos, déjala apagada.</p>
         </section>
 
         <section>

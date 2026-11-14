@@ -6104,6 +6104,16 @@ button.kpi:hover {
 /* Trazo en vivo en su propia capa: dibujar no obliga a repintar la página ni el cristal de alrededor. */
 .ink-live {
   pointer-events: none;
-  will-change: transform;
-  transform: translateZ(0);
+}
+/* Zoom del lienzo y pellizco */
+.ink-page {
+  width: calc(min(100%, 900px) * var(--ink-zoom, 1));
+}
+.pdf-scroll,
+.ink-scroll {
+  touch-action: pan-x pan-y;
+}
+.ink-zoom {
+  display: flex;
+  align-items: center;
 }

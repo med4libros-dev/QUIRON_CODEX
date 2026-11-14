@@ -92,6 +92,10 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - Datos: verificación del respaldo en carpeta, aviso persistente de fallas, copia previa y «Deshacer restauración», aviso de almacenamiento > 85 %, aviso si una escritura falla, validación de cabecera `%PDF-`.
 - Textos y nombres unificados (GPC y temario, Ajustes → Preferencias), estados vacíos con acción.
 
+### v0.6.7 · Zoom y escritura rápida ✅ (noviembre 2026)
+- `usePinchZoom` (pellizco y Ctrl + rueda con vista previa por transform), zoom del lienzo (`settings.inkZoom`), desplazamiento horizontal con el dedo.
+- Tinta: confirmación incremental al soltar (sin redibujar la hoja), se retiró `desynchronized` y la predicción quedó opcional, `stabilize` adaptable, la punta solo borra su zona.
+
 ### v0.6.6 · Tinta de baja latencia ✅ (noviembre 2026)
 - Trazo en vivo incremental (solo el tramo nuevo, sin `requestAnimationFrame` ni redibujar el trazo completo), canvas `desynchronized`, eventos `pointerrawupdate`, punta con `getPredictedEvents()` en una capa aparte que se borra en cada evento, opacidad del marcatextos/lápiz en la capa y estabilización más ligera (0.75).
 

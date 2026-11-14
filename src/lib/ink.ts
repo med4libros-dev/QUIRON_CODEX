@@ -165,8 +165,18 @@ export async function renderInkPage(
 
 /** Contexto 2D; los canvas en vivo (data-live) piden el modo de baja latencia. */
 export function ctx2d(c: HTMLCanvasElement): CanvasRenderingContext2D | null {
-  return c.getContext('2d', c.dataset.live !== undefined ? { desynchronized: true } : undefined) as CanvasRenderingContext2D | null;
+  return c.getContext('2d');
 }
+
+/** Suavizado adaptable: quita el temblor al escribir despacio y no retrasa nada en trazos rápidos. */
+export function stabilize(last: number[], p: number[]) {
+  const d = Math.hypot(p[0] - last[0], p[1] - last[1]);
+  const a = d >= 5 ? 1 : 0.6 + 0.08 * d;
+  p[0] = Math.round((last[0] + (p[0] - last[0]) * a) * 10) / 10;
+  p[1] = Math.round((last[1] + (p[1] - last[1]) * a) * 10) / 10;
+}
+
+const tipDirty = new WeakMap<CanvasRenderingContext2D, [number, number, number, number]>();
 
 export interface LiveStyle {
   tool: StrokeLike['tool'];
@@ -218,19 +228,35 @@ export function drawLiveSegments(ctx: CanvasRenderingContext2D, pts: number[][],
  * Punta del trazo: el último medio tramo (de la última mitad al punto real) más los puntos predichos.
  * Va en un canvas aparte que se borra en cada evento, así la predicción nunca queda en el dibujo.
  */
-export function drawLiveTip(ctx: CanvasRenderingContext2D, pts: number[][], predicted: number[][], st: LiveStyle, color: string, w: number, h: number) {
-  ctx.clearRect(0, 0, w, h);
+export function drawLiveTip(ctx: CanvasRenderingContext2D, pts: number[][], predicted: number[][], st: LiveStyle, color: string) {
+  // Solo se borra la zona que ocupaba la punta anterior (borrar la hoja entera en cada evento era lento).
+  const d = tipDirty.get(ctx);
+  if (d) ctx.clearRect(d[0], d[1], d[2], d[3]);
+  tipDirty.delete(ctx);
   if (pts.length < 2 && !predicted.length) return;
   const last = pts[pts.length - 1];
   const start = pts.length >= 2 ? mid(pts[pts.length - 2], last) : last;
+  const lw = liveWidth(st, last[2]);
   ctx.lineCap = st.tool === 'highlighter' ? 'butt' : 'round';
   ctx.lineJoin = 'round';
   ctx.strokeStyle = color;
   ctx.globalAlpha = 1;
-  ctx.lineWidth = liveWidth(st, last[2]);
+  ctx.lineWidth = lw;
   ctx.beginPath();
   ctx.moveTo(start[0], start[1]);
   ctx.lineTo(last[0], last[1]);
-  for (const p of predicted) ctx.lineTo(p[0], p[1]);
+  let x0 = Math.min(start[0], last[0]);
+  let y0 = Math.min(start[1], last[1]);
+  let x1 = Math.max(start[0], last[0]);
+  let y1 = Math.max(start[1], last[1]);
+  for (const p of predicted) {
+    ctx.lineTo(p[0], p[1]);
+    x0 = Math.min(x0, p[0]);
+    y0 = Math.min(y0, p[1]);
+    x1 = Math.max(x1, p[0]);
+    y1 = Math.max(y1, p[1]);
+  }
   ctx.stroke();
+  const pad = lw + 3;
+  tipDirty.set(ctx, [x0 - pad, y0 - pad, x1 - x0 + pad * 2, y1 - y0 + pad * 2]);
 }
