@@ -73,13 +73,19 @@ export function WardView() {
         </span>
       </div>
       {patients.length ? (
-        <div className="ward-grid">
+        <div className={`ward-grid n${Math.min(patients.length, 3)}`}>
           {patients.map((p) => (
             <PatientCard key={p.id} p={p} />
           ))}
         </div>
       ) : (
-        <div className="ts-empty muted">Agrega a tus pacientes al empezar la guardia; al terminar puedes pasar los interesantes a tu bitácora de casos.</div>
+        <div className="empty-mini ward-empty">
+          <Icon name="bed" size={26} />
+          <p className="muted">Agrega a tus pacientes al empezar la guardia: cama, sexo, edad y pendientes («BH de control 14:00»). Al terminar, pasa los interesantes a tu bitácora de casos.</p>
+          <button className="btn primary" onClick={() => useWard.getState().addPatient()}>
+            <Icon name="plus" size={15} /> Agregar mi primer paciente
+          </button>
+        </div>
       )}
       {ending && <EndShift onClose={() => setEnding(false)} />}
       <RoundsModal />

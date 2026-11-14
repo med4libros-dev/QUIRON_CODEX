@@ -38,7 +38,7 @@ El proyecto ya está configurado con **Tauri 2** (`src-tauri/`). Genera un insta
 
 - Se guarda **solo y al instante** en el navegador: PDFs, resaltados, post-its, marcadores, notas, cuadernos, calendario, metas y minutos de Pomodoro. Sigue ahí aunque cierres o apagues la computadora.
 - Solo se pierde si borras los datos de navegación de Edge, o si abres el archivo en otro navegador u otra computadora (cada uno guarda por separado).
-- **Respaldo automático (recomendado)**: botón **Respaldo** del menú izquierdo → «Elegir carpeta de respaldo». Elige una carpeta de **OneDrive** (por ejemplo `OneDrive/QuironCodex-respaldo`). Quirón Codex guarda tu progreso ahí cada 2 minutos y al cerrar la ventana.
+- **Respaldo automático (recomendado)**: **Ajustes** (abajo en la barra izquierda) → **Respaldo** → «Elegir carpeta de respaldo». Elige una carpeta de **OneDrive** (por ejemplo `OneDrive/QuironCodex-respaldo`). Quirón Codex guarda tu progreso ahí cada 2 minutos y al cerrar la ventana.
   - Al reabrir la app, Edge puede pedir permiso otra vez: verás un punto naranja en «Respaldo» → «Reconectar carpeta».
 - **Pasar el progreso a la Surface**: en la Surface abre `Quiron Codex.html` → Respaldo → elige **la misma carpeta de OneDrive** → «Traer progreso». Para volver a la PC, haz lo mismo al revés. Usa una computadora a la vez y trae el progreso antes de empezar.
 - **Respaldo en archivo**: Respaldo → «Descargar con PDFs» genera un solo archivo `.json`; «Restaurar archivo» lo carga en cualquier computadora.
@@ -55,15 +55,15 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### Fase 2
 - **Temario** (Inicio) → ficha de cada tema: sube la **GRR** y la **GER** (se reconocen por el nombre), vista de guardia, casos y flashcards.
 - **Perlas**: en Estudio, selecciona texto con el mouse o encierra una zona con la herramienta **Recorte (R)** usando el lápiz. Elige Apunte, Flashcard, Lienzo o Guardia.
-- **Guardia** (barra lateral): fichas de bolsillo y calculadoras. Las dosis las copias tú desde la GPC; la app no trae dosis precargadas.
+- **Herramientas → Guardia** (barra lateral): fichas de bolsillo y calculadoras. Las dosis las copias tú desde la GPC; la app no trae dosis precargadas.
 - **Hoy no doy más / Postguardia** (lección de hoy): reprograma lo pendiente y te deja 10 min de flashcards. Botón Deshacer.
 - **Casos vistos**: 3 líneas sin datos identificables.
 
 ### Fase 3a
-- **Nota SOAP** (barra lateral): elige tipo de nota y tema, llena signos vitales y hallazgos, copia. Los datos del paciente no se guardan.
+- **Herramientas → Nota SOAP** (barra lateral): elige tipo de nota y tema, llena signos vitales y hallazgos, copia. Los datos del paciente no se guardan.
 - **Perlas HY**: mnemotecnias y datos de alto rendimiento por tema; exporta/importa para compartir.
 - **Música**: botón redondo abajo a la izquierda → «Elegir carpeta».
-- **Estilo**: botón «Cristal / Mate» en la barra lateral.
+- **Estilo**: Ajustes → «Estilo: Cristal / Mate».
 
 ### Fase 3b
 - **Simulacros** (barra lateral): genera casos tipo ENARM desde tu GER (necesita tu API key de Anthropic) o escríbelos; resuélvelos en bloques cronometrados.
@@ -76,7 +76,7 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.5 (19 mejoras)
 - **Bitácora** (barra lateral): procedimientos con conteo observé/asistí/realicé y meta por procedimiento, todos tus casos y un **diario** privado del internado (una entrada por día).
 - **Turno**: pendientes con hora, signos vitales marcados ↑/↓ según **tu** tabla por edad (Guardia → Signos vitales) y **Ensayo** del pase de visita con cronómetro de 60–120 s.
-- **Ajustes** (barra lateral): **recordatorios** de Windows (flashcards y refuerzo del día, pendientes con hora, 30 min antes del fin del turno) y **modo noche** (sin luz azul, automático por horario).
+- **Ajustes → Noche y avisos**: **recordatorios** de Windows (flashcards y refuerzo del día, pendientes con hora, 30 min antes del fin del turno) y **modo noche** (sin luz azul, automático por horario).
 - **Respaldo → Cifrado con contraseña** (AES-256). La contraseña no se guarda: si la olvidas, el respaldo no se recupera.
 - **PDF**: % leído y «retomar p. X»; marcadores como página clave (algoritmo, tabla, dosis, criterios); botón **?** para preguntas rápidas con IA desde tus subrayados; **Comparar lado a lado** dos guías del tema con scroll sincronizado.
 - **Ficha del tema**: **Diagrama** del algoritmo con IA desde tu GPC (editable y se pega en el lienzo), % completo de tu nota.
@@ -85,6 +85,13 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 - **Inicio**: fármaco del día (de tus fichas), resumen de la semana exportable a PDF, «Repasar preguntadas».
 - **«Me lo preguntaron»** (botón con micrófono) en preguntas, perlas y flashcards: se repasan primero y tienen su propio simulacro y filtro.
 - **Perlas HY → Mnemotecnias con IA** para tus temas débiles: eliges cuáles se guardan.
+
+### v0.5.1 (pulido visual)
+- Barra lateral más corta: **Herramientas** agrupa GPC, Guardia y Nota SOAP; **Ajustes** agrupa Respaldo, Noche y avisos, Tema y Estilo. Cabe en la Surface sin desplazar.
+- **Inicio**: franja con flashcards de hoy, temas débiles, pendientes del turno y días para el ENARM (toca para poner la fecha). Las tarjetas de la derecha se pliegan con la flecha y se recuerda tu elección.
+- Menos ámbar: queda para la acción principal y lo urgente; «Prioridad alta» ahora es un punto junto al tema.
+- Bitácora y signos vitales se ven como tabla limpia; se editan con «Editar metas» / «Editar rangos».
+- Turno con tarjetas más anchas cuando hay pocos pacientes, estados vacíos con ejemplo y botón, números en la tipografía del Codex, aviso de **Noche** en la barra superior (tócalo para apagarlo) y transiciones suaves entre vistas.
 
 Roadmap del proyecto: [ROADMAP.md](ROADMAP.md).
 

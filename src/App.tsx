@@ -70,6 +70,7 @@ export default function App() {
   useEffect(() => {
     const apply = () => {
       const on = nightActive(night, nightFrom, nightTo);
+      if (useUI.getState().nightOn !== on) useUI.setState({ nightOn: on });
       if (on) document.documentElement.dataset.night = 'on';
       else delete document.documentElement.dataset.night;
     };

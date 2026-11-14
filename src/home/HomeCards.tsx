@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '../components/Icon';
+import { FoldBtn, useFold } from '../components/Fold';
 import { topicMastery, weakTopics } from '../analytics/mastery';
 import { useDrugs } from '../drugs/store';
 import { useExam } from '../exam/store';
@@ -27,6 +28,7 @@ export function DrugOfDay() {
   const drugs = useDrugs((s) => s.drugs);
   const today = todayKey();
   const [shift, setShift] = useState(0);
+  const [open, toggle] = useFold('drug');
   const d = drugs.length ? drugs[(dailyIndex(today, drugs.length) + shift) % drugs.length] : null;
   return (
     <section className="card dod-card">
@@ -35,13 +37,14 @@ export function DrugOfDay() {
           <Icon name="pill" size={15} /> Fármaco del día
         </h4>
         <span className="spacer" />
-        {drugs.length > 1 && (
+        {open && drugs.length > 1 && (
           <button className="btn ghost sm" onClick={() => setShift((x) => x + 1)} title="Otro">
             <Icon name="shuffle" size={14} />
           </button>
         )}
+        <FoldBtn open={open} onToggle={toggle} label="fármaco del día" />
       </div>
-      {d ? (
+      {!open ? null : d ? (
         <>
           <div className="dod-name">{d.name}</div>
           <div className="muted small">{[d.presentation, d.route, d.frequency].filter(Boolean).join(' · ')}</div>

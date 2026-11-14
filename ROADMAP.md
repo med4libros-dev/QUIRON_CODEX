@@ -75,6 +75,9 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - **Mapa de GPC** por especialidad (sin GPC / adjunta / leyendo / leída).
 - **«Me lo preguntaron»** en preguntas, perlas y flashcards como repaso prioritario.
 
+### v0.5.1 · Pulido visual ✅ (noviembre 2026)
+- Barra lateral de 17 a 11 botones (menús «Herramientas» y «Ajustes»); franja de 4 indicadores en Inicio con cuenta regresiva al ENARM; tarjetas plegables; ámbar reservado para la acción principal; prioridad como punto; tablas en modo lectura con edición explícita; estados vacíos con ejemplo y acción; aviso de modo noche; transiciones de 120 ms (respetan «reducir movimiento»).
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

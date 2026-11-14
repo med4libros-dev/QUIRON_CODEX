@@ -7,6 +7,7 @@ import { privacyWarnings, useTopicStore } from '../internship/topicStore';
 import type { SpecialtyId } from '../internship/types';
 import { fmt, fromKey, todayKey } from '../lib/date';
 import { useUI } from '../store/ui';
+import { useSettings } from '../store/settings';
 import { PROC_ROLES, procCounts, useLogbook, type ProcRole } from './store';
 
 type Tab = 'proc' | 'cases' | 'journal';
@@ -57,6 +58,7 @@ function Procedures() {
   const [newType, setNewType] = useState('');
   const [filter, setFilter] = useState<SpecialtyId | ''>('');
   const [open, setOpen] = useState<string | null>(null);
+  const [editGoals, setEditGoals] = useState(false);
   const shown = filter ? entries.filter((e) => e.specialty === filter) : entries;
   const warn = privacyWarnings(note);
 
@@ -126,7 +128,13 @@ function Procedures() {
       </section>
 
       <section className="card lb-counts">
-        <h4>Conteo</h4>
+        <div className="field-row tight">
+          <h4>Conteo</h4>
+          <span className="spacer" />
+          <button className={`btn ghost sm${editGoals ? ' active' : ''}`} onClick={() => setEditGoals((v) => !v)} aria-pressed={editGoals}>
+            <Icon name="pencil" size={13} /> {editGoals ? 'Listo' : 'Editar metas'}
+          </button>
+        </div>
         <table className="lb-table">
           <thead>
             <tr>
@@ -164,19 +172,29 @@ function Procedures() {
                       {c[r] || ''}
                     </td>
                   ))}
-                  <td>
-                    <input
-                      className="input xs num"
-                      inputMode="numeric"
-                      defaultValue={t.target ?? ''}
-                      onBlur={(e) => updateType(t.id, { target: e.target.value.trim() ? Math.max(0, Number(e.target.value) || 0) : null })}
-                      aria-label={`Meta de ${t.name}`}
-                    />
+                  <td className="tabular">
+                    {editGoals ? (
+                      <input
+                        className="input xs num"
+                        inputMode="numeric"
+                        defaultValue={t.target ?? ''}
+                        onBlur={(e) => updateType(t.id, { target: e.target.value.trim() ? Math.max(0, Number(e.target.value) || 0) : null })}
+                        aria-label={`Meta de ${t.name}`}
+                      />
+                    ) : t.target !== null ? (
+                      <span className={reached ? 'ok-text' : 'muted'}>
+                        {c['realicé']}/{t.target}
+                      </span>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
                   </td>
                   <td>
-                    <button className="icon-btn xs" onClick={() => confirm(`¿Quitar «${t.name}» y sus registros?`) && removeType(t.id)} aria-label={`Quitar ${t.name}`}>
-                      <Icon name="x" size={12} />
-                    </button>
+                    {editGoals && (
+                      <button className="icon-btn xs" onClick={() => confirm(`¿Quitar «${t.name}» y sus registros?`) && removeType(t.id)} aria-label={`Quitar ${t.name}`}>
+                        <Icon name="x" size={12} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
@@ -214,7 +232,12 @@ function Procedures() {
             ))}
           </ul>
         ) : (
-          <p className="muted small">Aún no hay registros.</p>
+          <div className="empty-mini">
+            <p className="muted small">Aún no hay registros. Ejemplo: «Venopunción · realicé · primer intento con supervisión».</p>
+            <button className="btn sm" onClick={() => (document.querySelector('.lb-form select') as HTMLSelectElement | null)?.focus()}>
+              <Icon name="plus" size={14} /> Registrar mi primer procedimiento
+            </button>
+          </div>
         )}
       </section>
     </div>
@@ -252,7 +275,12 @@ function AllCases() {
           })}
         </ul>
       ) : (
-        <p className="muted small">Aún no has registrado casos.</p>
+        <div className="empty-mini">
+          <p className="muted small">Aún no has registrado casos. Al terminar el Turno puedes pasar ahí a tus pacientes (anónimos), o registrarlos desde Inicio → Casos vistos.</p>
+          <button className="btn sm" onClick={() => useSettings.getState().setView('internado')}>
+            Ir a Inicio
+          </button>
+        </div>
       )}
     </section>
   );
@@ -325,7 +353,12 @@ function Journal() {
             ))}
           </ul>
         ) : (
-          <p className="muted small">Aún no hay entradas. Dos minutos al final de cada guardia bastan.</p>
+          <div className="empty-mini">
+            <p className="muted small">Aún no hay entradas. Dos minutos al final de cada guardia bastan. Ejemplo: «Aprendí a explicar un pronóstico con calma».</p>
+            <button className="btn sm" onClick={() => (document.querySelector('textarea[aria-label="¿Qué aprendí hoy?"]') as HTMLTextAreaElement | null)?.focus()}>
+              <Icon name="pen" size={14} /> Escribir la de hoy
+            </button>
+          </div>
         )}
       </section>
     </div>

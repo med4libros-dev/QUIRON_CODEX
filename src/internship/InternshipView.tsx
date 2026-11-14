@@ -16,6 +16,8 @@ import { useSettings } from '../store/settings';
 import { useExam } from '../exam/store';
 import { masteryColor, topicMastery, weakTopics } from '../analytics/mastery';
 import { DrugOfDay, WeeklySummary } from '../home/HomeCards';
+import { FoldBtn, useFold } from '../components/Fold';
+import { useWard } from '../ward/store';
 import type { DayPlan, InternshipConfig, Lesson } from './types';
 
 const KIND_LABEL = { new: 'Tema nuevo', review: 'Repaso espaciado', final: 'Repaso integral' } as const;
@@ -53,6 +55,12 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
     [info],
   );
   const [caseOpen, setCaseOpen] = useState(false);
+  const [weakOpen, toggleWeak] = useFold('weak');
+  const [casesOpen, toggleCases] = useFold('cases');
+  const [rotOpen, toggleRot] = useFold('rotations', false);
+  const [syllOpen, toggleSyll] = useFold('syllabus');
+  const wardPending = useWard((s) => s.patients.reduce((n, p) => n + p.tasks.filter((t) => !t.done).length, 0));
+  const enarmDate = useSettings((s) => s.enarmDate);
   const today = todayKey();
   const clamp = (k: string) => (k < config.start ? config.start : k > config.end ? config.end : k);
   const [selected, setSelected] = useState(() => clamp(today));
@@ -121,6 +129,8 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
           <Icon name="settings" size={16} /> Ajustar plan
         </button>
       </header>
+
+      <KpiStrip due={due.length} weak={weakTopics(mastery, 5).length} wardPending={wardPending} enarmDate={enarmDate} today={today} />
 
       <div className="intern-grid">
         <div className="intern-main">
@@ -212,8 +222,9 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
                 <button className="btn ghost sm" onClick={() => useSettings.getState().setView('progress')}>
                   Ver mapa
                 </button>
+                <FoldBtn open={weakOpen} onToggle={toggleWeak} label="temas débiles" />
               </div>
-              {weakTopics(mastery, 5).length ? (
+              {!weakOpen ? null : weakTopics(mastery, 5).length ? (
                 <ul className="weak-list">
                   {weakTopics(mastery, 5).map((id) => {
                     const m = mastery.get(id)!;
@@ -231,8 +242,8 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
               ) : (
                 <p className="muted small">Ningún tema débil por ahora. Se calcula con tus simulacros y flashcards.</p>
               )}
-              {weak.length > 0 && <p className="muted small">Agregué un repaso de refuerzo de 15 min para los {weak.length} más bajos esta semana.</p>}
-              {weak.length > 0 && (
+              {weakOpen && weak.length > 0 && <p className="muted small">Agregué un repaso de refuerzo de 15 min para los {weak.length} más bajos esta semana.</p>}
+              {weakOpen && weak.length > 0 && (
                 <button className="btn ghost sm" onClick={() => useSettings.getState().setView('hy')} title="Mnemotecnias con IA desde tu GPC para estos temas">
                   <Icon name="sparkles" size={14} /> Mnemotecnias
                 </button>
@@ -277,8 +288,9 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
               <button className="btn ghost sm" onClick={() => setCaseOpen(true)}>
                 <Icon name="plus" size={14} /> Registrar
               </button>
+              <FoldBtn open={casesOpen} onToggle={toggleCases} label="casos vistos" />
             </div>
-            {recentCases.length ? (
+            {!casesOpen ? null : recentCases.length ? (
               <ul className="case-mini">
                 {recentCases.slice(0, 3).map((c) => (
                   <li key={c.id}>
@@ -292,7 +304,12 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
                 ))}
               </ul>
             ) : (
-              <p className="muted small">Tu bitácora de pacientes reales (anónima): 3 líneas por caso, ligadas al tema.</p>
+              <div className="empty-mini">
+                <p className="muted small">Tu bitácora de pacientes reales (anónima): 3 líneas por caso, ligadas al tema. Ejemplo: «M 72 a · EPOC exacerbado · broncodilatador + esteroide».</p>
+                <button className="btn sm" onClick={() => setCaseOpen(true)}>
+                  <Icon name="plus" size={14} /> Registrar mi primer caso
+                </button>
+              </div>
             )}
           </section>
           <MonthCalendar
@@ -309,7 +326,10 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
           <section className="card">
             <div className="card-head">
               <h4>Rotaciones</h4>
+              <span className="spacer" />
+              <FoldBtn open={rotOpen} onToggle={toggleRot} label="rotaciones" />
             </div>
+            {rotOpen && (
             <div className="timeline">
               {config.rotations.map((r) => {
                 const days = diffDays(r.start, r.end) + 1;
@@ -329,6 +349,7 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
                 <span className="tl-now" style={{ left: `${((dayIndex - 0.5) / total) * 100}%` }} title="Hoy" />
               )}
             </div>
+            )}
           </section>
           <section className="card">
             <div className="card-head">
@@ -337,7 +358,10 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
               <b className="tabular">
                 {doneTopics.length}/{TOPICS.length}
               </b>
+              <FoldBtn open={syllOpen} onToggle={toggleSyll} label="avance del temario" />
             </div>
+            {syllOpen && (
+            <>
             <div className="bar big">
               <span style={{ width: `${(doneTopics.length / TOPICS.length) * 100}%` }} />
             </div>
@@ -354,6 +378,8 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
                 </li>
               ))}
             </ul>
+            </>
+            )}
           </section>
         </aside>
       </div>
@@ -534,12 +560,12 @@ function LessonRow({ lesson, done, onToggle, note }: { lesson: Lesson; done: boo
         <button className="lesson-title" onClick={() => useUI.getState().openTopic(t.id, 'docs')} title="Ficha del tema: GPC, guardia, casos y flashcards">
           <span className="sp-tag">{sp.short}</span>
           {t.title}
+          {t.yield === 3 && <i className="prio-dot" title="Prioridad alta: sale mucho en el ENARM" aria-label="Prioridad alta" />}
           {kinds.has('GRR') && <span className="badge grr">GRR</span>}
           {kinds.has('GER') && <span className="badge ger">GER</span>}
         </button>
         <div className="lesson-meta">
           {lesson.adaptive ? 'Refuerzo · tema débil' : KIND_LABEL[lesson.kind]} · {detail} · {lesson.minutes} min
-          {t.yield === 3 && <span className="hy"> · Prioridad alta</span>}
           {note && <span> · {note}</span>}
           {lesson.movedFrom && <span> · reprogramada del {fmt(fromKey(lesson.movedFrom), { weekday: 'short', day: 'numeric' })}</span>}
         </div>
@@ -551,6 +577,50 @@ function LessonRow({ lesson, done, onToggle, note }: { lesson: Lesson; done: boo
         Estudiar
       </button>
     </li>
+  );
+}
+
+/** Franja de Inicio: lo que toca hoy en 4 números. */
+function KpiStrip({ due, weak, wardPending, enarmDate, today }: { due: number; weak: number; wardPending: number; enarmDate: string | null; today: string }) {
+  const [editing, setEditing] = useState(false);
+  const days = enarmDate ? diffDays(today, enarmDate) : null;
+  return (
+    <div className="kpi-strip">
+      <button className="kpi" onClick={() => due && useUI.getState().startReview({ cardIds: dueCards(useCards.getState().cards).map((c) => c.id), title: 'Repaso de hoy' })} title={due ? 'Repasar ahora' : 'Sin flashcards pendientes'}>
+        <b className="tabular">{due}</b>
+        <span>flashcards hoy</span>
+      </button>
+      <button className="kpi" onClick={() => useSettings.getState().setView('progress')} title="Ver el mapa de debilidades">
+        <b className="tabular">{weak}</b>
+        <span>temas débiles</span>
+      </button>
+      <button className="kpi" onClick={() => useSettings.getState().setView('ward')} title="Ir al Turno">
+        <b className="tabular">{wardPending}</b>
+        <span>pendientes del turno</span>
+      </button>
+      {editing || days === null ? (
+        <label className="kpi kpi-edit">
+          <input
+            className="input sm"
+            type="date"
+            defaultValue={enarmDate ?? ''}
+            aria-label="Fecha del ENARM"
+            onChange={(e) => {
+              if (e.target.value) {
+                useSettings.getState().setEnarmDate(e.target.value);
+                setEditing(false);
+              }
+            }}
+          />
+          <span>fecha del ENARM</span>
+        </label>
+      ) : (
+        <button className="kpi" onClick={() => setEditing(true)} title="Cambiar la fecha del ENARM">
+          <b className="tabular">{days < 0 ? '—' : days}</b>
+          <span>{days < 0 ? 'ENARM pasado' : days === 1 ? 'día para el ENARM' : 'días para el ENARM'}</span>
+        </button>
+      )}
+    </div>
   );
 }
 

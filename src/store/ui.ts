@@ -45,6 +45,8 @@ export interface UIState {
   /** Preguntas desde subrayados (id de documento). */
   hlQuiz: string | null;
   setHlQuiz: (docId: string | null) => void;
+  /** El modo noche está activo ahora (lo calcula App). */
+  nightOn: boolean;
   soapOpen: boolean;
   setSoapOpen: (v: boolean) => void;
   pearl: Pearl | null;
@@ -78,6 +80,7 @@ export const useUI = createStore<UIState>((set) => ({
   setDiagram: (diagram) => set({ diagram, topicSheet: null }),
   hlQuiz: null,
   setHlQuiz: (hlQuiz) => set({ hlQuiz }),
+  nightOn: false,
   soapOpen: false,
   setSoapOpen: (soapOpen) => set({ soapOpen, topicSheet: null, guardQuickOpen: false }),
   pearl: null,

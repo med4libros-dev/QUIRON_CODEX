@@ -28,6 +28,9 @@ export interface SettingsState {
   reminders: boolean;
   /** Hora del aviso diario de flashcards/refuerzo. */
   reminderHour: number;
+  /** Fecha del ENARM (YYYY-MM-DD) para la cuenta regresiva de Inicio. */
+  enarmDate: string | null;
+  setEnarmDate: (d: string | null) => void;
   setNight: (n: 'off' | 'auto' | 'on', from?: number, to?: number) => void;
   setReminders: (on: boolean, hour?: number) => void;
   setTheme: (t: Theme) => void;
@@ -65,6 +68,8 @@ export const useSettings = createStore<SettingsState>(
     nightTo: 6,
     reminders: false,
     reminderHour: 8,
+    enarmDate: null,
+    setEnarmDate: (enarmDate) => set({ enarmDate }),
     setNight: (night, from, to) => set((s) => ({ night, nightFrom: from ?? s.nightFrom, nightTo: to ?? s.nightTo })),
     setReminders: (reminders, hour) => set((s) => ({ reminders, reminderHour: hour ?? s.reminderHour })),
     setTheme: (theme) => set({ theme }),
@@ -84,8 +89,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour }) => ({
-      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour,
+    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate }) => ({
+      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate,
     }),
   },
 );

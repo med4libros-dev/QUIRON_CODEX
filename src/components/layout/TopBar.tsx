@@ -13,6 +13,7 @@ export function TopBar() {
   const view = useSettings((s) => s.view);
   const activeDocId = useSettings((s) => s.activeDocId);
   const docName = useLibrary((s) => s.docs.find((d) => d.id === activeDocId)?.name);
+  const nightOn = useUI((s) => s.nightOn);
 
   return (
     <header className="topbar">
@@ -31,6 +32,11 @@ export function TopBar() {
         )}
       </div>
       {view === 'study' && <LayoutControls />}
+      {nightOn && (
+        <button className="night-chip" onClick={() => useSettings.getState().setNight('off')} title="Modo noche activo: toca para apagarlo (Ajustes → Noche y avisos)" aria-label="Apagar modo noche">
+          <Icon name="moon" size={14} /> <span className="hide-narrow">Noche</span>
+        </button>
+      )}
       <button className="btn ghost sm search-btn" onClick={() => useUI.getState().setSearchOpen(true)} title="Buscar en todo (Ctrl+K)" aria-label="Buscar en todo">
         <Icon name="search" size={15} /> <span className="hide-narrow">Buscar</span> <kbd className="hide-narrow">Ctrl K</kbd>
       </button>

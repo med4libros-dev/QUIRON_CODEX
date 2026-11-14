@@ -188,6 +188,13 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - El cifrado envuelve todo el JSON del respaldo: `{app, enc:1, kdf, iter, salt, iv, data}`. Si el cifrado está activo y bloqueado, ni la descarga ni la carpeta escriben nada en claro.
 - Todo lo que genera la IA usa solo el material del usuario (GPC con `[p. N]`, apuntes o subrayados) y se valida antes de guardarse; nada entra sin que el usuario lo elija o lo revise.
 
+## v0.5.1 (pulido visual)
+
+- `NavRail.tsx`: vistas + menús emergentes (`.rail-pop`, en portal) «Herramientas» y «Ajustes».
+- `components/Fold.tsx`: `useFold(id)` recuerda tarjetas plegadas en `qc:folds` (solo este equipo).
+- `KpiStrip` en `InternshipView.tsx`; fecha del ENARM en `alq:settings.enarmDate`.
+- `ui.nightOn` (lo calcula App) → aviso en `TopBar`.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
