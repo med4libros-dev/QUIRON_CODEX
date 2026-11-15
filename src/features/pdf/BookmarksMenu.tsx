@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { pdfRefHtml, useBridge } from '../../store/bridge';
 import { useLibrary } from '../../store/library';
+import { outlineOf, type OutlineItem } from '../../lib/pdf';
 import { KEY_PAGE_LABEL, type Bookmark, type KeyPageKind } from '../../types';
 
 const EMPTY: Bookmark[] = [];
@@ -17,6 +18,20 @@ export function BookmarksMenu({ docId, docName, currentPage, onClose }: { docId:
   const insert = useBridge((s) => s.insertIntoNote);
   const box = useRef<HTMLDivElement>(null);
   const marked = bookmarks.some((b) => b.page === currentPage);
+  const [tab, setTab] = useState<'mine' | 'doc'>('mine');
+  const [outline, setOutline] = useState<OutlineItem[] | null>(null);
+
+  // El índice que trae el propio PDF se lee la primera vez que lo pides.
+  useEffect(() => {
+    if (tab !== 'doc' || outline) return;
+    let alive = true;
+    outlineOf(docId)
+      .then((o) => alive && setOutline(o))
+      .catch(() => alive && setOutline([]));
+    return () => {
+      alive = false;
+    };
+  }, [tab, outline, docId]);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -30,7 +45,14 @@ export function BookmarksMenu({ docId, docName, currentPage, onClose }: { docId:
   return (
     <div className="popover bm-menu" ref={box} role="dialog" aria-label="Marcadores">
       <div className="bm-head">
-        <h4>Marcadores</h4>
+        <div className="seg sm" role="tablist" aria-label="Marcadores o índice del archivo">
+          <button role="tab" aria-selected={tab === 'mine'} className={tab === 'mine' ? 'active' : ''} onClick={() => setTab('mine')}>
+            Mis marcadores
+          </button>
+          <button role="tab" aria-selected={tab === 'doc'} className={tab === 'doc' ? 'active' : ''} onClick={() => setTab('doc')}>
+            Índice del archivo
+          </button>
+        </div>
         <div className="spacer" />
         {!marked && (
           <button className="btn ghost sm" onClick={() => toggle(docId, currentPage)}>
@@ -47,7 +69,24 @@ export function BookmarksMenu({ docId, docName, currentPage, onClose }: { docId:
           </button>
         )}
       </div>
-      {bookmarks.length === 0 ? (
+      {tab === 'doc' ? (
+        outline === null ? (
+          <p className="muted small bm-empty">Leyendo el índice del archivo…</p>
+        ) : outline.length === 0 ? (
+          <p className="muted small bm-empty">Este PDF no trae índice propio. Usa tus marcadores (tecla B).</p>
+        ) : (
+          <ul className="bm-list outline">
+            {outline.map((o, i) => (
+              <li key={i} style={{ paddingLeft: `${Math.min(o.depth, 4) * 12}px` }}>
+                <button className="bm-outline" disabled={!o.page} onClick={() => o.page && goTo(docId, o.page)} title={o.page ? `Ir a la p. ${o.page}` : 'El PDF no indica la página'}>
+                  <span className="ellipsis">{o.title}</span>
+                  <span className="muted small tabular">{o.page ?? '—'}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : bookmarks.length === 0 ? (
         <p className="muted small bm-empty">
           Aún no hay marcadores. Usa el botón <Icon name="bookmark" size={12} /> o la tecla <b>B</b> para marcar la página actual.
         </p>

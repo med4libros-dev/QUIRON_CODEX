@@ -28,6 +28,8 @@ export function NotebooksView() {
   const [selected, setSelected] = useState<string | null>(null);
   const [dialog, setDialog] = useState<{ notebook?: Notebook } | null>(null);
   const [q, setQ] = useState('');
+  /** Filtro por etiqueta (null = todas). */
+  const [tag, setTag] = useState<string | null>(null);
 
   const docName = useMemo(() => new Map(docs.map((d) => [d.id, d.name])), [docs]);
   const subjectName = useMemo(() => new Map(subjects.map((s) => [s.id, s.name])), [subjects]);
@@ -47,8 +49,19 @@ export function NotebooksView() {
   const current = selected ?? notebooks[0]?.id ?? (byBook.get(LOOSE)?.length ? LOOSE : null);
   const currentBook = notebooks.find((b) => b.id === current);
   const needle = q.trim().toLowerCase();
-  const list = (current ? byBook.get(current) ?? [] : []).filter(
-    (n) => !needle || n.title.toLowerCase().includes(needle) || htmlToText(n.html).toLowerCase().includes(needle),
+  const inBook = current ? byBook.get(current) ?? [] : [];
+  // Etiquetas que existen en este cuaderno, con cuántas notas tiene cada una.
+  const tagCounts = new Map<string, number>();
+  for (const n of inBook) for (const t of n.tags ?? []) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+  const tags = [...tagCounts.keys()].sort();
+  const list = inBook.filter(
+    (n) =>
+      (!tag || (n.tags ?? []).includes(tag)) &&
+      (!needle ||
+        n.title.toLowerCase().includes(needle) ||
+        htmlToText(n.html).toLowerCase().includes(needle) ||
+        (n.inkText ?? '').toLowerCase().includes(needle) ||
+        (n.tags ?? []).some((t) => t.includes(needle))),
   );
 
   const open = (n: Note) => {
@@ -155,7 +168,7 @@ export function NotebooksView() {
               <div className="spacer" />
               <label className="search compact">
                 <Icon name="search" size={15} />
-                <input className="input sm" placeholder="Buscar en notas…" value={q} onChange={(e) => setQ(e.target.value)} />
+                <input className="input sm" placeholder="Buscar en notas y en tu letra…" value={q} onChange={(e) => setQ(e.target.value)} />
               </label>
               {currentBook && (
                 <button className="btn primary sm" onClick={newNoteHere}>
@@ -163,6 +176,18 @@ export function NotebooksView() {
                 </button>
               )}
             </div>
+            {tags.length > 0 && (
+              <div className="tag-row filter">
+                <button className={`tag ghost${tag === null ? ' on' : ''}`} onClick={() => setTag(null)} aria-pressed={tag === null}>
+                  Todas
+                </button>
+                {tags.map((t) => (
+                  <button key={t} className={`tag ghost${tag === t ? ' on' : ''}`} onClick={() => setTag(tag === t ? null : t)} aria-pressed={tag === t}>
+                    {t} <span className="muted small">{tagCounts.get(t)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {list.length === 0 ? (
               <p className="muted small">
                 {needle
@@ -182,6 +207,11 @@ export function NotebooksView() {
                       <span className="muted small">
                         {n.docId && docName.get(n.docId) ? `📄 ${docName.get(n.docId)} · ` : ''}
                         {fmt(new Date(n.updatedAt), { day: 'numeric', month: 'short' })}
+                        {(n.tags ?? []).map((t) => (
+                          <span key={t} className="tag mini">
+                            {t}
+                          </span>
+                        ))}
                       </span>
                     </button>
                     <select

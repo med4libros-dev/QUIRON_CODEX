@@ -101,3 +101,57 @@ export async function extractAllPages(docId: string, maxPages = 2000, onProgress
     destroy();
   }
 }
+
+/* ---------- Índice del archivo (marcadores que trae el propio PDF) ---------- */
+
+export interface OutlineItem {
+  title: string;
+  /** Página destino (1-based) o null si el PDF no la resuelve. */
+  page: number | null;
+  depth: number;
+}
+
+const outlineCache = new Map<string, OutlineItem[]>();
+
+interface RawOutline {
+  title: string;
+  dest: string | unknown[] | null;
+  items?: RawOutline[];
+}
+
+/**
+ * Índice que trae el propio PDF (las GPC suelen traerlo). Se resuelve una vez y se guarda
+ * en memoria; si el archivo no tiene índice devuelve una lista vacía.
+ */
+export async function outlineOf(docId: string, max = 400): Promise<OutlineItem[]> {
+  const hit = outlineCache.get(docId);
+  if (hit) return hit;
+  const task = openPdf(await loadPdfData(docId));
+  const out: OutlineItem[] = [];
+  try {
+    const pdf = await task.promise;
+    const raw = (await pdf.getOutline()) as RawOutline[] | null;
+    const pageOf = async (dest: RawOutline['dest']): Promise<number | null> => {
+      try {
+        const arr = typeof dest === 'string' ? ((await pdf.getDestination(dest)) as unknown[] | null) : dest;
+        if (!Array.isArray(arr) || !arr.length) return null;
+        return (await pdf.getPageIndex(arr[0] as never)) + 1;
+      } catch {
+        return null;
+      }
+    };
+    const walk = async (items: RawOutline[], depth: number) => {
+      for (const it of items) {
+        if (out.length >= max) return;
+        const title = (it.title ?? '').replace(/\s+/g, ' ').trim();
+        if (title) out.push({ title, page: await pageOf(it.dest), depth });
+        if (it.items?.length) await walk(it.items, depth + 1);
+      }
+    };
+    if (raw?.length) await walk(raw, 0);
+  } finally {
+    task.destroy();
+  }
+  outlineCache.set(docId, out);
+  return out;
+}

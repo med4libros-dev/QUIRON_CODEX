@@ -107,11 +107,20 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - **Rendimiento del lápiz**: confirmación incremental sin redibujar la hoja, grupos estables por página (`lib/groups.ts`), guardados aplazados mientras escribes (`lib/inkBusy.ts`), hojas lejanas sueltan sus canvas, Estudio sin fondo animado ni desenfoque.
 - **Diagnóstico del lápiz**: mide eventos/s, tiempo de dibujo, evento→pintado, cuadro y pintado→pantalla.
 
+### v0.8 · Lo escrito a mano, buscable ✅ (noviembre 2026)
+- **Reconocimiento de escritura** (`lib/inkOcr.ts` + visión en `lib/ai.ts`): la hoja se dibuja a PNG y el motor elegido la transcribe; el texto vive en `Note.inkText`, entra en Ctrl+K y puede volcarse al editor.
+- **Buscar en el PDF abierto** (`lib/findInPage.ts` + `features/pdf/FindBar.tsx`): coincidencias contadas desde el índice de texto y marcadas con rectángulos sobre la capa de texto.
+- **Pestañas** (`settings.openDocs`), **recorte de márgenes** (`settings.pdfCrop`, por `clip-path` + márgenes negativos: las anotaciones no se mueven) e **índice del archivo** (`outlineOf`).
+- **Oclusión de imágenes** (`flashcards/OcclusionModal.tsx`, `Card.occlusion`), **hoja de resaltados por tema** y **tapar la columna Cornell**.
+- **Papelera de 30 días** (`store/trash.ts`) e **historial de notas** (`lib/noteHistory.ts`).
+- **Etiquetas** (`Note.tags`), **dictado** (`lib/dictation.ts`), **paquete de repaso** (`lib/studyPack.ts`), **.ics** (`lib/ics.ts`) y **cuaderno a PDF** (`exportNotebookToPdf`).
+- **Sincronización asistida** Surface ↔ PC (`syncCheck`/`startSyncWatch` + `features/backup/SyncBar.tsx`): avisa y trae, nunca sobreescribe sin preguntar.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.
 - Capas (borrador / limpio), lazo para mover y escalar trazos, recortes del PDF pegados en el lienzo.
-- Búsqueda en todas las notas (texto) y etiquetas.
+- ~~Búsqueda en todas las notas (texto) y etiquetas~~ ✅ v0.8 (incluye lo escrito a mano).
 
 ### Fase 4 · Active recall avanzado (parcialmente cubierto por la Fase 3b)
 - **Flashcards con FSRS**: se crean desde resaltados, perlas ENARM y huecos (cloze) del texto; tienen una cola diaria integrada a la lección del día.
@@ -122,7 +131,7 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 ### Fase 5 · Pulido y portabilidad
 - App instalable (PWA) en Edge con ícono propio; modo guardia (repasos de 5–10 min con una mano).
 - Sincronización opcional en la nube (por ejemplo Supabase) además de la carpeta de OneDrive.
-- Exportar el plan al calendario (.ics) y un informe semanal de avance.
+- ~~Exportar el plan al calendario (.ics)~~ ✅ v0.8. Informe semanal de avance: pendiente.
 
 ## Algoritmo de distribución anual (Fase 1)
 

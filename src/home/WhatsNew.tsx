@@ -8,14 +8,15 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'lasso', title: 'Lazo', text: 'En el lienzo, el botón del lazo encierra lo que escribiste para moverlo, agrandarlo, cambiarle el color, duplicarlo o borrarlo.' },
-  { icon: 'flow', title: 'Formas rectas', text: 'Dibuja una flecha, un cuadro o un círculo y deja el lápiz quieto medio segundo: se convierte en forma limpia. Se apaga en Preferencias → Lápiz.' },
-  { icon: 'pen', title: 'Plumas favoritas', text: 'Cuatro plumas a un toque, arriba de los colores. Mantén presionada una para guardar ahí la pluma que estés usando. El botón lateral del lápiz hace de borrador o de lazo.' },
-  { icon: 'copy', title: 'Hojas del lienzo', text: 'Inserta hojas en medio, súbelas, bájalas o quítalas; y plantillas Cornell y de dos columnas.' },
-  { icon: 'moon', title: 'Guía en oscuro y pantalla completa', text: 'En el PDF, menú «⋯»: fondo negro con texto claro, y lectura sin barras (Esc para salir).' },
-  { icon: 'clock', title: 'Tu tiempo de estudio se cuenta solo', text: 'Mientras lees o escribes, el reloj de arriba suma tu tiempo y lo guarda en Progreso. Se detiene a los 2 minutos sin actividad.' },
-  { icon: 'sparkles', title: 'Gemini o Claude', text: 'En Ajustes → Preferencias → IA puedes elegir el motor y poner tu clave de Google (Gemini) en vez de la de Anthropic.' },
-  { icon: 'target', title: 'Diagnóstico del lápiz', text: 'Preferencias → Lápiz → Diagnóstico: mide el retraso real en tu Surface y te dice dónde está el problema.' },
+  { icon: 'pencil', title: 'Buscar en lo que escribiste a mano', text: 'En la nota, menú «⋯» → Reconocer mi letra: transcribe tus hojas con la IA que elegiste. Después Ctrl+K encuentra lo que anotaste con el lápiz, y puedes pasar la hoja a texto editable.' },
+  { icon: 'search', title: 'Ctrl+F dentro de la guía', text: 'Busca una palabra en el PDF abierto, salta de coincidencia en coincidencia y las marca sobre la página.' },
+  { icon: 'columns', title: 'Pestañas y márgenes', text: 'Varias guías abiertas a la vez en pestañas; el botón de márgenes recorta el borde blanco para aprovechar la pantalla. En Marcadores ahora también está el índice que trae el propio PDF.' },
+  { icon: 'eye', title: 'Tapar para repasar', text: 'Recorta un esquema y tapa sus etiquetas: sale una tarjeta por cada una. Y en hojas Cornell o de dos columnas, «Tapar y repasar» cubre la columna izquierda.' },
+  { icon: 'highlighter', title: 'Todos los resaltados de un tema', text: 'En la ficha del tema, pestaña «Resaltados»: todo lo que marcaste en sus guías, en una hoja, con su página y filtrable por color.' },
+  { icon: 'trash', title: 'Papelera de 30 días e historial', text: 'Lo que borres (notas, guías, hojas) se puede recuperar 30 días desde Ajustes → Papelera. Cada nota guarda además versiones anteriores de su texto.' },
+  { icon: 'tag', title: 'Etiquetas y dictado', text: 'Pon etiquetas a tus notas y fíltralas en Cuadernos. Y si traes las manos ocupadas, dicta a la nota por voz.' },
+  { icon: 'swap', title: 'Surface y PC al día', text: 'Si la otra computadora dejó avance más nuevo en la carpeta compartida, la app te ofrece traerlo al abrir. Y en Respaldo → «Llevarlo a otro lado» sacas un paquete para repasar en el celular y el plan en .ics para tu calendario.' },
+  { icon: 'notebook', title: 'Cuaderno completo a PDF', text: 'Desde el menú «⋯» de la nota: todas las notas del cuaderno en un PDF con índice.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

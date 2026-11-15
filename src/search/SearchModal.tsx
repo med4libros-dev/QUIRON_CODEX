@@ -111,7 +111,13 @@ function SearchInner({ onClose }: { onClose: () => void }) {
     for (const t of TOPICS) if (norm(t.title).includes(needle)) push({ key: `t${t.id}`, group: 'Temas', title: t.title, snippet: SPECIALTY[t.specialty].name, go: () => useUI.getState().openTopic(t.id, 'docs') }, 6);
     for (const n of notes) {
       const text = htmlToText(n.html);
-      if (norm(`${n.title} ${text}`).includes(needle)) push({ key: `n${n.id}`, group: 'Notas', title: n.title || 'Sin título', snippet: around(text, needle), go: () => openNote(n.id) }, 8);
+      const ink = n.inkText ?? '';
+      const tags = (n.tags ?? []).join(' ');
+      if (!norm(`${n.title} ${text} ${ink} ${tags}`).includes(needle)) continue;
+      // Si la coincidencia está en lo escrito a mano, el fragmento sale de ahí.
+      const inText = norm(text).includes(needle);
+      const snippet = inText ? around(text, needle) : norm(ink).includes(needle) ? `✍ ${around(ink, needle)}` : around(text || ink, needle);
+      push({ key: `n${n.id}`, group: 'Notas', title: n.title || 'Sin título', snippet, go: () => openNote(n.id) }, 8);
     }
     for (const i of hy)
       if (norm(`${i.title} ${i.text} ${i.explain}`).includes(needle))
@@ -176,7 +182,7 @@ function SearchInner({ onClose }: { onClose: () => void }) {
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Busca en notas, PDFs, perlas, casos, flashcards…"
+            placeholder="Busca en notas, tu letra, PDFs, perlas, casos…"
             aria-label="Buscar en todo"
             onKeyDown={(e) => {
               if (e.key === 'Escape') close();

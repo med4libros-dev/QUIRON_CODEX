@@ -3,6 +3,7 @@ import { Icon, type IconName } from '../../components/Icon';
 import { escapeHtml, sanitizeHtml } from '../../lib/html';
 import { pdfRefHtml, useBridge } from '../../store/bridge';
 import { useLibrary } from '../../store/library';
+import { recordVersion } from '../../lib/noteHistory';
 import { useNotes } from '../../store/notes';
 import { useSettings } from '../../store/settings';
 import type { Bookmark, Highlight, Note } from '../../types';
@@ -87,6 +88,8 @@ export function TextEditor({ note }: { note: Note }) {
     clearTimeout(timer.current);
     if (!dirty.current) return;
     dirty.current = false;
+    const prev = useNotes.getState().notes.find((n) => n.id === note.id)?.html ?? '';
+    if (prev !== html.current) void recordVersion(note.id, prev);
     update(note.id, { html: html.current });
     setSaved(true);
   }, [note.id, update]);
@@ -109,6 +112,19 @@ export function TextEditor({ note }: { note: Note }) {
     return () => flush();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * La nota cambió desde fuera (restauraste una versión del historial, volvió de la papelera
+   * o llegó de la otra computadora): se refresca el editor, salvo si estás escribiendo ahora.
+   */
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || dirty.current || note.html === html.current) return;
+    html.current = note.html;
+    el.innerHTML = note.html;
+    measure();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note.html]);
 
   // Recuerda la selección dentro del editor (para insertar desde la cinta o desde el PDF)
   // y refleja el formato activo en los botones.

@@ -6,6 +6,7 @@ import { SPECIALTIES, TOPIC, TOPICS } from '../internship/curriculum';
 import { todayKey } from '../lib/date';
 import { openPdfPage } from '../store/navigate';
 import { useUI } from '../store/ui';
+import { Occluded } from './Occluded';
 import { GRADE_LABEL, dueCards, schedule, useCards, type Card, type Grade } from './store';
 
 /** Selector de tema reutilizable (todas las especialidades). */
@@ -182,10 +183,11 @@ function ReviewSession({ ids, title, minutes, onClose }: { ids: string[]; title:
             <button className={`flashcard${flipped ? ' flipped' : ''}`} onClick={() => setFlipped((f) => !f)} aria-label={flipped ? 'Ver pregunta' : 'Ver respuesta'}>
               <div className="fc-topic muted small">{card.topicId ? TOPIC[card.topicId]?.title : 'Sin tema'}</div>
               <div className="fc-front">{card.front}</div>
+              {card.occlusion && card.image && <Occluded src={card.image} boxes={card.occlusion.boxes} target={card.occlusion.target} revealed={flipped} />}
               {flipped ? (
                 <div className="fc-back">
                   {card.back && <p>{card.back}</p>}
-                  {card.image && <img src={card.image} alt="Recorte" />}
+                  {card.image && !card.occlusion && <img src={card.image} alt="Recorte" />}
                   {card.source && (
                     <span
                       className="pdf-ref"

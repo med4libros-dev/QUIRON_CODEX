@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { Icon, type IconName } from '../Icon';
 import emblem from '../../assets/quiron-emblem.png';
 import { BackupDialog } from '../../features/backup/BackupDialog';
+import { TrashDialog } from '../../features/trash/TrashDialog';
+import { useTrash } from '../../store/trash';
 import { PrefsDialog } from '../../features/prefs/PrefsDialog';
 import { backupError, folderStatus } from '../../lib/backup';
 import { useSettings } from '../../store/settings';
@@ -35,6 +37,8 @@ export function NavRail() {
   const look = useSettings((s) => s.look);
   const setLook = useSettings((s) => s.setLook);
   const [backupOpen, setBackupOpen] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
+  const trashCount = useTrash((s) => s.items.length);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [needsReconnect, setNeedsReconnect] = useState(false);
   const [menu, setMenu] = useState<{ id: Menu; top: number }>({ id: null, top: 0 });
@@ -154,6 +158,12 @@ export function NavRail() {
                   </span>
                   {backupAlert && <i className="rail-dot" />}
                 </button>
+                <button role="menuitem" onClick={run(() => setTrashOpen(true))} title="Lo que borraste en los últimos 30 días">
+                  <Icon name="trash" size={17} />
+                  <span>
+                    Papelera <small>{trashCount ? `${trashCount} elemento${trashCount === 1 ? '' : 's'} · 30 días` : 'Vacía'}</small>
+                  </span>
+                </button>
                 <button role="menuitem" onClick={run(() => setPrefsOpen(true))} title="Modo noche, recordatorios e IA">
                   <Icon name="bell" size={17} />
                   <span>
@@ -177,6 +187,7 @@ export function NavRail() {
           document.body,
         )}
       {backupOpen && <BackupDialog onClose={() => setBackupOpen(false)} />}
+      {trashOpen && <TrashDialog onClose={() => setTrashOpen(false)} />}
       {prefsOpen && <PrefsDialog onClose={() => setPrefsOpen(false)} />}
     </nav>
   );

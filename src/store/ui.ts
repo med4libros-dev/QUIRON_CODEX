@@ -16,7 +16,7 @@ export interface Pearl {
   y: number;
 }
 
-export type TopicTab = 'docs' | 'guard' | 'cases' | 'cards' | 'hy';
+export type TopicTab = 'docs' | 'guard' | 'cases' | 'cards' | 'hy' | 'hl';
 
 /** Estado de interfaz global (no se guarda): ventanas que se abren desde cualquier parte. */
 export interface UIState {
@@ -48,6 +48,9 @@ export interface UIState {
   /** Flashcards de huecos: de los subrayados de un PDF o de un fragmento suelto. */
   cloze: { docId: string; items?: { text: string; page: number }[]; topicId?: string | null } | null;
   setCloze: (c: UIState['cloze']) => void;
+  /** Recorte que se va a convertir en tarjetas de oclusión. */
+  occlusion: { src: string; topicId?: string | null; source?: { docId: string; docName: string; page: number } } | null;
+  setOcclusion: (o: UIState['occlusion']) => void;
   shortcutsOpen: boolean;
   /** Lectura a pantalla completa: sin barra lateral ni barras superiores. */
   focus: boolean;
@@ -89,6 +92,8 @@ export const useUI = createStore<UIState>((set) => ({
   setHlQuiz: (hlQuiz) => set({ hlQuiz }),
   cloze: null,
   setCloze: (cloze) => set({ cloze }),
+  occlusion: null,
+  setOcclusion: (occlusion) => set({ occlusion }),
   shortcutsOpen: false,
   focus: false,
   setFocus: (focus) => {

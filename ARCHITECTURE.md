@@ -231,14 +231,34 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - El trazo que acabas de soltar se pinta en la capa base y se marca como «ya dibujado»: el efecto de redibujo lo detecta y no repite la hoja. La lista de trazos se actualiza en la primera pausa (250 ms) y el guardado en la siguiente (600 ms), nunca en medio de un trazo.
 - Las hojas fuera de vista liberan sus canvas (`IntersectionObserver`, margen 900 px).
 
+## v0.8
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Visión del motor de IA | `src/lib/ai.ts` | `callAi({ images })`: bloques `image` (Claude) o `inlineData` (Gemini). Sin imágenes el cuerpo no cambia |
+| Reconocer la letra | `src/lib/inkOcr.ts` | `renderNoteSheet` (PNG 1200 px) → transcripción → `Note.inkText`; una petición por hoja |
+| Buscar en el PDF | `src/lib/findInPage.ts` | Recorre la capa de texto letra por letra (plegado 1:1) y devuelve rectángulos en % |
+| Pestañas y márgenes | `src/store/settings.ts` | `openDocs`, `closeDoc`, `pdfCrop`; el recorte es `clip-path` + márgenes negativos, la página conserva su tamaño real |
+| Índice del PDF | `src/lib/pdf.ts` | `outlineOf` resuelve destinos con `getDestination`/`getPageIndex`, en memoria |
+| Oclusión | `src/flashcards/OcclusionModal.tsx`, `Occluded.tsx` | `Card.occlusion {boxes(0–1), target}`: una tarjeta por etiqueta, imagen compartida |
+| Papelera | `src/store/trash.ts` | 30 días; la nota viaja con sus trazos e imágenes, el PDF conserva su archivo hasta purgarse |
+| Historial de notas | `src/lib/noteHistory.ts` | `hist:<noteId>` en `kv` (objeto, no texto); máximo 20, una versión cada 8 min o al borrar mucho |
+| Dictado | `src/lib/dictation.ts` | `SpeechRecognition` del sistema, es-MX, se reanuda solo; sin soporte lo dice |
+| Paquete móvil | `src/lib/studyPack.ts` | Un `.html` autocontenido de solo lectura, con filtro; sin PDFs |
+| Calendario | `src/lib/ics.ts` | Eventos de día completo: rotaciones, guardias (`isGuardia`) y sesiones |
+| Sincronización | `src/lib/backup.ts` | `folderExportedAt` lee solo la fecha; `alq:folderSeen` marca lo ya visto; `qc:sync` avisa a la interfaz |
+
+- El editor se refresca cuando la nota cambia desde fuera (historial, papelera, sincronización) salvo si estás escribiendo en ese momento.
+- Borrar una nota, una guía o una hoja pasa primero por la papelera; purga al abrir la app.
+
 ## Modelo de datos (resumen)
 
-`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
+`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind, inkText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
 
 ## Próximos pasos sugeridos
 
 - **Exportar el PDF anotado** (incrustar resaltados, tinta y post-its en el propio PDF con pdf-lib).
-- **Sincronización entre dispositivos**: los stores ya pasan por `createStore`. Basta con agregar un adaptador (por ejemplo Supabase o un servidor propio) que replique `kv`, `pdfs` e `ink`.
-- **Búsqueda dentro del PDF** con `getTextContent()` e índice por página.
+- **Sincronización automática en la nube**: hoy la carpeta compartida avisa y trae a petición (v0.8). Un adaptador sobre `createStore` (Supabase o servidor propio) podría replicar `kv`, `pdfs` e `ink` sin intervención.
+
 - **Fuente Unicode incrustada** al exportar (para griego y símbolos sin transliterar).
 - **PWA instalable** (service worker) para abrirla como app en Windows.

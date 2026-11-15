@@ -6367,3 +6367,452 @@ button.kpi:hover {
     animation: none;
   }
 }
+
+/* ===================== 0.8 · Buscar en la guía, pestañas y márgenes ===================== */
+
+/* Pestañas de guías abiertas */
+.doc-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.doc-tabs::-webkit-scrollbar {
+  display: none;
+}
+.doc-tab {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 230px;
+  padding: 2px 4px 2px 2px;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  background: var(--surface-2);
+}
+.doc-tab.active {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  box-shadow: inset 0 2px 0 var(--accent-line);
+}
+.doc-tab-name {
+  max-width: 190px;
+  padding: 6px 6px 6px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.doc-tab.active .doc-tab-name {
+  color: var(--text);
+  font-weight: 600;
+}
+.doc-tab-x {
+  opacity: 0.55;
+}
+.doc-tab-x:hover {
+  opacity: 1;
+}
+
+/* Barra de búsqueda dentro del PDF */
+.find-bar {
+  gap: 8px;
+}
+.find-input {
+  width: min(280px, 40vw);
+  height: 30px;
+}
+.find-count {
+  min-width: 140px;
+}
+.find-hit {
+  position: absolute;
+  background: rgba(250, 204, 21, 0.45);
+  border-radius: 2px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+[data-theme='dark'] .find-hit {
+  background: rgba(250, 204, 21, 0.5);
+  mix-blend-mode: screen;
+}
+
+/* Recorte de márgenes: la página conserva su tamaño real (las anotaciones no se mueven),
+   solo se oculta el borde y se cierra el espacio que dejaba. */
+.pdf-scroll[data-crop] .pdf-page {
+  clip-path: inset(var(--crop) var(--crop) var(--crop) var(--crop));
+  margin-top: calc(-1 * var(--crop));
+  margin-bottom: calc(-1 * var(--crop));
+}
+
+/* Índice del archivo */
+.bm-list.outline li {
+  display: block;
+  padding: 0;
+}
+.bm-outline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.bm-outline:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+.bm-outline:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+.bm-outline .ellipsis {
+  flex: 1;
+}
+.seg.sm button {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+
+/* ===================== 0.8 · Oclusión de imágenes ===================== */
+
+.occ-wrap,
+.occ-edit {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0;
+}
+.occ-wrap img,
+.occ-edit img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  user-select: none;
+}
+.occ-edit {
+  touch-action: none;
+  cursor: crosshair;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.occ-box {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font: 600 13px/1 system-ui, sans-serif;
+}
+.occ-box.target {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.occ-box.target.open {
+  background: transparent;
+  border: 2px dashed var(--accent);
+}
+.occ-box.editing {
+  background: color-mix(in srgb, var(--surface-3) 80%, transparent);
+}
+.occ-box.drafting {
+  background: var(--accent-soft);
+  border-style: dashed;
+}
+.occ-del {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--danger);
+  cursor: pointer;
+}
+.occ-preview {
+  margin: 8px 0;
+}
+.occ-preview summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.occ-foot {
+  margin-top: 10px;
+  align-items: flex-end;
+}
+.flashcard .occ-wrap {
+  margin: 10px auto;
+  display: block;
+  text-align: center;
+}
+
+/* ===================== 0.8 · Resaltados del tema ===================== */
+
+.hl-digest-head {
+  align-items: center;
+  margin-bottom: 8px;
+}
+.hl-digest .seg .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+.hl-digest-doc {
+  margin-bottom: 14px;
+}
+.hl-digest-doc h5 {
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.hl-digest-doc ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hl-digest-doc li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+}
+.hl-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 2px;
+}
+.hl-text {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+}
+.hl-text:hover {
+  color: var(--accent);
+}
+
+/* ===================== 0.8 · Papelera e historial ===================== */
+
+.trash-list,
+.hist-list {
+  margin: 10px 0;
+  padding: 0;
+  list-style: none;
+  max-height: 46vh;
+  overflow: auto;
+}
+.trash-list li,
+.hist-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.trash-kind {
+  flex: 0 0 86px;
+}
+.trash-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+}
+.trash-when {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.hist-prev {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ===================== 0.8 · Etiquetas ===================== */
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.tag-row.filter {
+  margin: 4px 0 8px;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 12px;
+}
+.tag button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.tag button:hover {
+  color: var(--danger);
+}
+.tag.ghost {
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.tag.ghost.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.tag.mini {
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  background: var(--surface-3);
+  border-color: var(--border);
+}
+.tag-reuse {
+  margin: 10px 0 0;
+}
+
+/* ===================== 0.8 · Reconocer letra y dictado ===================== */
+
+.ocr-label {
+  display: block;
+  margin-top: 10px;
+}
+.ocr-text,
+.dict-text {
+  width: 100%;
+  margin-top: 4px;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.dict-text {
+  font-family: inherit;
+  font-size: 14px;
+  margin: 10px 0;
+}
+.rec-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--danger);
+}
+.rec-dot::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  animation: rec 1.2s ease-in-out infinite;
+}
+@keyframes rec {
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rec-dot::before {
+    animation: none;
+  }
+}
+
+/* Tapar y repasar (Cornell / dos columnas) */
+.ink-mask {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 28%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  z-index: 6;
+  border: 0;
+  border-right: 1px dashed var(--border-strong);
+  background: var(--surface-3);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.ink-page[data-paper='columns'] .ink-mask {
+  width: 50%;
+}
+.ink-mask:hover {
+  background: var(--surface-2);
+}
+
+/* ===================== 0.8 · Sincronización y paquete ===================== */
+
+.sync-bar {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(640px, 94vw);
+  padding: 8px 10px 8px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+}
+.chk-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0;
+}
+.chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}

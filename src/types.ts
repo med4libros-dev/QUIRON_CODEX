@@ -86,6 +86,11 @@ export interface Note {
   inkPages: number;
   paper: PaperStyle;
   kind: 'manual' | 'synth';
+  /** Transcripción de lo escrito a mano (la hace el motor de IA cuando tú lo pides). */
+  inkText?: string;
+  inkTextAt?: number;
+  /** Etiquetas libres para filtrar («guardia», «dudas», «ENARM»…). */
+  tags?: string[];
   createdAt: number;
   updatedAt: number;
 }
@@ -125,3 +130,6 @@ export const HIGHLIGHT_META: Record<HighlightColor, { label: string; fill: strin
   purple: { label: 'Fármacos / dosis', fill: 'rgba(167, 139, 250, 0.38)', solid: '#8b5cf6' },
   red: { label: 'Urgencia / dato de alarma', fill: 'rgba(248, 113, 113, 0.36)', solid: '#ef4444' },
 };
+
+/** Imagen pegada en una hoja del lienzo (igual que InkImage, sin importar su módulo). */
+export interface InkImageLike { id: string; page: number; x: number; y: number; w: number; h: number; src: string }

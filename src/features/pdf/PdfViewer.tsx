@@ -19,6 +19,7 @@ import { ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, liveOpaci
 import { capturePointer } from '../../lib/pointer';
 import { cropPage } from '../../lib/crop';
 import { TextLayer, extractTextInRect, loadPdfData, openPdf, type PDFDocumentProxy, type PDFPageProxy } from '../../lib/pdf';
+import { findRects, type FindRect } from '../../lib/findInPage';
 import { useUI } from '../../store/ui';
 import { useLibrary } from '../../store/library';
 import { useTools } from '../../store/tools';
@@ -36,6 +37,8 @@ interface Props {
   onZoom?: (z: number) => void;
   /** false = no guarda la página como «retomar aquí» (p. ej. en el comparador). */
   persistPage?: boolean;
+  /** Texto buscado dentro del documento (Ctrl+F): se marca sobre cada página. */
+  find?: string;
 }
 
 type Size = { w: number; h: number };
@@ -56,7 +59,7 @@ const LINE_H = 0.016;
  *  - El render ocurre fuera de pantalla y se copia de una vez: no hay parpadeo al hacer zoom.
  *  - Todas las anotaciones se guardan en coordenadas relativas a la página: sobreviven a cualquier zoom.
  */
-export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage = true }: Props) {
+export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage = true, find = '' }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageEls = useRef<(HTMLDivElement | null)[]>([]);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
@@ -142,6 +145,7 @@ export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage
   const inkByPage = useMemo(() => (gI.current = stableGroups(gI.current, inks)), [inks]);
   const stickyByPage = useMemo(() => (gS.current = stableGroups(gS.current, stickies)), [stickies]);
   const pdfDark = useSettings((s) => s.pdfDark);
+  const crop = useSettings((s) => s.pdfCrop);
   const bookmarkByPage = useMemo(() => new Map((bookmarks ?? []).map((b) => [b.page, b])), [bookmarks]);
 
   const onScroll = () => {
@@ -213,7 +217,7 @@ export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage
   }
 
   return (
-    <div className="pdf-scroll" ref={scrollRef} onScroll={onScroll} data-tool={tool} data-dark={pdfDark ? '1' : undefined} onPointerUp={onSelectEnd} onKeyUp={(e) => e.shiftKey && onSelectEnd()}>
+    <div className="pdf-scroll" ref={scrollRef} onScroll={onScroll} data-tool={tool} data-dark={pdfDark ? '1' : undefined} data-crop={crop > 0 ? '1' : undefined} style={{ '--crop': `${crop}%` } as CSSProperties} onPointerUp={onSelectEnd} onKeyUp={(e) => e.shiftKey && onSelectEnd()}>
       {!pdf || !base || !scale ? (
         <div className="loading">Cargando documento…</div>
       ) : (
@@ -232,6 +236,7 @@ export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage
             bookmark={bookmarkByPage.get(i + 1)}
             rootRef={scrollRef}
             elsRef={pageEls}
+            find={find}
           />
         ))
       )}
@@ -252,6 +257,7 @@ interface PageProps {
   bookmark?: Bookmark;
   rootRef: RefObject<HTMLDivElement | null>;
   elsRef: RefObject<(HTMLDivElement | null)[]>;
+  find: string;
 }
 
 type Gesture =
@@ -273,8 +279,12 @@ const PdfPage = memo(function PdfPage({
   bookmark,
   rootRef,
   elsRef,
+  find,
 }: PageProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  /** Sube cada vez que la capa de texto termina: dispara el marcado de la búsqueda. */
+  const [textTick, setTextTick] = useState(0);
+  const [hits, setHits] = useState<FindRect[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inkRef = useRef<HTMLCanvasElement>(null);
   const liveRef = useRef<HTMLCanvasElement>(null);
@@ -353,6 +363,7 @@ const PdfPage = memo(function PdfPage({
           if (cancelled) return;
           tdiv.style.setProperty('--min-font-size', fresh.style.getPropertyValue('--min-font-size') || '1');
           tdiv.replaceChildren(...Array.from(fresh.childNodes));
+          setTextTick((n) => n + 1);
         }
       } catch (err) {
         if ((err as { name?: string } | null)?.name !== 'RenderingCancelledException') console.warn(err);
@@ -366,6 +377,17 @@ const PdfPage = memo(function PdfPage({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, scale, pdf]);
+
+  // Marcas de la búsqueda (Ctrl+F): se recalculan al cambiar el texto buscado, el zoom o la página.
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el || !find || find.trim().length < 2 || !textTick) {
+      setHits((h) => (h.length ? [] : h));
+      return;
+    }
+    const t = setTimeout(() => setHits(findRects(el, find)), 30);
+    return () => clearTimeout(t);
+  }, [find, textTick, scale, cssW]);
 
   /** Prepara un canvas de anotación en coordenadas lógicas (ancho 1000). */
   const prepare = (c: HTMLCanvasElement | null) => {
@@ -668,6 +690,9 @@ const PdfPage = memo(function PdfPage({
     >
       <canvas ref={canvasRef} />
       <div ref={textRef} className="textLayer" style={{ '--total-scale-factor': scale } as CSSProperties} />
+      {hits.map((r, i) => (
+        <div key={i} className="find-hit" style={{ left: `${r.x}%`, top: `${r.y}%`, width: `${r.w}%`, height: `${r.h}%` }} />
+      ))}
       {highlights.map((h) =>
         h.style === 'underline' ? (
           <div

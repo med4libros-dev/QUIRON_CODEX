@@ -1,3 +1,4 @@
+import { useTrash } from './trash';
 import { useUI } from './ui';
 import { createStore } from '../lib/createStore';
 import { idb } from '../lib/idb';
@@ -49,6 +50,8 @@ export interface LibraryState {
 
   /** Deshace la última anotación hecha en este PDF. */
   undoLast: (docId: string) => void;
+  /** Devuelve un PDF desde la papelera con sus anotaciones. */
+  restoreDoc: (p: { doc: DocMeta; highlights: Highlight[]; inks: Stroke[]; stickies: Sticky[]; bookmarks: Bookmark[]; read: number[] }) => void;
   goTo: (docId: string, page: number) => void;
 }
 
@@ -116,8 +119,19 @@ export const useLibrary = createStore<LibraryState>(
       },
 
       removeDoc: async (id) => {
-        await idb.del('pdfs', id);
-        void idb.del('kv', `search:${id}`);
+        // El archivo se queda guardado mientras el PDF esté en la papelera (30 días).
+        const st = get();
+        const doc = st.docs.find((d) => d.id === id);
+        if (doc)
+          useTrash.getState().push(doc.name, {
+            kind: 'doc',
+            doc,
+            highlights: st.highlights[id] ?? [],
+            inks: st.inks[id] ?? [],
+            stickies: st.stickies[id] ?? [],
+            bookmarks: st.bookmarks[id] ?? [],
+            read: st.read[id] ?? [],
+          });
         set((s) => {
           const highlights = { ...s.highlights };
           const inks = { ...s.inks };
@@ -218,6 +232,16 @@ export const useLibrary = createStore<LibraryState>(
           return { history, inks: { ...s.inks, [docId]: entry.removed ? [...current, ...entry.removed] : current } };
         });
       },
+
+      restoreDoc: ({ doc, highlights, inks, stickies, bookmarks, read }) =>
+        set((s) => ({
+          docs: s.docs.some((d) => d.id === doc.id) ? s.docs : [doc, ...s.docs],
+          highlights: { ...s.highlights, [doc.id]: highlights },
+          inks: { ...s.inks, [doc.id]: inks },
+          stickies: { ...s.stickies, [doc.id]: stickies },
+          bookmarks: { ...s.bookmarks, [doc.id]: bookmarks },
+          read: { ...s.read, [doc.id]: read },
+        })),
 
       goTo: (docId, page) => set((s) => ({ nav: { docId, page, n: (s.nav?.n ?? 0) + 1 } })),
     };

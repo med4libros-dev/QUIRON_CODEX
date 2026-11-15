@@ -25,6 +25,7 @@ import { useBridge } from '../../store/bridge';
 import { useTools } from '../../store/tools';
 import { useNotes } from '../../store/notes';
 import { useSettings } from '../../store/settings';
+import { useTrash } from '../../store/trash';
 import type { InkTool, Note, PaperStyle, Stroke } from '../../types';
 
 const EMPTY: Stroke[] = [];
@@ -65,6 +66,8 @@ export function InkCanvas({ note }: { note: Note }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [images, setImages] = useState<InkImage[]>(EMPTY_IMG);
   const [sel, setSel] = useState<{ page: number; ids: Set<string> } | null>(null);
+  /** Tapar y repasar: cubre la columna izquierda (Cornell o dos columnas). */
+  const [mask, setMask] = useState(false);
   const inkRev = useBridge((s) => (s.inkRev?.noteId === note.id ? s.inkRev.n : 0));
 
   // Recortes pegados desde el PDF: se guardan aparte de los trazos y se recargan si llega uno nuevo.
@@ -309,11 +312,27 @@ export function InkCanvas({ note }: { note: Note }) {
     remap((p) => (p === i ? j : p === j ? i : p));
   };
   const deletePage = (i: number) => {
-    const used = latest.current.some((s) => s.page === i) || imagesRef.current.some((im) => im.page === i);
-    if (used && !confirm(`¿Quitar la hoja ${i + 1} con todo lo que tiene?`)) return;
+    const mine = latest.current.filter((s) => s.page === i);
+    const pics = imagesRef.current.filter((im) => im.page === i);
+    const used = mine.length > 0 || pics.length > 0;
+    if (used && !confirm(`¿Quitar la hoja ${i + 1} con todo lo que tiene? Queda 30 días en la papelera.`)) return;
+    // La hoja se guarda en la papelera con sus trazos e imágenes, para poder devolverla.
+    if (used)
+      useTrash.getState().push(`${note.title || 'Nota'} · hoja ${i + 1}`, {
+        kind: 'sheet',
+        noteId: note.id,
+        noteTitle: note.title || 'Nota sin título',
+        page: i,
+        strokes: mine,
+        images: pics,
+      });
     remap((p) => (p === i ? null : p > i ? p - 1 : p));
     update(note.id, { inkPages: Math.max(1, pages - 1) });
   };
+
+  useEffect(() => {
+    if (note.paper !== 'cornell' && note.paper !== 'columns') setMask(false);
+  }, [note.paper]);
 
   const color = setting.color;
   const size = setting.size;
@@ -371,6 +390,16 @@ export function InkCanvas({ note }: { note: Note }) {
         >
           <Icon name="hand" size={16} /> Solo lápiz
         </button>
+        {(note.paper === 'cornell' || note.paper === 'columns') && (
+          <button
+            className={`btn ghost sm${mask ? ' active' : ''}`}
+            onClick={() => setMask((v) => !v)}
+            aria-pressed={mask}
+            title={note.paper === 'cornell' ? 'Tapar la columna de la izquierda para repasar (toca la zona tapada para ver)' : 'Tapar la columna izquierda para repasar'}
+          >
+            <Icon name="eye" size={16} /> Tapar y repasar
+          </button>
+        )}
         <select className="select xs" value={note.paper} onChange={(e) => update(note.id, { paper: e.target.value as PaperStyle })} aria-label="Tipo de hoja">
           <option value="lined">Rayada</option>
           <option value="grid">Cuadrícula</option>
@@ -415,6 +444,7 @@ export function InkCanvas({ note }: { note: Note }) {
                   size={size}
                   penOnly={penOnly}
                   paper={note.paper}
+                  mask={mask}
                   dark={dark}
                   scrollRef={scrollRef}
                   sel={sel?.page === i ? sel.ids : null}
@@ -446,6 +476,8 @@ interface PageProps {
   size: number;
   penOnly: boolean;
   paper: PaperStyle;
+  /** Tapar la columna izquierda para repasar. */
+  mask: boolean;
   dark: boolean;
   scrollRef: RefObject<HTMLDivElement | null>;
   sel: Set<string> | null;
@@ -464,7 +496,12 @@ type Gesture =
 
 const IDENT = (ox = 0, oy = 0): Xf => ({ dx: 0, dy: 0, s: 1, ox, oy });
 
-const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, tool, color, size, penOnly, paper, dark, scrollRef, sel, onStroke, onErase, onSelect, onTransform, onSelAction }: PageProps) {
+const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, tool, color, size, penOnly, paper, mask, dark, scrollRef, sel, onStroke, onErase, onSelect, onTransform, onSelAction }: PageProps) {
+  /** Esta hoja ya se destapó (se vuelve a tapar al apagar el modo). */
+  const [shownMask, setShownMask] = useState(false);
+  useEffect(() => {
+    if (!mask) setShownMask(false);
+  }, [mask]);
   const wrapRef = useRef<HTMLDivElement>(null);
   const baseRef = useRef<HTMLCanvasElement>(null);
   const liveRef = useRef<HTMLCanvasElement>(null);
@@ -796,6 +833,18 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       onPointerCancel={onUp}
       onContextMenu={(e) => e.preventDefault()}
     >
+      {mask && !shownMask && (
+        <button
+          className="ink-mask"
+          onClick={() => setShownMask(true)}
+          onPointerDown={(e) => e.stopPropagation()}
+          title="Toca para ver lo que está tapado"
+          aria-label={`Ver la columna tapada de la hoja ${index + 1}`}
+        >
+          <Icon name="eye" size={18} />
+          <span className="small">Toca para ver</span>
+        </button>
+      )}
       {images.map((im) => (
         <img
           key={im.id}

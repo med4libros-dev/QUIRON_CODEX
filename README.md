@@ -115,6 +115,19 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.8
+- **Buscar en lo que escribiste a mano**: menú «⋯» de la nota → *Reconocer mi letra*. Transcribe tus hojas con el motor de IA que elegiste, lo deja buscable en Ctrl+K y, si quieres, lo pasa al texto de la nota.
+- **Ctrl+F dentro de la guía**: cuenta las coincidencias, salta entre ellas y las marca sobre la página.
+- **Pestañas** de varias guías abiertas, **recorte de márgenes** (4 % / 7 %) e **índice del propio PDF** junto a tus marcadores.
+- **Oclusión de imágenes**: recorta un esquema, tapa sus etiquetas y sale una flashcard por cada una.
+- **Hoja de resaltados del tema**: ficha del tema → *Resaltados*; todo lo marcado en sus guías, con su página y filtrable por color.
+- **Tapar y repasar** la columna izquierda en hojas Cornell y de dos columnas.
+- **Papelera de 30 días** (notas, guías y hojas, con su tinta y sus resaltados) e **historial de versiones** de cada nota.
+- **Etiquetas** con filtro en Cuadernos y **dictado por voz** a la nota.
+- **Surface ↔ PC**: si la otra computadora dejó algo más nuevo en la carpeta compartida, la app te ofrece traerlo al abrir.
+- **Llevarlo a otro lado** (Respaldo): paquete `.html` de solo lectura para repasar en el celular y plan en `.ics` para el calendario del teléfono.
+- **Cuaderno completo a PDF** con portada e índice.
+
 ### v0.7
 - **Lazo** en el lienzo: encierra trazos y muévelos, escálalos, cámbiales el color, duplícalos o bórralos.
 - **Formas rectas**: línea, flecha, rectángulo y elipse al dejar el lápiz quieto (Preferencias → Lápiz para apagarlo).

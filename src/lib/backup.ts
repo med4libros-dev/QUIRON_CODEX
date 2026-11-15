@@ -330,6 +330,7 @@ export async function saveToFolder(): Promise<boolean> {
     }
   }
   markBackup();
+  markFolderSeen(data.exportedAt);
   setBackupError(null);
   return true;
 }
@@ -392,4 +393,77 @@ export function startAutoBackup() {
     if (document.visibilityState === 'hidden') void tick();
   });
   return tick;
+}
+
+/* ---------- Sincronización Surface ↔ PC ---------- */
+
+const SEEN_KEY = 'alq:folderSeen';
+
+export interface SyncInfo {
+  /** Fecha del respaldo que hay en la carpeta (ISO) o null si no hay. */
+  folderAt: string | null;
+  /** true = la carpeta trae datos más nuevos que lo último que esta computadora dejó o trajo. */
+  newer: boolean;
+  /** true = aquí hay cambios sin respaldar (traer lo de la carpeta los reemplazaría). */
+  localChanges: boolean;
+}
+
+/** Fecha del respaldo de la carpeta, sin tocar nada de lo que tienes aquí. */
+export async function folderExportedAt(): Promise<string | null> {
+  const dir = await getFolder();
+  if (!dir || (await folderStatus()) !== 'granted') return null;
+  for (const name of [DATA_FILE, LEGACY_FILE]) {
+    try {
+      const file = await (await dir.getFileHandle(name)).getFile();
+      const head = await file.slice(0, 400).text();
+      const m = /"exportedAt"\s*:\s*"([^"]+)"/.exec(head);
+      if (m) return m[1];
+      // Cifrado: no se puede leer la fecha, se usa la del archivo.
+      return new Date(file.lastModified).toISOString();
+    } catch {
+      /* ese archivo no está */
+    }
+  }
+  return null;
+}
+
+/**
+ * ¿La otra computadora dejó algo más nuevo en la carpeta compartida?
+ * Compara la fecha del respaldo de la carpeta con la última que esta computadora dejó o trajo.
+ */
+export async function syncCheck(): Promise<SyncInfo> {
+  const folderAt = await folderExportedAt();
+  const seen = localStorage.getItem(SEEN_KEY) ?? localStorage.getItem(LAST_KEY) ?? '';
+  return {
+    folderAt,
+    newer: !!folderAt && (!seen || folderAt > seen),
+    localChanges: changeCount() > 0,
+  };
+}
+
+/** Marca esta fecha de carpeta como ya vista (se dejó o se trajo). */
+export const markFolderSeen = (at: string) => localStorage.setItem(SEEN_KEY, at);
+
+/** Trae lo más nuevo de la carpeta y lo marca como visto. */
+export async function syncFromFolder(pw?: string): Promise<string> {
+  const at = await loadFromFolder(pw);
+  markFolderSeen(at);
+  return at;
+}
+
+/**
+ * Al abrir la app: si la carpeta trae algo más nuevo (lo dejó la otra computadora),
+ * avisa con el evento «qc:sync» para que la interfaz te pregunte si quieres traerlo.
+ */
+export function startSyncWatch(delay = 4000) {
+  const check = async () => {
+    try {
+      const info = await syncCheck();
+      if (info.newer && info.folderAt) window.dispatchEvent(new CustomEvent('qc:sync', { detail: info }));
+    } catch {
+      /* sin carpeta o sin permiso: no se avisa nada */
+    }
+  };
+  setTimeout(() => void check(), delay);
+  return check;
 }

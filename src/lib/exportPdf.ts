@@ -229,3 +229,50 @@ export function downloadBlob(blob: Blob, name: string) {
 }
 
 const safeName = (s: string) => (s.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'notas').slice(0, 80);
+
+/**
+ * Cuaderno completo a PDF: una portada con el índice (cada nota y en qué página empieza)
+ * y después todas las notas, con su texto y sus hojas escritas a mano.
+ */
+export async function exportNotebookToPdf(name: string, notes: ExportInput[]): Promise<void> {
+  if (!notes.length) throw new Error('Este cuaderno no tiene notas.');
+  const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
+  const out = await PDFDocument.create();
+  out.setTitle(name);
+  out.setCreator('Quirón Codex');
+  out.setProducer('Quirón Codex');
+  const regular = await out.embedFont(StandardFonts.Helvetica);
+  const bold = await out.embedFont(StandardFonts.HelveticaBold);
+  const index = out.addPage(A4);
+
+  const starts: { title: string; page: number }[] = [];
+  for (const note of notes) {
+    const bytes = await buildPdf(note);
+    const src = await PDFDocument.load(bytes);
+    const copied = await out.copyPages(src, src.getPageIndices());
+    starts.push({ title: note.title, page: out.getPageCount() + 1 });
+    for (const pg of copied) out.addPage(pg);
+  }
+
+  const ink = rgb(0.11, 0.11, 0.1);
+  const muted = rgb(0.42, 0.42, 0.4);
+  let y = A4[1] - M;
+  index.drawText(toWinAnsi(name), { x: M, y: (y -= 26), size: 22, font: bold, color: ink });
+  index.drawText(
+    toWinAnsi(`${notes.length} nota${notes.length === 1 ? '' : 's'}  ·  ${new Date().toLocaleDateString('es-MX', { dateStyle: 'long' })}`),
+    { x: M, y: (y -= 18), size: 9.5, font: regular, color: muted },
+  );
+  y -= 16;
+  index.drawText('Índice', { x: M, y: (y -= 14), size: 12, font: bold, color: ink });
+  y -= 6;
+  const maxW = A4[0] - 2 * M - 34;
+  for (const s of starts) {
+    if (y < M + 20) break;
+    const line = wrap(toWinAnsi(s.title || 'Nota sin título'), regular, 10.5, maxW)[0];
+    index.drawText(line, { x: M, y: (y -= 16), size: 10.5, font: regular, color: ink });
+    index.drawText(String(s.page), { x: A4[0] - M - 22, y, size: 10.5, font: regular, color: muted });
+  }
+
+  const bytes = await out.save();
+  downloadBlob(new Blob([bytes as BlobPart], { type: 'application/pdf' }), `${safeName(name)}.pdf`);
+}

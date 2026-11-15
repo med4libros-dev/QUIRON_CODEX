@@ -9,6 +9,7 @@ import { useSettings } from '../../store/settings';
 import { STICKY_COLORS, useTools } from '../../store/tools';
 import { HIGHLIGHT_META, HIGHLIGHT_ORDER, type DocMeta } from '../../types';
 import { BookmarksMenu } from './BookmarksMenu';
+import { FindBar } from './FindBar';
 import { FileManager } from './FileManager';
 import { PdfViewer, type PdfTool } from './PdfViewer';
 
@@ -58,6 +59,14 @@ export function PdfWorkspace() {
   const [busy, setBusy] = useState(false);
   const [bmOpen, setBmOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+  const [find, setFind] = useState('');
+  const openDocs = useSettings((s) => s.openDocs);
+  const closeDoc = useSettings((s) => s.closeDoc);
+  const crop = useSettings((s) => s.pdfCrop);
+  const setPdfCrop = useSettings((s) => s.setPdfCrop);
+  /** Pestañas de guías abiertas (se omiten las que ya se borraron). */
+  const tabs = openDocs.map((id) => docs.find((d) => d.id === id)).filter((d): d is DocMeta => !!d);
   const pageMarked = useLibrary((s) => (activeDocId ? (s.bookmarks[activeDocId] ?? []).some((b) => b.page === page) : false));
 
   const currentPage = useRef(1);
@@ -76,6 +85,8 @@ export function PdfWorkspace() {
 
   useEffect(() => {
     setPage(doc?.lastPage ?? 1);
+    setFindOpen(false);
+    setFind('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc?.id]);
 
@@ -85,6 +96,13 @@ export function PdfWorkspace() {
       const t = e.target as HTMLElement | null;
       if (!t || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
       if (useSettings.getState().view !== 'study') return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        if (useSettings.getState().activeDocId) {
+          e.preventDefault();
+          setFindOpen(true);
+        }
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         const id = useSettings.getState().activeDocId;
         if (id && t.closest('.pdf-workspace, body') && !t.closest('.notes-panel')) {
@@ -170,6 +188,20 @@ export function PdfWorkspace() {
         void upload(Array.from(e.dataTransfer.files));
       }}
     >
+      {tabs.length > 1 && (
+        <div className="doc-tabs" role="tablist" aria-label="Guías abiertas">
+          {tabs.map((d) => (
+            <div key={d.id} className={`doc-tab${d.id === activeDocId ? ' active' : ''}`}>
+              <button role="tab" aria-selected={d.id === activeDocId} className="doc-tab-name ellipsis" title={d.name} onClick={() => setActiveDoc(d.id)}>
+                {d.name}
+              </button>
+              <button className="icon-btn xs doc-tab-x" onClick={() => closeDoc(d.id)} title={`Cerrar «${d.name}»`} aria-label={`Cerrar ${d.name}`}>
+                <Icon name="x" size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="toolbar">
         <button className={`icon-btn${libraryOpen ? ' active' : ''}`} onClick={() => setLibraryOpen(!libraryOpen)} title="Biblioteca de PDFs">
           <Icon name="folder" />
@@ -211,6 +243,19 @@ export function PdfWorkspace() {
             </div>
             <div className="spacer" />
             <div className="group">
+              <button className={`icon-btn${findOpen ? ' active' : ''}`} onClick={() => setFindOpen((v) => !v)} title="Buscar en esta guía (Ctrl+F)" aria-label="Buscar en esta guía">
+                <Icon name="search" />
+              </button>
+              <button
+                className={`icon-btn${crop > 0 ? ' active' : ''}`}
+                onClick={() => setPdfCrop(crop === 0 ? 4 : crop === 4 ? 7 : 0)}
+                title={crop === 0 ? 'Recortar márgenes: aprovecha más pantalla (toca para 4 %)' : `Márgenes recortados ${crop} % · toca para ${crop === 4 ? '7 %' : 'página completa'}`}
+                aria-label="Recortar márgenes"
+              >
+                <Icon name="minimize" />
+              </button>
+            </div>
+            <div className="group">
               <button className="icon-btn" onClick={() => zoomStep(-1)} title="Alejar">
                 <Icon name="zoomOut" />
               </button>
@@ -249,6 +294,8 @@ export function PdfWorkspace() {
           </>
         )}
       </div>
+
+      {doc && findOpen && <FindBar docId={doc.id} onFind={setFind} onGo={(p) => goTo(doc.id, p)} onClose={() => setFindOpen(false)} />}
 
       {doc && tool !== 'select' && (
         <div className="subbar">
@@ -294,7 +341,7 @@ export function PdfWorkspace() {
 
       <div className="pdf-body">
         {doc ? (
-          <PdfViewer key={doc.id} docId={doc.id} tool={tool} zoom={zoom} onPageChange={setPage} onZoom={setZoom} />
+          <PdfViewer key={doc.id} docId={doc.id} tool={tool} zoom={zoom} onPageChange={setPage} onZoom={setZoom} find={find} />
         ) : hydrated ? (
           <EmptyLibrary docs={docs} busy={busy} onUpload={(f) => void upload(f)} onOpen={setActiveDoc} />
         ) : null}

@@ -18,6 +18,9 @@ import { purgeExpiredShift } from './ward/store';
 import { DiagramModal } from './ai/DiagramModal';
 import { HlQuizModal } from './ai/HlQuizModal';
 import { ClozeModal } from './flashcards/ClozeModal';
+import { OcclusionModal } from './flashcards/OcclusionModal';
+import { SyncBar } from './features/backup/SyncBar';
+import { useTrash } from './store/trash';
 import { ShortcutsModal, WhatsNew } from './home/WhatsNew';
 import { startReminders } from './lib/reminders';
 import { startAutoFocus } from './lib/autoFocus';
@@ -184,6 +187,11 @@ export default function App() {
     return () => mq.removeEventListener('change', apply);
   }, [theme, setDark]);
 
+  // Papelera: al abrir, se va lo que ya pasó de 30 días.
+  useEffect(() => {
+    void useTrash.getState().purgeOld();
+  }, []);
+
   usePomodoroTicker();
   // Cronómetro automático: cuenta el tiempo real leyendo o escribiendo en Estudio y Cuadernos.
   useEffect(startAutoFocus, []);
@@ -288,6 +296,8 @@ export default function App() {
       <DiagramModal />
       <HlQuizModal />
       <ClozeModal />
+      <OcclusionModal />
+      <SyncBar />
       <ShortcutsModal />
       <WhatsNew />
       <TtsBar />

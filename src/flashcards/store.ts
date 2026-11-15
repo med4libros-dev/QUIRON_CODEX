@@ -1,6 +1,7 @@
 import { createStore } from '../lib/createStore';
 import { addDays, fromKey, toKey, todayKey } from '../lib/date';
 import { uid } from '../lib/id';
+import type { NRect } from '../types';
 
 /**
  * Flashcards con repaso espaciado (algoritmo tipo SM-2 / Anki).
@@ -16,6 +17,8 @@ export interface Card {
   back: string;
   /** Recorte del PDF (data URL) para el reverso. */
   image?: string;
+  /** Oclusión de imagen: cajas que tapan etiquetas y cuál toca adivinar en esta tarjeta. */
+  occlusion?: { boxes: NRect[]; target: number };
   source?: { docId: string; docName: string; page: number };
   createdAt: number;
   due: string;
@@ -54,7 +57,7 @@ export function schedule(c: Pick<Card, 'interval' | 'ease' | 'reps' | 'lapses'>,
 
 export interface CardsState {
   cards: Card[];
-  addCard: (c: Pick<Card, 'front' | 'back' | 'topicId' | 'image' | 'source'>) => string;
+  addCard: (c: Pick<Card, 'front' | 'back' | 'topicId' | 'image' | 'source' | 'occlusion'>) => string;
   updateCard: (id: string, patch: Partial<Card>) => void;
   removeCard: (id: string) => void;
   grade: (id: string, g: Grade) => void;

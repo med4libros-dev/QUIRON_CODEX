@@ -32,15 +32,33 @@ export interface AiCall {
   system: string;
   user: string;
   maxTokens?: number;
+  /** Imágenes (data URL PNG/JPEG) que acompañan a la petición: hojas escritas a mano, recortes… */
+  images?: string[];
 }
 
-export async function callAi({ system, user, maxTokens = 4000 }: AiCall): Promise<string> {
+export async function callAi({ system, user, maxTokens = 4000, images }: AiCall): Promise<string> {
   const cfg = aiCfg();
   if (!cfg.key) throw new Error(aiMissingMsg());
-  return cfg.provider === 'gemini' ? callGemini(cfg, system, user, maxTokens) : callClaude(cfg, system, user, maxTokens);
+  const imgs = (images ?? []).map(splitDataUrl).filter((x): x is Img => !!x);
+  return cfg.provider === 'gemini' ? callGemini(cfg, system, user, maxTokens, imgs) : callClaude(cfg, system, user, maxTokens, imgs);
 }
 
-async function callClaude(cfg: AiCfg, system: string, user: string, maxTokens: number): Promise<string> {
+interface Img {
+  mime: string;
+  b64: string;
+}
+
+/** Separa un data URL en tipo y contenido; devuelve null si no lo es. */
+function splitDataUrl(src: string): Img | null {
+  const m = /^data:([^;]+);base64,(.+)$/s.exec(src.trim());
+  return m ? { mime: m[1], b64: m[2] } : null;
+}
+
+async function callClaude(cfg: AiCfg, system: string, user: string, maxTokens: number, images: Img[] = []): Promise<string> {
+  // Sin imágenes se manda el texto tal cual (como siempre); con imágenes, en bloques.
+  const content: unknown = images.length
+    ? [...images.map((im) => ({ type: 'image', source: { type: 'base64', media_type: im.mime, data: im.b64 } })), { type: 'text', text: user }]
+    : user;
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -49,7 +67,7 @@ async function callClaude(cfg: AiCfg, system: string, user: string, maxTokens: n
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
-    body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] }),
+    body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
   });
   if (!res.ok) throw new Error(await apiError(res, 'Claude'));
   const data = (await res.json()) as { content?: { type: string; text?: string }[] };
@@ -60,13 +78,14 @@ async function callClaude(cfg: AiCfg, system: string, user: string, maxTokens: n
 
 interface GeminiPart {
   text?: string;
+  inlineData?: { mimeType: string; data: string };
 }
 interface GeminiRes {
   candidates?: { content?: { parts?: GeminiPart[] }; finishReason?: string }[];
   promptFeedback?: { blockReason?: string };
 }
 
-async function callGemini(cfg: AiCfg, system: string, user: string, maxTokens: number): Promise<string> {
+async function callGemini(cfg: AiCfg, system: string, user: string, maxTokens: number, images: Img[] = []): Promise<string> {
   const generationConfig: Record<string, unknown> = { maxOutputTokens: maxTokens, temperature: 0.6 };
   // Los modelos «flash» razonan antes de responder y eso consume el presupuesto de salida: se desactiva.
   if (/flash/i.test(cfg.model)) generationConfig.thinkingConfig = { thinkingBudget: 0 };
@@ -75,7 +94,7 @@ async function callGemini(cfg: AiCfg, system: string, user: string, maxTokens: n
     headers: { 'content-type': 'application/json', 'x-goog-api-key': cfg.key },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
-      contents: [{ role: 'user', parts: [{ text: user }] }],
+      contents: [{ role: 'user', parts: [...images.map((im) => ({ inlineData: { mimeType: im.mime, data: im.b64 } })), { text: user }] as GeminiPart[] }],
       generationConfig,
     }),
   });

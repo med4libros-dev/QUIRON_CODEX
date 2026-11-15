@@ -203,6 +203,20 @@ function PearlMenuInner({ pearl }: { pearl: Pearl }) {
         >
           <Icon name="square" size={16} /> Huecos
         </button>
+        <button
+          className="pearl-btn"
+          onClick={() => {
+            const src = image();
+            if (!src) return done('No se pudo capturar la zona: espera a que cargue la página.');
+            useUI.getState().setOcclusion({ src, topicId: topicId && topicId !== OPEN_NOTE ? topicId : null, source: { docId: pearl.docId, docName, page: pearl.page } });
+            document.getSelection()?.removeAllRanges();
+            setPearl(null);
+          }}
+          disabled={!pearl.image}
+          title="Tapar etiquetas del esquema y crear una tarjeta por cada una"
+        >
+          <Icon name="eye" size={16} /> Tapar
+        </button>
         <button className="pearl-btn" onClick={() => void toCanvas()} title="Pegar como imagen en el lienzo para rayar encima">
           <Icon name="crop" size={16} /> Lienzo
         </button>

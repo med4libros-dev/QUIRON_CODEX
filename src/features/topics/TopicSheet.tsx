@@ -5,7 +5,7 @@ import { Modal } from '../../components/Modal';
 import { CALCULATORS, calculatorsForTopic } from '../../clinical/calculators';
 import { dueCards, useCards } from '../../flashcards/store';
 import { SPECIALTY, TOPIC, gpcSearchUrl } from '../../internship/curriculum';
-import { openTopicNote } from '../../internship/openLesson';
+import { openTopicById, openTopicNote } from '../../internship/openLesson';
 import {
   GUARD_FIELDS,
   emptyInfo,
@@ -16,11 +16,14 @@ import {
   type CaseEntry,
 } from '../../internship/topicStore';
 import { fmt, fromKey, todayKey } from '../../lib/date';
+import { escapeHtml } from '../../lib/html';
+import { pdfRefHtml, useBridge } from '../../store/bridge';
 import { useLibrary } from '../../store/library';
 import { openPdfPage } from '../../store/navigate';
 import { useSettings } from '../../store/settings';
 import { speak, ttsSupported } from '../../lib/tts';
 import { useUI, type TopicTab } from '../../store/ui';
+import { HIGHLIGHT_META, HIGHLIGHT_ORDER, type DocMeta, type Highlight, type HighlightColor } from '../../types';
 import { CalculatorCard } from './CalculatorCard';
 import { HyEditor, HyList } from '../../hy/HyView';
 import { useHy } from '../../hy/store';
@@ -81,6 +84,7 @@ const TABS: { id: TopicTab; label: string }[] = [
   { id: 'cases', label: 'Casos vistos' },
   { id: 'cards', label: 'Flashcards' },
   { id: 'hy', label: 'Perlas HY' },
+  { id: 'hl', label: 'Resaltados' },
 ];
 
 const KIND_LABEL: Record<AttachmentKind, string> = {
@@ -140,6 +144,7 @@ export function TopicSheet() {
         {sheet.tab === 'cases' && <CasesTab topicId={t.id} />}
         {sheet.tab === 'cards' && <CardsTab topicId={t.id} />}
         {sheet.tab === 'hy' && <HyTab topicId={t.id} />}
+        {sheet.tab === 'hl' && <HighlightsTab topicId={t.id} />}
       </div>
     </Modal>
   );
@@ -443,6 +448,98 @@ function HyTab({ topicId }: { topicId: string }) {
         )}
       </div>
       <HyList items={items} compact />
+    </div>
+  );
+}
+
+/* ---------- Resaltados del tema ---------- */
+
+const HL_EMPTY: Highlight[] = [];
+
+/**
+ * Todo lo que resaltaste de este tema, de todas sus guías, en una sola hoja: para repasar
+ * en diez minutos sin abrir cada PDF. Se puede filtrar por color y mandar completo a la nota.
+ */
+function HighlightsTab({ topicId }: { topicId: string }) {
+  const info = useTopicStore((s) => s.info[topicId]) ?? emptyInfo();
+  const docs = useLibrary((s) => s.docs);
+  const byDoc = useLibrary((s) => s.highlights);
+  const insert = useBridge((s) => s.insertIntoNote);
+  const [color, setColor] = useState<HighlightColor | 'all'>('all');
+
+  const groups = useMemo(() => {
+    const out: { doc: DocMeta; items: Highlight[] }[] = [];
+    for (const a of info.attachments) {
+      const doc = docs.find((d) => d.id === a.docId);
+      if (!doc) continue;
+      const items = (byDoc[a.docId] ?? HL_EMPTY)
+        .filter((h) => h.text.trim() && (color === 'all' || h.color === color))
+        .sort((x, y) => x.page - y.page || x.rect.y - y.rect.y);
+      if (items.length) out.push({ doc, items });
+    }
+    return out;
+  }, [info.attachments, docs, byDoc, color]);
+
+  const total = groups.reduce((n, g) => n + g.items.length, 0);
+  const present = new Set<HighlightColor>();
+  for (const a of info.attachments) for (const h of byDoc[a.docId] ?? HL_EMPTY) if (h.text.trim()) present.add(h.color);
+
+  const toNote = () => {
+    const html = groups
+      .map(
+        (g) =>
+          `<h3>${escapeHtml(g.doc.name)}</h3><ul>${g.items
+            .map((h) => `<li>${escapeHtml(h.text.replace(/\s+/g, ' ').trim())} ${pdfRefHtml(g.doc.id, g.doc.name, h.page)}</li>`)
+            .join('')}</ul>`,
+      )
+      .join('');
+    openTopicById(topicId);
+    insert(`<h2>Resaltados de ${escapeHtml(TOPIC[topicId]?.title ?? 'este tema')}</h2>${html}<p><br></p>`, { append: true });
+  };
+
+  if (!info.attachments.length) return <p className="muted small">Adjunta una guía en «Documentos» y aquí aparecerá todo lo que resaltes de ella.</p>;
+
+  return (
+    <div className="hl-digest">
+      <div className="row gap wrap hl-digest-head">
+        <div className="seg sm" role="radiogroup" aria-label="Filtrar por color">
+          <button className={color === 'all' ? 'active' : ''} onClick={() => setColor('all')} aria-pressed={color === 'all'}>
+            Todos
+          </button>
+          {HIGHLIGHT_ORDER.filter((c) => present.has(c)).map((c) => (
+            <button key={c} className={color === c ? 'active' : ''} onClick={() => setColor(c)} aria-pressed={color === c} title={HIGHLIGHT_META[c].label}>
+              <span className="dot" style={{ background: HIGHLIGHT_META[c].solid }} /> {HIGHLIGHT_META[c].label}
+            </button>
+          ))}
+        </div>
+        <div className="spacer" />
+        <span className="muted small tabular">{total} resaltado{total === 1 ? '' : 's'}</span>
+        <button className="btn ghost sm" onClick={toNote} disabled={!total} title="Enviar la hoja completa a los apuntes del tema">
+          <Icon name="insert" size={14} /> Todo a la nota
+        </button>
+      </div>
+      {!total ? (
+        <p className="muted small">
+          Nada resaltado todavía{color === 'all' ? '' : ' de ese color'}. Los resaltados de área sobre PDFs escaneados no traen texto y no aparecen aquí.
+        </p>
+      ) : (
+        groups.map((g) => (
+          <section key={g.doc.id} className="hl-digest-doc">
+            <h5 className="ellipsis">{g.doc.name}</h5>
+            <ul>
+              {g.items.map((h) => (
+                <li key={h.id}>
+                  <span className="hl-dot" style={{ background: HIGHLIGHT_META[h.color].solid }} title={HIGHLIGHT_META[h.color].label} />
+                  <button className="hl-text" onClick={() => openPdfPage(g.doc.id, h.page)} title={`Ir a la p. ${h.page}`}>
+                    {h.text.replace(/\s+/g, ' ').trim()}
+                  </button>
+                  <span className="muted small tabular">p. {h.page}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      )}
     </div>
   );
 }

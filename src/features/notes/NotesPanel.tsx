@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, type IconName } from '../../components/Icon';
 import { fmt } from '../../lib/date';
-import { exportToPdf } from '../../lib/exportPdf';
+import { exportNotebookToPdf, exportToPdf } from '../../lib/exportPdf';
 import { exportToWord } from '../../lib/exportWord';
 import { useBridge } from '../../store/bridge';
 import { idb } from '../../lib/idb';
@@ -15,6 +15,7 @@ import type { Stroke } from '../../types';
 import { noteCompleteness } from '../../lib/completeness';
 import { NotebookDialog } from '../notebooks/NotebookDialog';
 import { SynthPanel } from '../synth/SynthPanel';
+import { DictationDialog, HistoryDialog, OcrDialog, TagsDialog } from './NoteTools';
 import { InkCanvas } from './InkCanvas';
 import { TextEditor } from './TextEditor';
 
@@ -48,6 +49,8 @@ export function NotesPanel() {
   const [tab, setTab] = useState<Tab>('text');
   const [exporting, setExporting] = useState(false);
   const [nbDialog, setNbDialog] = useState(false);
+  const [noteDialog, setNoteDialog] = useState<'ocr' | 'dict' | 'tags' | 'hist' | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const book = notebooks.find((b) => b.id === scope) ?? null;
   // Si el PDF tiene materia y existe un cuaderno de esa materia, las notas nuevas van ahí.
@@ -93,7 +96,7 @@ export function NotesPanel() {
   };
 
   const remove = () => {
-    if (!note || !confirm(`¿Eliminar la nota «${note.title}»? Esto no se puede deshacer.`)) return;
+    if (!note || !confirm(`¿Eliminar la nota «${note.title}»? Queda 30 días en la papelera.`)) return;
     deleteNote(note.id);
     setActiveNote(null);
   };
@@ -117,6 +120,35 @@ export function NotesPanel() {
       });
     } catch (e) {
       alert(`No se pudo exportar: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  /** Cuaderno completo a PDF: portada con índice y todas sus notas en orden. */
+  const exportBook = async () => {
+    if (!book) return;
+    (document.activeElement as HTMLElement | null)?.blur();
+    setExporting(true);
+    try {
+      const fresh = useNotes
+        .getState()
+        .notes.filter((n) => n.notebookId === book.id)
+        .sort((a, b) => a.createdAt - b.createdAt);
+      const inputs = [];
+      for (const n of fresh) {
+        inputs.push({
+          title: n.title,
+          html: n.html,
+          strokes: (await idb.get<Stroke[]>('ink', n.id)) ?? [],
+          inkPages: n.inkPages,
+          images: await loadInkImages(n.id),
+          subtitle: n.docId ? `Fuente: ${docs.find((d) => d.id === n.docId)?.name ?? ''}` : undefined,
+        });
+      }
+      await exportNotebookToPdf(book.name, inputs);
+    } catch (e) {
+      alert(`No se pudo exportar el cuaderno: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setExporting(false);
     }
@@ -165,7 +197,34 @@ export function NotesPanel() {
             >
               <Icon name="download" size={15} /> Word
             </button>
-            <button className="icon-btn danger" onClick={remove} title="Eliminar nota">
+            <div className="group more-wrap">
+              <button
+                className={`icon-btn${menuOpen ? ' active' : ''}`}
+                data-note-more
+                onClick={() => setMenuOpen((v) => !v)}
+                title="Más: reconocer mi letra, dictar, etiquetas, historial"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                aria-label="Más acciones de la nota"
+              >
+                <Icon name="more" />
+              </button>
+              {menuOpen && (
+                <NoteMenu
+                  onClose={() => setMenuOpen(false)}
+                  hasInk={note.inkPages > 0}
+                  tagCount={note.tags?.length ?? 0}
+                  bookName={book?.name}
+                  exporting={exporting}
+                  onPick={(k) => {
+                    setMenuOpen(false);
+                    if (k === 'book') void exportBook();
+                    else setNoteDialog(k);
+                  }}
+                />
+              )}
+            </div>
+            <button className="icon-btn danger" onClick={remove} title="Eliminar nota (queda en la papelera 30 días)">
               <Icon name="trash" />
             </button>
           </>
@@ -275,6 +334,10 @@ export function NotesPanel() {
         )}
       </div>
 
+      {note && noteDialog === 'ocr' && <OcrDialog note={note} onClose={() => setNoteDialog(null)} />}
+      {note && noteDialog === 'dict' && <DictationDialog note={note} onClose={() => setNoteDialog(null)} />}
+      {note && noteDialog === 'tags' && <TagsDialog note={note} onClose={() => setNoteDialog(null)} />}
+      {note && noteDialog === 'hist' && <HistoryDialog note={note} onClose={() => setNoteDialog(null)} />}
       {nbDialog && (
         <NotebookDialog
           onClose={() => setNbDialog(false)}
@@ -313,5 +376,69 @@ function CompletenessChip({ html }: { html: string }) {
         </span>
       )}
     </span>
+  );
+}
+
+/** Menú «más» de la nota: lo que no cabe en la barra. */
+function NoteMenu({
+  onClose,
+  onPick,
+  hasInk,
+  tagCount,
+  bookName,
+  exporting,
+}: {
+  onClose: () => void;
+  onPick: (k: 'ocr' | 'dict' | 'tags' | 'hist' | 'book') => void;
+  hasInk: boolean;
+  tagCount: number;
+  bookName?: string;
+  exporting: boolean;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Element;
+      if (!box.current?.contains(t) && !t.closest('[data-note-more]')) onClose();
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [onClose]);
+
+  return (
+    <div className="popover more-menu" ref={box} role="menu" aria-label="Más acciones de la nota">
+      <button role="menuitem" onClick={() => onPick('ocr')} disabled={!hasInk}>
+        <Icon name="pencil" size={16} />
+        <span>
+          Reconocer mi letra <small>Buscar lo escrito a mano y pasarlo a texto</small>
+        </span>
+      </button>
+      <button role="menuitem" onClick={() => onPick('dict')}>
+        <Icon name="mic" size={16} />
+        <span>
+          Dictar <small>Hablar y revisar antes de agregar</small>
+        </span>
+      </button>
+      <button role="menuitem" onClick={() => onPick('tags')}>
+        <Icon name="tag" size={16} />
+        <span>
+          Etiquetas <small>{tagCount ? `${tagCount} puesta${tagCount === 1 ? '' : 's'}` : 'Para filtrar después'}</small>
+        </span>
+      </button>
+      <button role="menuitem" onClick={() => onPick('hist')}>
+        <Icon name="clock" size={16} />
+        <span>
+          Historial <small>Volver a una versión anterior</small>
+        </span>
+      </button>
+      {bookName && (
+        <button role="menuitem" onClick={() => onPick('book')} disabled={exporting}>
+          <Icon name="notebook" size={16} />
+          <span>
+            Exportar cuaderno <small>«{bookName}» completo a PDF con índice</small>
+          </span>
+        </button>
+      )}
+    </div>
   );
 }

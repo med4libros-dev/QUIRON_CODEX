@@ -34,6 +34,12 @@ export interface SettingsState {
   /** Punta predictiva del lápiz (experimental): adelanta el trazo unos milisegundos. */
   inkPredict: boolean;
   setInkPredict: (v: boolean) => void;
+  /** Recorte de márgenes del PDF en % de cada lado (0 = página completa). */
+  pdfCrop: number;
+  setPdfCrop: (v: number) => void;
+  /** Guías abiertas en pestañas, en orden. */
+  openDocs: string[];
+  closeDoc: (id: string) => void;
   /** Guías en oscuro: fondo negro y texto claro (solo cambia cómo se ven, no el archivo). */
   pdfDark: boolean;
   setPdfDark: (v: boolean) => void;
@@ -92,6 +98,18 @@ export const useSettings = createStore<SettingsState>(
     setInkPredict: (inkPredict) => set({ inkPredict }),
     pdfDark: false,
     setPdfDark: (pdfDark) => set({ pdfDark }),
+    pdfCrop: 0,
+    setPdfCrop: (v) => set({ pdfCrop: Math.min(12, Math.max(0, Math.round(v))) }),
+    openDocs: [],
+    closeDoc: (id) =>
+      set((s) => {
+        const openDocs = s.openDocs.filter((d) => d !== id);
+        if (s.activeDocId !== id) return { openDocs };
+        // Al cerrar la pestaña activa pasa a la vecina.
+        const i = s.openDocs.indexOf(id);
+        const next = openDocs[Math.min(i, openDocs.length - 1)] ?? null;
+        return { openDocs, activeDocId: next, activeNoteId: null };
+      }),
     inkZoom: 1,
     setInkZoom: (inkZoom) => set({ inkZoom: Math.min(3, Math.max(0.5, Math.round(inkZoom * 100) / 100)) }),
     saver: 'auto',
@@ -107,7 +125,12 @@ export const useSettings = createStore<SettingsState>(
     toggleSwap: () => set((s) => ({ swapPanes: !s.swapPanes })),
     setPaneMode: (paneMode) => set({ paneMode }),
     setLibraryOpen: (libraryOpen) => set({ libraryOpen }),
-    setActiveDoc: (activeDocId) => set({ activeDocId, activeNoteId: null }),
+    setActiveDoc: (activeDocId) =>
+      set((s) => ({
+        activeDocId,
+        activeNoteId: null,
+        openDocs: !activeDocId || s.openDocs.includes(activeDocId) ? s.openDocs : [...s.openDocs, activeDocId].slice(-8),
+      })),
     setActiveNote: (activeNoteId) => set({ activeNoteId }),
     setNotebookScope: (notebookScope) => set({ notebookScope, activeNoteId: null }),
     aiProvider: 'claude',
@@ -122,8 +145,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, aiProvider, geminiKey, geminiModel }) => ({
-      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, aiProvider, geminiKey, geminiModel,
+    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, pdfCrop, openDocs, aiProvider, geminiKey, geminiModel }) => ({
+      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, pdfCrop, openDocs, aiProvider, geminiKey, geminiModel,
     }),
   },
 );

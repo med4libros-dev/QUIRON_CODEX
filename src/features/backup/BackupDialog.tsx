@@ -20,7 +20,10 @@ import {
   reconnectFolder,
   restoreFromFile,
   saveToFolder,
+  syncCheck,
+  syncFromFolder,
 } from '../../lib/backup';
+import { ShareDialog } from './ShareDialog';
 
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : 'nunca';
@@ -41,6 +44,7 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
   const pwArg = () => pw || undefined;
   const [err, setErr] = useState(backupError());
   const [undoAt, setUndoAt] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const refresh = async () => {
     try {
@@ -262,8 +266,39 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
             </button>
           </section>
         )}
+        <section>
+          <h4>Pasar el progreso entre la PC y la Surface</h4>
+          <p className="muted small">
+            Con la carpeta de respaldo configurada en las dos computadoras, cada una deja ahí su avance. Al abrir la app te avisa si
+            la otra dejó algo más nuevo. También puedes revisar ahora mismo.
+          </p>
+          <div className="row gap wrap">
+            <button
+              className="btn sm"
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  const info = await syncCheck();
+                  if (!info.folderAt) return 'La carpeta no tiene respaldo todavía (o no está conectada).';
+                  if (!info.newer) return `La carpeta está al día (${fmtDate(info.folderAt)}).`;
+                  if (!confirm(`La carpeta trae datos más nuevos (${fmtDate(info.folderAt)}).\n\n¿Traerlos a esta computadora? Lo de aquí se reemplaza (se puede deshacer).`))
+                    return 'No se trajo nada.';
+                  await syncFromFolder(pwArg());
+                  setTimeout(() => location.reload(), 900);
+                  return 'Trayendo lo más nuevo… recargando.';
+                }, '')
+              }
+            >
+              <Icon name="swap" size={15} /> Revisar la carpeta ahora
+            </button>
+            <button className="btn ghost sm" onClick={() => setShareOpen(true)} title="Paquete para el celular y plan en .ics">
+              <Icon name="external" size={15} /> Llevarlo a otro lado
+            </button>
+          </div>
+        </section>
         {msg && <p className={`small ${msg.ok ? 'ok-text' : 'error'}`}>{msg.text}</p>}
       </div>
+      {shareOpen && <ShareDialog onClose={() => setShareOpen(false)} />}
     </Modal>
   );
 }
