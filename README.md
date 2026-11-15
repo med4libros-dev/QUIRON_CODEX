@@ -115,6 +115,9 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.8.1
+- **Arreglo**: en pantalla completa la guía se quedaba sin ancho (al ocultar la barra lateral el contenido caía en una columna de 0 px). Ahora la rejilla queda de una sola columna y el PDF ocupa todo.
+
 ### v0.8
 - **Buscar en lo que escribiste a mano**: menú «⋯» de la nota → *Reconocer mi letra*. Transcribe tus hojas con el motor de IA que elegiste, lo deja buscable en Ctrl+K y, si quieres, lo pasa al texto de la nota.
 - **Ctrl+F dentro de la guía**: cuenta las coincidencias, salta entre ellas y las marca sobre la página.

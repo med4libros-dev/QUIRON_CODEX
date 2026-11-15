@@ -6254,12 +6254,15 @@ button.kpi:hover {
 }
 
 /* Pantalla completa de lectura */
+/* La barra lateral se oculta por completo, así que la rejilla queda de una sola columna:
+   con «0 1fr» el contenido caía en la columna de 0 px y el PDF se quedaba sin ancho. */
 [data-focus='on'] .app {
-  grid-template-columns: 0 1fr;
+  grid-template-columns: 1fr;
 }
 [data-focus='on'] .rail,
 [data-focus='on'] .topbar,
 [data-focus='on'] .mini-player,
+[data-focus='on'] .pdf-workspace > .doc-tabs,
 [data-focus='on'] .pdf-workspace > .toolbar {
   display: none;
 }
