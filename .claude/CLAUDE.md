@@ -31,3 +31,9 @@ La librería en sí se instala aparte en tu equipo: `pip install "notebooklm-py[
 Licencias en `.claude/skills/VERCEL-SKILLS-LICENSE.md` y `.claude/skills/UI-UX-PRO-MAX-LICENSE.md`.
 Nota: el sistema visual del proyecto («Pistache» y «Cristal líquido / Dark Academia») manda sobre cualquier
 sugerencia de estas skills; sirven para auditar y afinar, no para rehacer la identidad.
+
+# Pruebas
+- `playwright-skill` (MIT · TestDino) — guías de Playwright al día (selectores, esperas, trazas, flaky,
+  accesibilidad, CI, page objects y diseño de casos). La suite de este proyecto vive fuera del repo
+  (`/tmp/tc/*.py`, Playwright de Python); esta skill sirve para escribirla mejor y para traerla al repo
+  si algún día se decide versionarla. Licencia en `.claude/skills/PLAYWRIGHT-SKILL-LICENSE.md`.
