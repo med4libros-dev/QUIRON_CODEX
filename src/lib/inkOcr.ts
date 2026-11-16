@@ -1,6 +1,6 @@
 import { callAi } from './ai';
 import { idb } from './idb';
-import { renderInkPage } from './ink';
+import { renderInkCrop, renderInkPage } from './ink';
 import { loadInkImages } from './inkImages';
 import { useNotes } from '../store/notes';
 import { useSettings } from '../store/settings';
@@ -72,6 +72,32 @@ export async function recognizeSheet(noteId: string, page: number): Promise<stri
     user: 'Transcribe esta hoja de apuntes.',
     images: [img],
     maxTokens: 2000,
+  });
+  return clean(raw);
+}
+
+const FORMULA =
+  'Lees una fórmula o cálculo clínico escrito a mano. Devuelve ÚNICAMENTE la fórmula en texto plano ' +
+  'de una sola línea, con los operadores normales (+ - * / = ( ) % y ÷ como /). No la resuelvas, no expliques. ' +
+  'Si no hay una fórmula, devuelve la transcripción literal de lo que haya.';
+
+/**
+ * Transcribe solo lo que encerraste con el lazo, no la hoja entera. Se usa para pasar un párrafo
+ * al editor, convertirlo en flashcard o leer una fórmula sin tener que reconocer toda la hoja.
+ */
+export async function recognizeCrop(
+  strokes: Stroke[],
+  box: { x: number; y: number; w: number; h: number },
+  mode: 'text' | 'formula' = 'text',
+): Promise<string> {
+  if (!strokes.length) return '';
+  const img = await renderInkCrop(strokes, box);
+  if (!img) return '';
+  const raw = await callAi({
+    system: mode === 'formula' ? FORMULA : systemWithGlossary(),
+    user: mode === 'formula' ? 'Lee esta fórmula.' : 'Transcribe este fragmento de apuntes.',
+    images: [img],
+    maxTokens: 1200,
   });
   return clean(raw);
 }

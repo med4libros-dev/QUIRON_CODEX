@@ -292,9 +292,25 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - La identidad se apoya en tres niveles de papel y en la regla de que `--paper` es siempre la superficie más clara: `f4.py` lo comprueba midiendo la luminancia de `--paper`, `--surface` y `--bg` en día y noche.
 - No quedan `backdrop-filter`, gradientes de color de fondo ni `--glow-*` activos; los tokens siguen definidos como inertes porque otras reglas los referencian.
 
+## v0.12 · El lienzo manda
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Lazo → texto | `lib/ink.ts:renderInkCrop`, `lib/inkOcr.ts:recognizeCrop`, `features/notes/InkCropModal.tsx` | Dibuja solo la caja de la selección con 16 px de aire y la manda al motor de IA; modo «fórmula» cambia el prompt, no el recorte |
+| Tamaño de hoja | `SheetKind` en `types.ts`, `SHEETS`/`sheetH` en `lib/ink.ts` | El ancho lógico sigue en 1000 y solo cambia el alto, así los trazos guardados no se deforman. `rollo` son hojas de 4242 sin separación visible |
+| Fondo de hoja | `Note.sheetBg`, `lib/inkImages.ts:fileToDataUrl` | Imagen reescalada a 1400 px y guardada como JPEG en la nota |
+| Miniaturas | `features/notes/SheetRail.tsx` | Una miniatura por hoja, dibujadas en serie con `renderInkPage`; no se guarda ninguna imagen |
+| Margen del PDF | `settings.pdfMargin`, `features/pdf/PdfViewer.tsx` | El elemento de página crece pero la escala de la tinta no: lo escrito en la franja tiene x > 1000. Lo que se posiciona sobre la página (resaltados, post-its, coincidencias) divide sus medidas horizontales entre 1 + margen |
+| Grabar la clase | `lib/classAudio.ts`, `features/notes/ClassAudioBar.tsx`, `Stroke.t` | MediaRecorder; el blob va al almacén binario con clave `audio:<nota>` y el respaldo lo salta por prefijo. Tocar un trazo con la escucha abierta busca con `hitsStroke` y salta a `t − 2 s` |
+| Examen largo | `exam/LongExam.tsx`, `Runner` con `chain` | Bloques encadenados; cada uno llama a `addAttempt`, así el historial y la tendencia no cambian |
+| OCR en segundo plano | `lib/inkOcrAuto.ts` | Una nota por vuelta cada 90 s, solo notas en reposo (3 min), nunca con el lápiz abajo; media hora de espera tras fallar y tres intentos como máximo |
+| Sincronización automática | `startSyncWatch` + `settings.syncAuto` | Revisa cada 2 min; trae sin preguntar solo si no hay cambios locales ni cifrado bloqueado, y si no, cae en la barra de siempre |
+
+- Accesibilidad: `--border-strong` pasa a `#938565` / `#7a6a57` para llegar a 3:1 contra `--surface` (WCAG 1.4.11, el borde identifica el control); `.input:focus-visible` recupera el anillo que `outline: none` se comía; `::selection` y el borrador de recorte dejan el verde del tema anterior.
+
 ## Modelo de datos (resumen)
 
-`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos (blank|lined|margin|grid|dots|graph|ecg|half|plate|cornell|columns), kind, inkText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
+`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
 
 ## Próximos pasos sugeridos
 

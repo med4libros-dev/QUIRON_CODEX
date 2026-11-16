@@ -16,24 +16,30 @@ import { idb } from '../../lib/idb';
 import { uid } from '../../lib/id';
 import { useUI } from '../../store/ui';
 import { SheetsDialog } from './SheetsDialog';
-import { PAGE_H, PAGE_W, ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, inkColor, liveOpacity, stabilize, type LiveStyle } from '../../lib/ink';
+import { PAGE_H, PAGE_W, SHEETS, ctx2d, sheetH, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, inkColor, liveOpacity, stabilize, type LiveStyle } from '../../lib/ink';
 import { PenControls } from '../../components/PenControls';
 import { usePinchZoom } from '../../lib/usePinchZoom';
 import { inkDown, inkIsDown, inkUp } from '../../lib/inkBusy';
 import { stableGroups } from '../../lib/groups';
 import { applyXf, recognizeShape, strokesBox, strokesInLasso, type Xf } from '../../lib/shapes';
-import { loadInkImages, saveInkImages, type InkImage } from '../../lib/inkImages';
+import { InkCropModal } from './InkCropModal';
+import { SheetRail } from './SheetRail';
+import { ClassAudioBar } from './ClassAudioBar';
+import { useTopicStore } from '../../internship/topicStore';
 import { useBridge } from '../../store/bridge';
+import { escapeHtml } from '../../lib/html';
+import { fileToDataUrl, loadInkImages, saveInkImages, type InkImage } from '../../lib/inkImages';
+import { recordingElapsed, recordingNote } from '../../lib/classAudio';
 import { useTools } from '../../store/tools';
 import { useNotes } from '../../store/notes';
 import { useSettings } from '../../store/settings';
 import { useTrash } from '../../store/trash';
-import type { InkTool, Note, PaperStyle, Stroke } from '../../types';
+import type { InkTool, Note, PaperStyle, SheetKind, Stroke } from '../../types';
 
 const EMPTY: Stroke[] = [];
 const EMPTY_IMG: InkImage[] = [];
 type Mode = 'draw' | 'eraser' | 'lasso';
-type SelAction = { type: 'delete' } | { type: 'duplicate' } | { type: 'color'; color: string } | { type: 'move'; to: number };
+type SelAction = { type: 'delete' } | { type: 'duplicate' } | { type: 'color'; color: string } | { type: 'move'; to: number } | { type: 'read' };
 const SEL_COLORS = ['auto', '#dc2626', '#2563eb', '#16a34a', '#d97706'];
 const INK_ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
 
@@ -154,6 +160,9 @@ export function InkCanvas({ note }: { note: Note }) {
   // en la primera pausa de 250 ms, así escribir rápido no dispara trabajo de la interfaz entre letra y letra.
   const flushTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const addStroke = useCallback((s: Stroke) => {
+    // Con la clase grabándose, cada trazo guarda el segundo en que se escribió.
+    const el = recordingElapsed();
+    if (el !== null && recordingNote() === noteIdRef.current) s = { ...s, t: Math.round(el / 1000) };
     undo.current.push(latest.current);
     if (undo.current.length > 80) undo.current.shift();
     redo.current = [];
@@ -205,6 +214,32 @@ export function InkCanvas({ note }: { note: Note }) {
     [persist],
   );
 
+  const pageH = sheetH(note.sheet);
+  const noteIdRef = useRef(note.id);
+  noteIdRef.current = note.id;
+  const bgPick = useRef<HTMLInputElement>(null);
+  const [railOpen, setRailOpen] = useState(false);
+  const [audioOpen, setAudioOpen] = useState(false);
+  const [listening, setListening] = useState(false);
+  const seekRef = useRef<((seconds: number) => void) | null>(null);
+  /** Con «tocar para saltar», un toque en el lienzo busca el trazo más cercano y salta a su minuto. */
+  const onListenTap = useCallback((page: number, x: number, y: number) => {
+    const hit = latest.current.find((st) => st.page === page && st.t !== undefined && hitsStroke(st, x, y, 26));
+    if (hit?.t !== undefined) seekRef.current?.(hit.t);
+  }, []);
+  const [curSheet, setCurSheet] = useState(0);
+  /** Qué hoja se está viendo, para marcarla en las miniaturas. Solo mientras el panel está abierto. */
+  const onScrollSheet = useCallback(() => {
+    const sc = scrollRef.current;
+    if (!sc) return;
+    const sheets = sc.querySelectorAll('.ink-sheet');
+    const mid = sc.scrollTop + sc.clientHeight / 3;
+    let i = 0;
+    for (let k = 0; k < sheets.length; k++) if ((sheets[k] as HTMLElement).offsetTop <= mid) i = k;
+    setCurSheet(i);
+  }, []);
+  const [crop, setCrop] = useState<{ strokes: Stroke[]; box: { x: number; y: number; w: number; h: number } } | null>(null);
+
   /* ---------- Lazo ---------- */
   const selRef = useRef(sel);
   selRef.current = sel;
@@ -222,6 +257,12 @@ export function InkCanvas({ note }: { note: Note }) {
     (a: SelAction) => {
       const cur = selRef.current;
       if (!cur) return;
+      if (a.type === 'read') {
+        const mine = latest.current.filter((st) => cur.ids.has(st.id));
+        const box = mine.length ? strokesBox(mine) : null;
+        if (box) setCrop({ strokes: mine, box });
+        return;
+      }
       pushUndo();
       if (a.type === 'delete') {
         persist(latest.current.filter((s) => !cur.ids.has(s.id)));
@@ -419,7 +460,7 @@ export function InkCanvas({ note }: { note: Note }) {
             setMode((m) => (m === 'lasso' ? 'draw' : 'lasso'));
             setSel(null);
           }}
-          title="Lazo: encierra trazos para moverlos, cambiarles tamaño o color, duplicarlos o borrarlos"
+          title="Lazo: encierra trazos para leerlos, moverlos, cambiarles tamaño o color, duplicarlos o borrarlos"
           aria-pressed={mode === 'lasso'}
           aria-label="Lazo"
         >
@@ -466,6 +507,22 @@ export function InkCanvas({ note }: { note: Note }) {
           <Icon name="layers" size={16} /> Hojas
         </button>
         <button
+          className={`icon-btn${audioOpen ? ' active' : ''}`}
+          onClick={() => setAudioOpen((v) => !v)}
+          aria-pressed={audioOpen}
+          title="Grabar la clase y amarrarla a lo que escribes (para clases, no para pacientes)"
+        >
+          <Icon name="mic" size={16} />
+        </button>
+        <button
+          className={`icon-btn${railOpen ? ' active' : ''}`}
+          onClick={() => setRailOpen((v) => !v)}
+          aria-pressed={railOpen}
+          title={railOpen ? 'Ocultar las miniaturas de las hojas' : 'Ver las miniaturas de las hojas al lado'}
+        >
+          <Icon name="columns" size={16} />
+        </button>
+        <button
           className={`icon-btn${inkAuto ? ' active' : ''}`}
           onClick={() => setInkAuto(!inkAuto)}
           aria-pressed={inkAuto}
@@ -473,6 +530,38 @@ export function InkCanvas({ note }: { note: Note }) {
         >
           <Icon name="arrowDown" size={16} />
         </button>
+        <button
+          className={`icon-btn${note.sheetBg ? ' active' : ''}`}
+          onClick={() => (note.sheetBg ? update(note.id, { sheetBg: undefined }) : bgPick.current?.click())}
+          aria-pressed={!!note.sheetBg}
+          title={note.sheetBg ? 'Quitar el fondo de la hoja' : 'Poner una imagen de fondo fija en todas las hojas (una lámina, un formato del hospital)'}
+        >
+          <Icon name="map" size={16} />
+        </button>
+        <input
+          ref={bgPick}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            if (f) update(note.id, { sheetBg: await fileToDataUrl(f) });
+          }}
+        />
+        <select
+          className="select xs"
+          value={note.sheet ?? 'a4'}
+          onChange={(e) => update(note.id, { sheet: e.target.value as SheetKind })}
+          aria-label="Tamaño de hoja"
+          title="Tamaño y orientación de la hoja"
+        >
+          {SHEETS.map((sh) => (
+            <option key={sh.id} value={sh.id}>
+              {sh.label}
+            </option>
+          ))}
+        </select>
         <select className="select xs" value={note.paper} onChange={(e) => update(note.id, { paper: e.target.value as PaperStyle })} aria-label="Tipo de hoja">
           <optgroup label="Para escribir">
             <option value="lined">Rayada</option>
@@ -496,7 +585,20 @@ export function InkCanvas({ note }: { note: Note }) {
           <Icon name="trash" />
         </button>
       </div>
-      <div className="ink-scroll" ref={scrollRef} style={{ '--ink-zoom': inkZoom } as CSSProperties}>
+      {audioOpen && <ClassAudioBar noteId={note.id} seekRef={seekRef} onListening={setListening} />}
+      <div className="ink-body">
+      {railOpen && (
+        <SheetRail
+          pages={pages}
+          pageH={pageH}
+          strokes={strokes ?? EMPTY}
+          images={images}
+          current={curSheet}
+          onGo={(i) => scrollRef.current?.querySelectorAll('.ink-sheet')[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onClose={() => setRailOpen(false)}
+        />
+      )}
+      <div className="ink-scroll" ref={scrollRef} data-sheet={note.sheet ?? 'a4'} onScroll={onScrollSheet} style={{ '--ink-zoom': inkZoom } as CSSProperties}>
         {strokes === null ? (
           <div className="loading">Cargando lienzo…</div>
         ) : (
@@ -529,6 +631,9 @@ export function InkCanvas({ note }: { note: Note }) {
                   size={size}
                   penOnly={penOnly}
                   paper={note.paper}
+                  pageH={pageH}
+                  onListenTap={listening ? onListenTap : null}
+                  sheetBg={note.sheetBg}
                   mask={mask}
                   totalPages={pages}
                   dark={dark}
@@ -550,6 +655,16 @@ export function InkCanvas({ note }: { note: Note }) {
           </>
         )}
       </div>
+      </div>
+      {crop && (
+        <InkCropModal
+          strokes={crop.strokes}
+          box={crop.box}
+          topicId={useTopicStore.getState().lastTopicId}
+          onToNote={(t) => useBridge.getState().insertIntoNote(escapeHtml(t).replace(/\n/g, '<br>'), { noteId: note.id, append: true })}
+          onClose={() => setCrop(null)}
+        />
+      )}
       {sheetsOpen && (
         <SheetsDialog
           pages={reserved}
@@ -574,6 +689,12 @@ interface PageProps {
   size: number;
   penOnly: boolean;
   paper: PaperStyle;
+  /** Alto lógico de la hoja (cambia con el tamaño elegido). */
+  pageH: number;
+  /** Con la escucha abierta, tocar un trazo salta a su minuto en vez de dibujar. */
+  onListenTap: ((page: number, x: number, y: number) => void) | null;
+  /** Imagen de fondo fija de la hoja, si la nota tiene una. */
+  sheetBg?: string;
   /** Tapar la columna izquierda para repasar. */
   mask: boolean;
   /** Cuántas hojas tiene la nota (para mover la selección entre hojas). */
@@ -596,7 +717,7 @@ type Gesture =
 
 const IDENT = (ox = 0, oy = 0): Xf => ({ dx: 0, dy: 0, s: 1, ox, oy });
 
-const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, tool, color, size, penOnly, paper, mask, totalPages, dark, scrollRef, sel, onStroke, onErase, onSelect, onTransform, onSelAction }: PageProps) {
+const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, tool, color, size, penOnly, paper, pageH, onListenTap, sheetBg, mask, totalPages, dark, scrollRef, sel, onStroke, onErase, onSelect, onTransform, onSelAction }: PageProps) {
   /** Esta hoja ya se destapó (se vuelve a tapar al apagar el modo). */
   const [shownMask, setShownMask] = useState(false);
   useEffect(() => {
@@ -646,7 +767,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     // Con zoom alto se limita la resolución interna (≤ 2200 px de ancho) para no gastar memoria ni batería.
     const dpr = Math.min(window.devicePixelRatio || 1, 2, 2200 / cssW);
     const w = Math.round(cssW * dpr);
-    const h = Math.round(((cssW * PAGE_H) / PAGE_W) * dpr);
+    const h = Math.round(((cssW * pageH) / PAGE_W) * dpr);
     if (c.width !== w || c.height !== h) {
       c.width = w;
       c.height = h;
@@ -655,7 +776,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     if (!ctx) return null;
     const k = (cssW / PAGE_W) * dpr;
     ctx.setTransform(k, 0, 0, k, 0, 0);
-    ctx.clearRect(0, 0, PAGE_W, PAGE_H);
+    ctx.clearRect(0, 0, PAGE_W, pageH);
     return ctx;
   };
 
@@ -713,7 +834,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
 
   const toLocal = (ev: { clientX: number; clientY: number; pressure: number }, r: DOMRect): number[] => [
     Math.round(((ev.clientX - r.left) / r.width) * PAGE_W * 10) / 10,
-    Math.round(((ev.clientY - r.top) / r.height) * PAGE_H * 10) / 10,
+    Math.round(((ev.clientY - r.top) / r.height) * pageH * 10) / 10,
     Math.round((ev.pressure || 0.5) * 100) / 100,
   ];
 
@@ -733,7 +854,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
   const paintLasso = (pts: number[][]) => {
     const ctx = tipRef.current && ctx2d(tipRef.current);
     if (!ctx) return;
-    ctx.clearRect(0, 0, PAGE_W, PAGE_H);
+    ctx.clearRect(0, 0, PAGE_W, pageH);
     ctx.save();
     ctx.setLineDash([8, 6]);
     ctx.lineWidth = 2;
@@ -754,13 +875,19 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     c.snapped = true;
     c.st = { ...c.st, pressure: false };
     c.drawn = 0;
-    for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, PAGE_W, PAGE_H);
+    for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, PAGE_W, pageH);
     paintLive();
     wrapRef.current?.classList.add('snapped');
     setTimeout(() => wrapRef.current?.classList.remove('snapped'), 250);
   };
 
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (onListenTap) {
+      // Escuchando la clase: el toque busca el apunte y salta a su minuto, no dibuja.
+      const r = e.currentTarget.getBoundingClientRect();
+      onListenTap(index, ((e.clientX - r.left) / r.width) * PAGE_W, ((e.clientY - r.top) / r.height) * pageH);
+      return;
+    }
     if (penOnly && e.pointerType === 'touch') {
       pan.current = { id: e.pointerId, y: e.clientY, x: e.clientX };
       return;
@@ -900,7 +1027,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     }
     if (c.kind === 'lasso') {
       const ctx = tipRef.current && ctx2d(tipRef.current);
-      ctx?.clearRect(0, 0, PAGE_W, PAGE_H);
+      ctx?.clearRect(0, 0, PAGE_W, pageH);
       onSelect(index, strokesInLasso(strokes, c.pts));
       return;
     }
@@ -913,7 +1040,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       committed.current.add(stroke.id);
     }
     // La punta y el trazo en vivo se borran SIEMPRE: si quedaran, la cola predicha uniría una letra con la siguiente.
-    for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, PAGE_W, PAGE_H);
+    for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, PAGE_W, pageH);
     onStroke(stroke);
   };
 
@@ -926,7 +1053,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
       ref={wrapRef}
       className={`ink-page${tool === 'eraser' ? ' erasing' : ''}${tool === 'lasso' ? ' lassoing' : ''}`}
       data-paper={paper}
-      style={{ '--line': `${line}px` } as CSSProperties}
+      style={{ '--line': `${line}px`, aspectRatio: `${PAGE_W} / ${pageH}`, ...(sheetBg ? { backgroundImage: `url(${sheetBg})`, backgroundSize: '100% 100%' } : null) } as CSSProperties}
       onPointerDown={onDown}
       onPointerMove={onMove}
       onPointerUp={onUp}
@@ -953,20 +1080,23 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
           src={im.src}
           alt="Recorte del PDF"
           draggable={false}
-          style={{ left: `${(im.x / PAGE_W) * 100}%`, top: `${(im.y / PAGE_H) * 100}%`, width: `${(im.w / PAGE_W) * 100}%`, height: `${(im.h / PAGE_H) * 100}%` }}
+          style={{ left: `${(im.x / PAGE_W) * 100}%`, top: `${(im.y / pageH) * 100}%`, width: `${(im.w / PAGE_W) * 100}%`, height: `${(im.h / pageH) * 100}%` }}
         />
       ))}
       <canvas ref={baseRef} />
       <canvas ref={liveRef} data-live="" className="ink-live" />
       <canvas ref={tipRef} data-live="" className="ink-live" />
       {shown && (
-        <div className="sel-box" style={{ left: `${(shown.x / PAGE_W) * 100}%`, top: `${(shown.y / PAGE_H) * 100}%`, width: `${(shown.w / PAGE_W) * 100}%`, height: `${(shown.h / PAGE_H) * 100}%` }}>
+        <div className="sel-box" style={{ left: `${(shown.x / PAGE_W) * 100}%`, top: `${(shown.y / pageH) * 100}%`, width: `${(shown.w / PAGE_W) * 100}%`, height: `${(shown.h / pageH) * 100}%` }}>
           <i className="sel-handle" />
           {!xf && (
             <div className="sel-bar" onPointerDown={stop} onPointerUp={stop} onPointerMove={stop}>
               {SEL_COLORS.map((c) => (
                 <button key={c} className={`swatch${c === 'auto' ? ' auto' : ''}`} style={c === 'auto' ? undefined : { background: c }} onClick={() => onSelAction({ type: 'color', color: c })} aria-label={`Cambiar color a ${c === 'auto' ? 'tinta' : c}`} title="Cambiar color" />
               ))}
+              <button className="icon-btn xs" onClick={() => onSelAction({ type: 'read' })} title="Leer la selección: pasarla a texto, fórmula o flashcard" aria-label="Leer la selección">
+                <Icon name="text" size={14} />
+              </button>
               <button className="icon-btn xs" onClick={() => onSelAction({ type: 'duplicate' })} title="Duplicar" aria-label="Duplicar selección">
                 <Icon name="copy" size={14} />
               </button>
@@ -1000,7 +1130,7 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
           <button
             key={im.id}
             className="ink-img-del"
-            style={{ left: `${((im.x + im.w) / PAGE_W) * 100}%`, top: `${(im.y / PAGE_H) * 100}%` }}
+            style={{ left: `${((im.x + im.w) / PAGE_W) * 100}%`, top: `${(im.y / pageH) * 100}%` }}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onRemoveImage(im.id)}
             title="Quitar recorte"

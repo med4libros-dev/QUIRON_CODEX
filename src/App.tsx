@@ -28,6 +28,7 @@ import { useTrash } from './store/trash';
 import { ShortcutsModal, WhatsNew } from './home/WhatsNew';
 import { startReminders } from './lib/reminders';
 import { startAutoFocus } from './lib/autoFocus';
+import { startInkOcrAuto } from './lib/inkOcrAuto';
 import { setPersistErrorHandler } from './lib/createStore';
 import { setNotifyFallback } from './lib/notify';
 import { useUI } from './store/ui';
@@ -215,6 +216,8 @@ export default function App() {
   usePomodoroTicker();
   // Cronómetro automático: cuenta el tiempo real leyendo o escribiendo en Estudio y Cuadernos.
   useEffect(startAutoFocus, []);
+  // Reconocimiento de la letra en segundo plano (si lo activaste en Preferencias).
+  useEffect(startInkOcrAuto, []);
   const [studySeen, setStudySeen] = useState(view === 'study');
   if (view === 'study' && !studySeen) setStudySeen(true);
   const compareOn = useUI((s) => !!s.compare);

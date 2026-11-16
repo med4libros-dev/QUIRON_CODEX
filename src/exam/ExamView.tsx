@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../components/Icon';
 import { Modal } from '../components/Modal';
+import { LongExam, type LongPlan } from './LongExam';
 import { AskedToggle } from '../components/AskedToggle';
 import { TopicSelect } from '../flashcards/FlashcardUI';
 import { useCards } from '../flashcards/store';
@@ -40,7 +41,8 @@ export function ExamView() {
   const [count, setCount] = useState(20);
   const [mode, setMode] = useState<'exam' | 'study'>('exam');
   const [run, setRun] = useState<{ ids: string[]; title: string; minutes: number; mode: 'exam' | 'study' } | null>(null);
-  const [tab, setTab] = useState<'block' | 'bank' | 'gen' | 'hist'>('block');
+  const [long, setLong] = useState<LongPlan | null>(null);
+  const [tab, setTab] = useState<'block' | 'long' | 'bank' | 'gen' | 'hist'>('block');
 
   const week = useMemo(() => topicsThisWeek(done), [done]);
   const weak = useMemo(() => weakTopics(topicMastery(cards, questions, attempts), 8), [cards, questions, attempts]);
@@ -112,6 +114,7 @@ export function ExamView() {
         {(
           [
             ['block', 'Nuevo simulacro'],
+            ['long', 'Examen largo'],
             ['gen', 'Generar casos'],
             ['hist', 'Historial'],
             ['bank', 'Banco de preguntas'],
@@ -122,6 +125,9 @@ export function ExamView() {
           </button>
         ))}
       </div>
+
+      {tab === 'long' && <LongSetup pool={questions} stats={stats} onStart={setLong} />}
+      {long && <LongExam plan={long} onClose={() => setLong(null)} />}
 
       {tab === 'block' && (
         <section className="card exam-setup">
@@ -460,7 +466,22 @@ function QuestionEditor({
 }
 
 /** Aplicación de un bloque: una pregunta a la vez, cronómetro, marcar para revisar, resultados con explicaciones. */
-export function Runner({ ids, title, minutes, mode, onClose }: { ids: string[]; title: string; minutes: number; mode: 'exam' | 'study'; onClose: () => void }) {
+export function Runner({
+  ids,
+  title,
+  minutes,
+  mode,
+  onClose,
+  chain,
+}: {
+  ids: string[];
+  title: string;
+  minutes: number;
+  mode: 'exam' | 'study';
+  onClose: () => void;
+  /** En un examen largo: en qué bloque vas y cómo seguir al siguiente. */
+  chain?: { index: number; total: number; onNext: (right: number, total: number, seconds: number) => void };
+}) {
   const questions = useExam((s) => s.questions);
   const addAttempt = useExam((s) => s.addAttempt);
   const byId = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
@@ -486,8 +507,11 @@ export function Runner({ ids, title, minutes, mode, onClose }: { ids: string[]; 
 
   function finish() {
     setFinished(true);
-    addAttempt({ date: todayKey(), title, questionIds: qs.map((q) => q.id), answers, seconds: Math.round((Date.now() - startedAt.current) / 1000) });
+    const seconds = Math.round((Date.now() - startedAt.current) / 1000);
+    addAttempt({ date: todayKey(), title, questionIds: qs.map((q) => q.id), answers, seconds });
+    finishedWith.current = { right: qs.filter((qq, k) => answers[k] === qq.correct).length, total: qs.length, seconds };
   }
+  const finishedWith = useRef<{ right: number; total: number; seconds: number } | null>(null);
 
   const q = qs[i];
   const answered = answers.filter((a) => a !== null).length;
@@ -519,6 +543,17 @@ export function Runner({ ids, title, minutes, mode, onClose }: { ids: string[]; 
           {!finished && (
             <button className="btn primary sm" onClick={() => (answered < qs.length && !confirm(`Te faltan ${qs.length - answered}. ¿Terminar?`) ? null : finish())}>
               Terminar
+            </button>
+          )}
+          {finished && chain && (
+            <button
+              className="btn primary sm"
+              onClick={() => {
+                const r = finishedWith.current;
+                chain.onNext(r?.right ?? right, r?.total ?? qs.length, r?.seconds ?? 0);
+              }}
+            >
+              {chain.index + 1 < chain.total ? `Siguiente bloque (${chain.index + 2} de ${chain.total})` : 'Ver el resultado completo'}
             </button>
           )}
         </div>
@@ -612,5 +647,90 @@ function SpecialtyBreakdown({ qs, answers }: { qs: Question[]; answers: (number 
         </div>
       ))}
     </div>
+  );
+}
+
+/**
+ * Preparar un examen largo: varios bloques cronometrados seguidos, con descanso entre ellos.
+ * Los números los pones tú (el formato real del ENARM cambia de año a año); el valor inicial
+ * es una jornada de práctica razonable, no una copia del examen oficial.
+ */
+function LongSetup({ pool, stats, onStart }: { pool: Question[]; stats: Map<string, { last: boolean | null }>; onStart: (p: LongPlan) => void }) {
+  const [blocks, setBlocks] = useState(3);
+  const [per, setPer] = useState(50);
+  const [minutes, setMinutes] = useState(50);
+  const [rest, setRest] = useState(10);
+  const need = blocks * per;
+  const enough = pool.length >= need;
+
+  const start = () => {
+    // Igual que en el bloque suelto: primero las nunca vistas, luego las falladas, luego el resto.
+    const rank = (q: Question) => {
+      const s = stats.get(q.id);
+      return (!s ? 0 : !s.last ? 1 : 2) - (q.asked ? 0.5 : 0);
+    };
+    const ids = [...pool]
+      .map((q) => ({ q, r: rank(q), k: Math.random() }))
+      .sort((a, b) => a.r - b.r || a.k - b.k)
+      .slice(0, need)
+      .map((x) => x.q.id);
+    if (!ids.length) return;
+    const split: string[][] = [];
+    for (let i = 0; i < ids.length; i += per) split.push(ids.slice(i, i + per));
+    onStart({ blocks: split.filter((b) => b.length), minutesPerBlock: minutes, restMinutes: rest, mode: 'exam' });
+  };
+
+  return (
+    <section className="card exam-setup">
+      <p className="muted small">
+        Una jornada completa en lugar de un bloque suelto: varios bloques cronometrados, uno tras otro, con descanso entre ellos. Sirve para ensayar el cansancio, no solo el
+        contenido. Los números los eliges tú.
+      </p>
+      <div className="field-row">
+        <label className="field">
+          <span>Bloques</span>
+          <select className="select" value={blocks} onChange={(e) => setBlocks(Number(e.target.value))}>
+            {[2, 3, 4, 5, 6].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Preguntas por bloque</span>
+          <select className="select" value={per} onChange={(e) => setPer(Number(e.target.value))}>
+            {[20, 30, 50, 75, 100].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Minutos por bloque</span>
+          <input className="input" type="number" min={5} max={240} value={minutes} onChange={(e) => setMinutes(Math.max(5, Math.min(240, Number(e.target.value) || 5)))} />
+        </label>
+        <label className="field">
+          <span>Descanso (min)</span>
+          <input className="input" type="number" min={0} max={60} value={rest} onChange={(e) => setRest(Math.max(0, Math.min(60, Number(e.target.value) || 0)))} />
+        </label>
+      </div>
+      <div className="field-row">
+        <span className="muted small">
+          {need} preguntas en total · {Math.round((blocks * minutes + (blocks - 1) * rest) / 6) / 10} h con descansos. Tienes {pool.length} en el banco.
+        </span>
+        <span className="spacer" />
+        <button className="btn primary big" onClick={start} disabled={!pool.length}>
+          <Icon name="play" size={16} /> Empezar
+        </button>
+      </div>
+      {!enough && pool.length > 0 && (
+        <p className="small warn-text">
+          No alcanzan: se repartirán las {pool.length} que tienes en {Math.ceil(pool.length / per)} bloque(s). Genera más casos desde tus GPC para una jornada completa.
+        </p>
+      )}
+      {!pool.length && <p className="muted small">El banco está vacío. Genera casos desde tus GPC o escríbelos en el banco.</p>}
+    </section>
   );
 }

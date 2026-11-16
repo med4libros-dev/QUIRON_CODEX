@@ -134,6 +134,16 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - **Once estilos de hoja** (`PaperStyle`): rayada, con margen, mitad dibujo y mitad renglón, lisa, punteada, cuadrícula, milimetrada, papel de electro, lámina con pie, Cornell y dos columnas; agrupados en el selector por para qué sirven. Todos en CSS puro sobre `--line`, así que escalan con el zoom y no entran en el recorte ni en la exportación.
 - **Hojas continuas** (`settings.inkAuto`, activadas por omisión): al escribir en la última hoja aparece otra debajo. La hoja de más es virtual (`pages = reserved + 1` cuando hay tinta en la última), no se persiste, se retira sola al borrar lo escrito y el organizador de hojas no la cuenta.
 
+### v0.12 · El lienzo manda ✅ (noviembre 2026)
+- **Lazo → texto, fórmula o flashcard** (`lib/ink.ts:renderInkCrop`, `lib/inkOcr.ts:recognizeCrop`, `features/notes/InkCropModal.tsx`): transcribe solo el recorte encerrado, con un margen de aire, en vez de la hoja entera. Se corrige antes de llevárselo.
+- **Margen de notas junto al PDF** (`settings.pdfMargin`): franja en blanco al 30 % o 60 % del ancho de la página. La escala de la tinta no cambia: lo anotado antes sigue en su sitio y lo escrito en la franja simplemente tiene x > 1000.
+- **Columna de miniaturas** (`features/notes/SheetRail.tsx`) con la hoja actual marcada, para cuadernos largos.
+- **Tamaño de hoja** (`SheetKind`: A4, carta, apaisada, rollo) y **fondo propio** (`Note.sheetBg`): el ancho lógico sigue siendo 1000, solo cambia el alto.
+- **Grabar la clase** (`lib/classAudio.ts`, `features/notes/ClassAudioBar.tsx`): cada trazo guarda su segundo (`Stroke.t`) y tocarlo salta a ese momento. Solo clases; el audio vive en el almacén binario con prefijo `audio:` y queda fuera de los respaldos.
+- **Examen largo** (`exam/LongExam.tsx`): bloques cronometrados encadenados con descanso; cada bloque se guarda como intento propio y al final se muestra el acumulado.
+- **Reconocimiento en segundo plano** (`lib/inkOcrAuto.ts`) y **sincronización automática** (`startSyncWatch` + `settings.syncAuto`), ambos apagados de fábrica y con reglas para no estorbar ni reemplazar nada en silencio.
+- **Accesibilidad**: `--border-strong` sube a 3:1 contra la lámina (WCAG 1.4.11), los campos recuperan el anillo de foco con `:focus-visible` y se retiran los últimos verdes del tema anterior.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

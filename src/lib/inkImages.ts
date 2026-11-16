@@ -62,3 +62,29 @@ export async function addInkImage(noteId: string, src: string): Promise<InkImage
   useBridge.getState().bumpInk(noteId);
   return img;
 }
+
+/**
+ * Archivo de imagen → data URL, reescalado a `maxW` de ancho. Se usa para el fondo fijo de la
+ * hoja: una lámina o un formato escaneado no necesita más resolución y así no infla el respaldo.
+ */
+export async function fileToDataUrl(file: File, maxW = 1400): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = () => rej(new Error('No se pudo leer la imagen'));
+      i.src = url;
+    });
+    const k = Math.min(1, maxW / (img.naturalWidth || maxW));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth * k));
+    c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    const ctx = c.getContext('2d');
+    if (!ctx) throw new Error('No se pudo procesar la imagen');
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.82);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}

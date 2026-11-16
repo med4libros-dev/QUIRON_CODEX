@@ -37,6 +37,15 @@ export interface SettingsState {
   /** Hojas continuas: en cuanto escribes en la última, aparece otra debajo. */
   inkAuto: boolean;
   setInkAuto: (v: boolean) => void;
+  /** Margen en blanco junto a la página del PDF, como fracción de su ancho (0 = sin margen). */
+  pdfMargin: number;
+  setPdfMargin: (v: number) => void;
+  /** Transcribir la letra en segundo plano para que entre sola al buscador. */
+  inkOcrAuto: boolean;
+  setInkOcrAuto: (v: boolean) => void;
+  /** Traer solo lo que la otra computadora dejó en la carpeta, cuando aquí no hay nada que perder. */
+  syncAuto: boolean;
+  setSyncAuto: (v: boolean) => void;
   /** Tus abreviaturas, una por línea («IAM = infarto agudo de miocardio»): ayudan a leer tu letra. */
   inkGlossary: string;
   setInkGlossary: (v: string) => void;
@@ -109,6 +118,12 @@ export const useSettings = createStore<SettingsState>(
     setInkPredict: (inkPredict) => set({ inkPredict }),
     inkAuto: true,
     setInkAuto: (inkAuto) => set({ inkAuto }),
+    pdfMargin: 0,
+    setPdfMargin: (pdfMargin) => set({ pdfMargin }),
+    inkOcrAuto: false,
+    setInkOcrAuto: (inkOcrAuto) => set({ inkOcrAuto }),
+    syncAuto: false,
+    setSyncAuto: (syncAuto) => set({ syncAuto }),
     pdfDark: false,
     setPdfDark: (pdfDark) => set({ pdfDark }),
     inkGlossary: '',
@@ -163,8 +178,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel }) => ({
-      theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel,
+    pick: ({ theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel }) => ({
+      theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel,
     }),
   },
 );

@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '../../components/Icon';
-import { encryptionOn, encryptionUnlocked, markFolderSeen, startSyncWatch, syncFromFolder, type SyncInfo } from '../../lib/backup';
+import { encryptionOn, encryptionUnlocked, markFolderSeen, startSyncWatch, stopSyncWatch, syncFromFolder, type SyncInfo } from '../../lib/backup';
 import { useUI } from '../../store/ui';
 
 const when = (iso: string) => new Date(iso).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 /**
  * Aviso de sincronización: si la carpeta compartida trae algo más nuevo (lo dejó la otra
- * computadora), aparece esta barra para traerlo. Nunca se trae solo: lo decides tú, y antes
- * de reemplazar se guarda una copia de cómo estaba todo (Respaldo → Deshacer restauración).
+ * computadora), aparece esta barra para traerlo. Antes de reemplazar se guarda una copia de
+ * cómo estaba todo (Respaldo → Deshacer restauración).
+ *
+ * Con «traer solo» encendido en Preferencias, lo nuevo entra sin preguntar cuando aquí no hay
+ * cambios sin respaldar; si los hay, vuelve a aparecer esta barra para que decidas tú.
  */
 export function SyncBar() {
   const [info, setInfo] = useState<SyncInfo | null>(null);
@@ -17,9 +20,20 @@ export function SyncBar() {
 
   useEffect(() => {
     const onSync = (e: Event) => setInfo((e as CustomEvent<SyncInfo>).detail);
+    // Traído solo: ya está en disco; hay que recargar para que la app lea lo nuevo.
+    const onAuto = () => {
+      showToast('Progreso al día desde la carpeta. Recargando…');
+      setTimeout(() => location.reload(), 900);
+    };
     window.addEventListener('qc:sync', onSync);
+    window.addEventListener('qc:sync-auto', onAuto);
     startSyncWatch();
-    return () => window.removeEventListener('qc:sync', onSync);
+    return () => {
+      window.removeEventListener('qc:sync', onSync);
+      window.removeEventListener('qc:sync-auto', onAuto);
+      stopSyncWatch();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!info?.folderAt) return null;

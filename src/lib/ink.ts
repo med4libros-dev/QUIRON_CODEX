@@ -1,8 +1,22 @@
-import type { DrawTool, Stroke } from '../types';
+import type { DrawTool, SheetKind, Stroke } from '../types';
 
 /** Espacio lógico de una hoja del lienzo (proporción A4). Independiente del tamaño de pantalla. */
 export const PAGE_W = 1000;
 export const PAGE_H = 1414;
+
+/**
+ * Tamaño de hoja. El ancho lógico siempre es 1000: así los trazos que ya tienes guardados
+ * siguen cayendo donde los dejaste y solo cambia el alto de la hoja.
+ * «rollo» son hojas muy altas y sin separación visible: se lee como una tira continua.
+ */
+export const SHEETS: { id: SheetKind; label: string; h: number; hint: string }[] = [
+  { id: 'a4', label: 'A4 vertical', h: 1414, hint: 'La de siempre' },
+  { id: 'carta', label: 'Carta vertical', h: 1294, hint: 'Un poco más baja' },
+  { id: 'apaisada', label: 'A4 apaisada', h: 707, hint: 'Para esquemas anchos' },
+  { id: 'rollo', label: 'Rollo continuo', h: 4242, hint: 'Una tira sin cortes de hoja' },
+];
+
+export const sheetH = (k: SheetKind | undefined): number => SHEETS.find((s) => s.id === k)?.h ?? PAGE_H;
 
 export type StrokeLike = Pick<Stroke, 'tool' | 'color' | 'size' | 'points'>;
 
@@ -133,16 +147,56 @@ export async function renderInkPage(
   strokes: StrokeLike[],
   widthPx: number,
   images: { x: number; y: number; w: number; h: number; src: string }[] = [],
+  pageH = PAGE_H,
 ): Promise<string> {
   const c = document.createElement('canvas');
   const k = widthPx / PAGE_W;
   c.width = widthPx;
-  c.height = Math.round(PAGE_H * k);
+  c.height = Math.round(pageH * k);
   const ctx = c.getContext('2d');
   if (!ctx) return '';
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.setTransform(k, 0, 0, k, 0, 0);
+  for (const im of images) {
+    const el = await new Promise<HTMLImageElement | null>((res) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = () => res(null);
+      i.src = im.src;
+    });
+    if (el) ctx.drawImage(el, im.x, im.y, im.w, im.h);
+  }
+  for (const s of strokes) drawStroke(ctx, s, '#111827');
+  return c.toDataURL('image/png');
+}
+
+/**
+ * Dibuja solo un recorte de la hoja (lo que encerraste con el lazo), con un margen de aire
+ * para que el motor de IA vea las letras completas. Devuelve PNG con fondo blanco.
+ */
+export async function renderInkCrop(
+  strokes: StrokeLike[],
+  box: { x: number; y: number; w: number; h: number },
+  widthPx = 1200,
+  images: { x: number; y: number; w: number; h: number; src: string }[] = [],
+  pageH = PAGE_H,
+): Promise<string> {
+  const pad = 16;
+  const x = Math.max(0, box.x - pad);
+  const y = Math.max(0, box.y - pad);
+  const w = Math.min(PAGE_W - x, box.w + pad * 2);
+  const h = Math.min(pageH - y, box.h + pad * 2);
+  if (w <= 0 || h <= 0) return '';
+  const c = document.createElement('canvas');
+  const k = Math.min(widthPx / w, 2400 / h);
+  c.width = Math.round(w * k);
+  c.height = Math.round(h * k);
+  const ctx = c.getContext('2d');
+  if (!ctx) return '';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.setTransform(k, 0, 0, k, -x * k, -y * k);
   for (const im of images) {
     const el = await new Promise<HTMLImageElement | null>((res) => {
       const i = new Image();

@@ -115,6 +115,18 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.12
+- **Lazo → texto, fórmula o flashcard**: encierra un párrafo escrito a mano y el botón «Aa» de la barra de selección lo transcribe. Lee solo ese recorte (no la hoja completa), lo puedes corregir y llevártelo al editor, al portapapeles o a una tarjeta.
+- **Margen de notas junto al PDF**: una franja en blanco a la derecha de la guía para escribir sin encimar el texto; 30 % o 60 % del ancho de la página. La guía conserva su tamaño y lo que ya habías anotado no se mueve.
+- **Miniaturas del lienzo**: columna lateral con una miniatura por hoja y la hoja actual marcada.
+- **Tamaño de hoja**: A4 vertical, carta, A4 apaisada y **rollo continuo** (una tira sin cortes de hoja, para esquemas largos).
+- **Fondo propio de la hoja**: fija una imagen tuya —una lámina, un formato del hospital— como plantilla de todas las hojas y escribe encima.
+- **Grabar la clase**: mientras grabas, cada trazo guarda su minuto; después, «Tocar para saltar» te lleva del apunte al momento en que lo escribiste. Es para clases y seminarios, no para el pase de visita. El audio se queda en tu equipo y no entra en los respaldos.
+- **Examen largo**: varios bloques cronometrados seguidos, con descanso entre ellos, para ensayar la jornada completa. Cada bloque queda en el historial y al final ves el acumulado.
+- **Reconocer la letra en segundo plano** (Preferencias, apagado de fábrica): transcribe solas las notas en reposo para que lo escrito a mano entre al buscador sin pedirlo hoja por hoja.
+- **Traer solo lo de la otra computadora** (Preferencias, apagado de fábrica): revisa la carpeta compartida cada dos minutos y trae lo nuevo sin preguntar, pero solo cuando aquí no hay cambios sin respaldar.
+- **Accesibilidad**: los bordes que identifican un control llegan a 3:1, los campos recuperan el anillo de foco del teclado y la selección de texto usa el cardenillo del pack en vez del verde del tema viejo.
+
 ### v0.11 (Códice)
 - **Identidad propia**: un solo pack visual, «Códice», hecho a medida para esta app. Papel cálido en los tres niveles (mesa → lámina → página, y la página siempre es la más clara), filetes de tinta en lugar de sombras y desenfoques, esquinas casi rectas, versales pequeñas en los rótulos y la serif **Lora** —incrustada en la app, sin pedir nada a internet— para los títulos y para todo lo que se lee. Se fueron el cristal esmerilado y los resplandores de colores.
 - **Once estilos de hoja**: rayada, con margen, mitad dibujo y mitad renglón, lisa, punteada, cuadrícula, milimetrada, papel de electro, lámina con pie, Cornell y dos columnas. Agrupados en el selector por para qué sirve cada uno.

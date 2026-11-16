@@ -66,6 +66,8 @@ export function PdfWorkspace() {
   const crop = useSettings((s) => s.pdfCrop);
   const setPdfCrop = useSettings((s) => s.setPdfCrop);
   const spread = useSettings((s) => s.pdfSpread);
+  const nmargin = useSettings((s) => s.pdfMargin);
+  const setPdfMargin = useSettings((s) => s.setPdfMargin);
   const setPdfSpread = useSettings((s) => s.setPdfSpread);
   const focusOn = useUI((s) => s.focus);
   /** El puntero está cerca del borde de arriba: se muestran los controles flotantes. */
@@ -266,6 +268,18 @@ export function PdfWorkspace() {
                 aria-label="Recortar márgenes"
               >
                 <Icon name="minimize" />
+              </button>
+              <button
+                className={`icon-btn${nmargin > 0 ? ' active' : ''}`}
+                onClick={() => setPdfMargin(nmargin === 0 ? 0.3 : nmargin === 0.3 ? 0.6 : 0)}
+                title={
+                  nmargin === 0
+                    ? 'Margen de notas: una franja en blanco a la derecha para escribir sin encimar la guía'
+                    : `Margen de notas al ${Math.round(nmargin * 100)} % · toca para ${nmargin === 0.3 ? '60 %' : 'quitarlo'}`
+                }
+                aria-label="Margen de notas"
+              >
+                <Icon name="columns" />
               </button>
               <button
                 className={`icon-btn${spread ? ' active' : ''}`}

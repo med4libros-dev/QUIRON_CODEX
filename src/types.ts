@@ -64,7 +64,10 @@ export interface Stroke {
   color: string;
   size: number;
   points: number[][];
+  /** Segundo de la grabación de clase en que se escribió, si había una en curso. */
+  t?: number;
 }
+export type SheetKind = 'a4' | 'carta' | 'apaisada' | 'rollo';
 export type PaperStyle = 'blank' | 'lined' | 'margin' | 'grid' | 'dots' | 'graph' | 'ecg' | 'half' | 'plate' | 'cornell' | 'columns';
 /** Cuaderno: agrupa notas por materia o por tema, sin importar de qué PDF vengan. */
 export interface Notebook {
@@ -85,6 +88,10 @@ export interface Note {
   html: string;
   inkPages: number;
   paper: PaperStyle;
+  /** Tamaño de hoja del lienzo; si falta, A4 vertical (lo de siempre). */
+  sheet?: SheetKind;
+  /** Imagen de fondo propia (plantilla fija de la hoja), en data URL. */
+  sheetBg?: string;
   kind: 'manual' | 'synth';
   /** Transcripción de lo escrito a mano (la hace el motor de IA cuando tú lo pides). */
   inkText?: string;

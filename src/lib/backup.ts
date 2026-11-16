@@ -2,6 +2,7 @@ import { downloadBlob } from './exportPdf';
 import { flushPersistence, freezePersistence } from './createStore';
 import { changeCount } from './idb';
 import { inkBusy } from './inkBusy';
+import { useSettings } from '../store/settings';
 import { idb } from './idb';
 
 /**
@@ -21,6 +22,8 @@ const DATA_FILE = 'quiron-codex-datos.json';
 /** Nombre anterior (cuando la app se llamaba Alquimia): se sigue leyendo. */
 const LEGACY_FILE = 'alquimia-datos.json';
 const PDF_DIR = 'pdfs';
+/** Las grabaciones de clase comparten el almacén binario pero quedan fuera del respaldo: pesan mucho y se pueden rehacer. */
+const AUDIO_PREFIX = 'audio:';
 const HANDLE_KEY = 'backup:dir';
 const LAST_KEY = 'alq:lastBackup';
 
@@ -235,6 +238,7 @@ export async function downloadBackup(includePdfs: boolean) {
   if (includePdfs) {
     data.pdfs = {};
     for (const id of await idb.keys('pdfs')) {
+      if (id.startsWith(AUDIO_PREFIX)) continue;
       const blob = await idb.get<Blob>('pdfs', id);
       if (blob) data.pdfs[id] = { type: blob.type || 'application/pdf', b64: await toB64(blob) };
     }
@@ -322,6 +326,7 @@ export async function saveToFolder(): Promise<boolean> {
   }
   const pdfDir = await dir.getDirectoryHandle(PDF_DIR, { create: true });
   for (const id of await idb.keys('pdfs')) {
+    if (id.startsWith(AUDIO_PREFIX)) continue;
     try {
       await pdfDir.getFileHandle(`${id}.pdf`);
     } catch {
@@ -455,15 +460,40 @@ export async function syncFromFolder(pw?: string): Promise<string> {
  * Al abrir la app: si la carpeta trae algo más nuevo (lo dejó la otra computadora),
  * avisa con el evento «qc:sync» para que la interfaz te pregunte si quieres traerlo.
  */
+const WATCH_EVERY = 120_000;
+
+/**
+ * Vigila la carpeta compartida mientras la app está abierta.
+ *
+ * Con «traer solo» apagado (de fábrica) nada más avisa, como siempre. Encendido, trae lo nuevo
+ * sin preguntar **solo cuando no hay nada que perder aquí**: si esta computadora tiene cambios
+ * sin respaldar, o el respaldo está cifrado y bloqueado, vuelve a preguntar. Nunca reemplaza
+ * en silencio lo que escribiste.
+ */
 export function startSyncWatch(delay = 4000) {
   const check = async () => {
     try {
       const info = await syncCheck();
-      if (info.newer && info.folderAt) window.dispatchEvent(new CustomEvent('qc:sync', { detail: info }));
+      if (!info.newer || !info.folderAt) return;
+      const auto = useSettings.getState().syncAuto && !info.localChanges && !(encryptionOn() && !encryptionUnlocked());
+      if (auto) {
+        await syncFromFolder();
+        window.dispatchEvent(new CustomEvent('qc:sync-auto', { detail: info }));
+        return;
+      }
+      window.dispatchEvent(new CustomEvent('qc:sync', { detail: info }));
     } catch {
       /* sin carpeta o sin permiso: no se avisa nada */
     }
   };
-  setTimeout(() => void check(), delay);
+  const first = setTimeout(() => void check(), delay);
+  const timer = setInterval(() => void check(), WATCH_EVERY);
+  watchStop = () => {
+    clearTimeout(first);
+    clearInterval(timer);
+  };
   return check;
 }
+
+let watchStop: (() => void) | null = null;
+export const stopSyncWatch = () => watchStop?.();

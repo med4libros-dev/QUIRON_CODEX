@@ -31,6 +31,8 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
   const model = useSettings((s) => s.model);
   const saver = useSettings((s) => s.saver);
   const inkPredict = useSettings((s) => s.inkPredict);
+  const ocrAuto = useSettings((s) => s.inkOcrAuto);
+  const syncAuto = useSettings((s) => s.syncAuto);
   const retention = useSettings((s) => s.retention);
   const setRetention = useSettings((s) => s.setRetention);
   const barrel = useTools((s) => s.barrel);
@@ -131,6 +133,19 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
 
         <section>
           <h4>
+            <Icon name="swap" size={15} /> Carpeta compartida
+          </h4>
+          <label className="check">
+            <input type="checkbox" checked={syncAuto} onChange={(e) => useSettings.getState().setSyncAuto(e.target.checked)} /> Traer solo lo que deje la otra computadora
+          </label>
+          <p className="muted small">
+            Revisa la carpeta cada dos minutos y trae lo más nuevo sin preguntar, pero solo cuando aquí no hay cambios sin respaldar. Si los hay —o si el respaldo está
+            cifrado y bloqueado— vuelve a aparecer la barra para que decidas tú. Nunca reemplaza en silencio lo que escribiste.
+          </p>
+        </section>
+
+        <section>
+          <h4>
             <Icon name="cards" size={15} /> Repaso
           </h4>
           <p className="muted small">
@@ -171,6 +186,13 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
             <input type="checkbox" checked={inkPredict} onChange={(e) => useSettings.getState().setInkPredict(e.target.checked)} /> Punta predictiva (experimental)
           </label>
           <p className="muted small">Adelanta el trazo unos milisegundos con la predicción de Windows. Pruébala: si la punta «baila» o las letras parecen unirse, déjala apagada.</p>
+          <label className="check">
+            <input type="checkbox" checked={ocrAuto} onChange={(e) => useSettings.getState().setInkOcrAuto(e.target.checked)} /> Reconocer mi letra en segundo plano
+          </label>
+          <p className="muted small">
+            Transcribe solas las notas en reposo para que lo escrito a mano entre al buscador sin pedirlo hoja por hoja. Necesita el motor de IA configurado y consume de tu
+            cuenta: una petición por hoja. Sale de este equipo solo la imagen de tus hojas.
+          </p>
           <button className="btn ghost sm" onClick={() => setDiag(true)}>
             <Icon name="target" size={14} /> Diagnóstico del lápiz
           </button>

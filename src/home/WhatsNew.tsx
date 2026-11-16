@@ -8,9 +8,12 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'book', title: 'Códice: la app ya no se ve genérica', text: 'Un solo estilo, hecho a medida: papel cálido, filetes de tinta en lugar de sombras, versales pequeñas en los rótulos y una serif propia (Lora) para los títulos y para todo lo que se lee. Se acabaron el cristal esmerilado y los resplandores de colores.' },
-  { icon: 'layers', title: 'Once estilos de hoja', text: 'Rayada, con margen, mitad dibujo y mitad renglón, lisa, punteada, cuadrícula, milimetrada, papel de electro, lámina con pie, Cornell y dos columnas. El selector está en la barra del lienzo, agrupado por para qué sirve cada una.' },
-  { icon: 'arrowDown', title: 'Hojas continuas', text: 'En cuanto escribes en la última hoja sale otra debajo, como en los cuadernos digitales. La hoja de más no se guarda: si borras lo que escribiste, se retira sola. Se apaga con el botón de la flecha en la barra del lienzo.' },
+  { icon: 'lasso', title: 'Lo que encierras con el lazo, leído', text: 'Encierra un párrafo escrito a mano y el botón «Aa» lo pasa a texto, a fórmula o a flashcard. Transcribe solo ese recorte, no la hoja entera, y lo puedes corregir antes de llevártelo.' },
+  { icon: 'columns', title: 'Margen de notas junto al PDF', text: 'En la barra del lector: una franja en blanco a la derecha de la guía para escribir sin encimar el texto. Dos tamaños (30 % y 60 %). Lo que ya habías anotado no se mueve.' },
+  { icon: 'layers', title: 'Miniaturas, tamaños de hoja y rollo', text: 'Columna de miniaturas al lado del lienzo para saber dónde vas; A4, carta, apaisada o rollo continuo; y una imagen tuya de fondo fijo (una lámina, un formato del hospital) para escribir encima.' },
+  { icon: 'mic', title: 'Grabar la clase y volver a ella', text: 'Mientras grabas, cada trazo guarda su minuto. Después, «Tocar para saltar» y un toque en el apunte te lleva al momento en que lo escribiste. Para clases y seminarios, no para pacientes. El audio no sale de tu equipo ni entra en los respaldos.' },
+  { icon: 'target', title: 'Examen largo', text: 'Varios bloques cronometrados seguidos, con descanso entre ellos, para ensayar la jornada completa y no solo un bloque suelto. Los números los pones tú.' },
+  { icon: 'swap', title: 'Dos cosas que ahora pasan solas', text: 'En Preferencias puedes encender que tu letra se transcriba en segundo plano (entra sola al buscador) y que lo que deje tu otra computadora se traiga sin preguntar, siempre que aquí no haya cambios sin respaldar.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

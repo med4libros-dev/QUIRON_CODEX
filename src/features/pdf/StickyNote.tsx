@@ -6,7 +6,8 @@ import { STICKY_COLORS } from '../../store/tools';
 import type { Sticky } from '../../types';
 
 /** Post-it sobre el PDF: se arrastra por la barra superior, se minimiza y cambia de color. */
-export function StickyNote({ sticky, docId, autoFocus }: { sticky: Sticky; docId: string; autoFocus?: boolean }) {
+/** `scaleDiv` = 1 + margen de notas: las coordenadas del post-it son de la página, no del elemento. */
+export function StickyNote({ sticky, docId, autoFocus, scaleDiv = 1 }: { sticky: Sticky; docId: string; autoFocus?: boolean; scaleDiv?: number }) {
   const update = useLibrary((s) => s.updateSticky);
   const remove = useLibrary((s) => s.removeSticky);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -26,7 +27,7 @@ export function StickyNote({ sticky, docId, autoFocus }: { sticky: Sticky; docId
     capturePointer(e.currentTarget, e.pointerId);
     drag.current = {
       id: e.pointerId,
-      dx: e.clientX - (page.left + sticky.x * page.width),
+      dx: e.clientX - (page.left + sticky.x * (page.width / scaleDiv)),
       dy: e.clientY - (page.top + sticky.y * page.height),
       page,
     };
@@ -36,7 +37,7 @@ export function StickyNote({ sticky, docId, autoFocus }: { sticky: Sticky; docId
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
     moved.current = true;
-    const x = Math.min(0.98, Math.max(0, (e.clientX - d.dx - d.page.left) / d.page.width));
+    const x = Math.min(0.98, Math.max(0, (e.clientX - d.dx - d.page.left) / (d.page.width / scaleDiv)));
     const y = Math.min(0.98, Math.max(0, (e.clientY - d.dy - d.page.top) / d.page.height));
     update(docId, sticky.id, { x, y });
   };
@@ -44,7 +45,7 @@ export function StickyNote({ sticky, docId, autoFocus }: { sticky: Sticky; docId
     drag.current = null;
   };
 
-  const style = { left: `${sticky.x * 100}%`, top: `${sticky.y * 100}%`, '--sticky': sticky.color } as CSSProperties;
+  const style = { left: `${(sticky.x * 100) / scaleDiv}%`, top: `${sticky.y * 100}%`, '--sticky': sticky.color } as CSSProperties;
 
   if (!sticky.open) {
     return (

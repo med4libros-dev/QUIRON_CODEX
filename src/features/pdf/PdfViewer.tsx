@@ -316,6 +316,14 @@ const PdfPage = memo(function PdfPage({
   const getPage = async () => (pageRef.current ??= await pdf.getPage(index + 1));
   const cssW = size.w * scale;
   const cssH = size.h * scale;
+  // Margen de notas: una franja en blanco a la derecha para escribir sin encimar la guía.
+  // La escala de la tinta no cambia, así que lo anotado antes sigue donde estaba; lo que
+  // escribas en la franja simplemente tiene x > 1000.
+  const margin = useSettings((st) => st.pdfMargin);
+  const totalW = cssW * (1 + margin);
+  // Lo que se posiciona sobre la página (resaltados, coincidencias, borrador) está en fracción de
+  // la página, no del elemento: con margen hay que dividir las medidas horizontales.
+  const px = (v: number) => `${(v * 100) / (1 + margin)}%`;
   const logicalH = (LW * size.h) / size.w;
 
   useEffect(() => {
@@ -404,7 +412,7 @@ const PdfPage = memo(function PdfPage({
       return null;
     }
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.round(cssW * dpr);
+    const w = Math.round(totalW * dpr);
     const h = Math.round(cssH * dpr);
     if (c.width !== w || c.height !== h) {
       c.width = w;
@@ -414,7 +422,7 @@ const PdfPage = memo(function PdfPage({
     if (!ctx) return null;
     const k = (cssW / LW) * dpr;
     ctx.setTransform(k, 0, 0, k, 0, 0);
-    ctx.clearRect(0, 0, LW, logicalH);
+    ctx.clearRect(0, 0, LW * (1 + margin), logicalH);
     return ctx;
   };
 
@@ -437,7 +445,7 @@ const PdfPage = memo(function PdfPage({
   useEffect(() => {
     // Trazo recién soltado: ya está pintado en la capa de tinta, no se redibuja toda la página.
     const prev = prevStrokes.current;
-    const key = `${visible}|${cssW}|${cssH}`;
+    const key = `${visible}|${cssW}|${cssH}|${margin}`;
     const done = committed.current;
     const appended = done.size > 0 && key === prevKey.current && strokes.length > prev.length && prev.every((s, i) => s === strokes[i]) && strokes.slice(prev.length).every((s) => done.has(s.id));
     prevStrokes.current = strokes;
@@ -452,14 +460,14 @@ const PdfPage = memo(function PdfPage({
       prepare(tipRef.current);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [strokes, visible, cssW, cssH]);
+  }, [strokes, visible, cssW, cssH, margin]);
 
   const norm = (e: { clientX: number; clientY: number }, r: DOMRect) => ({
     x: clamp01((e.clientX - r.left) / r.width),
     y: clamp01((e.clientY - r.top) / r.height),
   });
   const toLogical = (e: { clientX: number; clientY: number; pressure: number }, r: DOMRect) => [
-    Math.round(((e.clientX - r.left) / r.width) * LW * 10) / 10,
+    Math.round(((e.clientX - r.left) / (r.width / (1 + margin))) * LW * 10) / 10,
     Math.round(((e.clientY - r.top) / r.height) * logicalH * 10) / 10,
     Math.round((e.pressure || 0.5) * 100) / 100,
   ];
@@ -568,7 +576,7 @@ const PdfPage = memo(function PdfPage({
     g.snapped = true;
     g.st = { ...g.st, pressure: false };
     g.drawn = 0;
-    for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, LW, logicalH);
+    for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, LW * (1 + margin), logicalH);
     paintLive();
   };
 
@@ -629,7 +637,7 @@ const PdfPage = memo(function PdfPage({
         drawStroke(base, stroke, '#111827');
         committed.current.add(stroke.id);
       }
-      for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, LW, logicalH);
+      for (const el of [liveRef.current, tipRef.current]) el && ctx2d(el)?.clearRect(0, 0, LW * (1 + margin), logicalH);
       // Sin trabajo de interfaz entre letra y letra: se envía a la biblioteca en la primera pausa.
       pendingInk.current.push(stroke);
       clearTimeout(inkFlush.current);
@@ -691,13 +699,14 @@ const PdfPage = memo(function PdfPage({
         wrapRef.current = el;
         elsRef.current[index] = el;
       }}
-      style={{ width: cssW, height: cssH }}
+      style={{ width: totalW, height: cssH, '--pdf-page-w': `${cssW}px` } as CSSProperties}
       data-page={index + 1}
+      data-margin={margin ? '1' : undefined}
     >
       <canvas ref={canvasRef} />
       <div ref={textRef} className="textLayer" style={{ '--total-scale-factor': scale } as CSSProperties} />
       {hits.map((r, i) => (
-        <div key={i} className="find-hit" style={{ left: `${r.x}%`, top: `${r.y}%`, width: `${r.w}%`, height: `${r.h}%` }} />
+        <div key={i} className="find-hit" style={{ left: px(r.x / 100), top: `${r.y}%`, width: px(r.w / 100), height: `${r.h}%` }} />
       ))}
       {highlights.map((h) =>
         h.style === 'underline' ? (
@@ -706,9 +715,9 @@ const PdfPage = memo(function PdfPage({
             className="hl underline"
             title={h.text ? `${HIGHLIGHT_META[h.color].label}: ${h.text}` : HIGHLIGHT_META[h.color].label}
             style={{
-              left: pct(h.rect.x),
+              left: px(h.rect.x),
               top: pct(h.rect.y),
-              width: pct(h.rect.w),
+              width: px(h.rect.w),
               height: pct(h.rect.h),
               borderBottom: `${Math.max(1, (h.thickness ?? 3) * scale)}px solid ${HIGHLIGHT_META[h.color].solid}`,
             }}
@@ -718,7 +727,7 @@ const PdfPage = memo(function PdfPage({
             key={h.id}
             className="hl"
             title={h.text ? `${HIGHLIGHT_META[h.color].label}: ${h.text}` : HIGHLIGHT_META[h.color].label}
-            style={{ left: pct(h.rect.x), top: pct(h.rect.y), width: pct(h.rect.w), height: pct(h.rect.h), background: HIGHLIGHT_META[h.color].fill }}
+            style={{ left: px(h.rect.x), top: pct(h.rect.y), width: px(h.rect.w), height: pct(h.rect.h), background: HIGHLIGHT_META[h.color].fill }}
           />
         ),
       )}
@@ -740,9 +749,9 @@ const PdfPage = memo(function PdfPage({
             <div
               className="hl underline draft"
               style={{
-                left: pct(draft.x),
+                left: px(draft.x),
                 top: pct(draft.y),
-                width: pct(draft.w),
+                width: px(draft.w),
                 height: pct(draft.h),
                 borderBottom: `${Math.max(1, underlineWidth * scale)}px solid ${HIGHLIGHT_META[hlColor].solid}`,
               }}
@@ -750,12 +759,12 @@ const PdfPage = memo(function PdfPage({
           ) : (
             <div
               className={`hl draft${tool === 'crop' ? ' crop' : ''}`}
-              style={{ left: pct(draft.x), top: pct(draft.y), width: pct(draft.w), height: pct(draft.h), background: tool === 'crop' ? undefined : HIGHLIGHT_META[hlColor].fill }}
+              style={{ left: px(draft.x), top: pct(draft.y), width: px(draft.w), height: pct(draft.h), background: tool === 'crop' ? undefined : HIGHLIGHT_META[hlColor].fill }}
             />
           ))}
       </div>
       {stickies.map((s) => (
-        <StickyNote key={s.id} sticky={s} docId={docId} autoFocus={s.id === fresh} />
+        <StickyNote key={s.id} sticky={s} docId={docId} autoFocus={s.id === fresh} scaleDiv={1 + margin} />
       ))}
       {bookmark && <span className="page-ribbon" title={bookmark.label ? `Marcador: ${bookmark.label}` : 'Página marcada'} />}
       <span className="page-badge">{index + 1}</span>
