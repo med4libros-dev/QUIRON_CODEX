@@ -10,3 +10,15 @@ original), `replica-entrepreneur` (qué odian sus usuarios), `replica-brand` (no
 `replica-launch` (landing y fichas de tienda), `replica-deploy` (ponerlo en línea).
 Cada una en `.claude/skills/<nombre>/SKILL.md`; licencia en `.claude/skills/REPLICA-LICENSE.md`.
 Reconstruyen lo que una app *hace*, nunca lo que *posee* (ni su código, logo, textos o contenido).
+
+# antislop (6 skills, MIT · miqdadbadjuber)
+Reglas contra el «slop» de IA en UI, texto y código: `antislop` (núcleo), `antislop-ui`,
+`antislop-layoutmobile`, `antislop-copywriting`, `antislop-code`, `antislop-human`.
+Licencia en `.claude/skills/ANTISLOP-LICENSE.md`.
+
+# find-skills (MIT · Vercel)
+Buscar e instalar skills del ecosistema (`npx skills find/add`). `.claude/skills/find-skills/SKILL.md`.
+
+# notebooklm (MIT · teng-lin)
+Operar Gemini Notebook (antes NotebookLM) por CLI o API de Python: `.claude/skills/notebooklm/SKILL.md`.
+La librería en sí se instala aparte en tu equipo: `pip install "notebooklm-py[browser]"`.
