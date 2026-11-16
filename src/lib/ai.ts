@@ -34,13 +34,19 @@ export interface AiCall {
   maxTokens?: number;
   /** Imágenes (data URL PNG/JPEG) que acompañan a la petición: hojas escritas a mano, recortes… */
   images?: string[];
+  /** Audio (data URL) para transcribir. Solo Gemini: la API de Claude no recibe audio. */
+  audio?: string[];
 }
 
-export async function callAi({ system, user, maxTokens = 4000, images }: AiCall): Promise<string> {
+export async function callAi({ system, user, maxTokens = 4000, images, audio }: AiCall): Promise<string> {
   const cfg = aiCfg();
   if (!cfg.key) throw new Error(aiMissingMsg());
   const imgs = (images ?? []).map(splitDataUrl).filter((x): x is Img => !!x);
-  return cfg.provider === 'gemini' ? callGemini(cfg, system, user, maxTokens, imgs) : callClaude(cfg, system, user, maxTokens, imgs);
+  const snd = (audio ?? []).map(splitDataUrl).filter((x): x is Img => !!x);
+  if (snd.length && cfg.provider !== 'gemini') {
+    throw new Error('Transcribir audio necesita el motor Gemini. Cámbialo en Preferencias → IA (la API de Claude no recibe audio).');
+  }
+  return cfg.provider === 'gemini' ? callGemini(cfg, system, user, maxTokens, [...imgs, ...snd]) : callClaude(cfg, system, user, maxTokens, imgs);
 }
 
 interface Img {

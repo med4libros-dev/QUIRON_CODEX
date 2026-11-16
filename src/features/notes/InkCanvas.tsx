@@ -21,7 +21,7 @@ import { PenControls } from '../../components/PenControls';
 import { usePinchZoom } from '../../lib/usePinchZoom';
 import { inkDown, inkIsDown, inkUp } from '../../lib/inkBusy';
 import { stableGroups } from '../../lib/groups';
-import { applyXf, recognizeShape, strokesBox, strokesInLasso, type Xf } from '../../lib/shapes';
+import { FLOW_TEMPLATES, applyXf, flowTemplate, recognizeShape, snapArrowToBoxes, strokesBox, strokesInLasso, type FlowTemplate, type Xf } from '../../lib/shapes';
 import { InkCropModal } from './InkCropModal';
 import { SheetRail } from './SheetRail';
 import { ClassAudioBar } from './ClassAudioBar';
@@ -37,6 +37,12 @@ import { useTrash } from '../../store/trash';
 import type { InkTool, Note, PaperStyle, SheetKind, Stroke } from '../../types';
 
 const EMPTY: Stroke[] = [];
+/** Hojas montadas de más arriba y de más abajo de lo que se ve. */
+const PAD = 2;
+/** Cuántas hojas se montan de salida, antes de la primera medición. */
+const WINDOW = 6;
+/** Por debajo de esto no se virtualiza: un cuaderno corto se comporta igual que siempre. */
+const VIRTUAL_FROM = 12;
 const EMPTY_IMG: InkImage[] = [];
 type Mode = 'draw' | 'eraser' | 'lasso';
 type SelAction = { type: 'delete' } | { type: 'duplicate' } | { type: 'color'; color: string } | { type: 'move'; to: number } | { type: 'read' };
@@ -163,6 +169,7 @@ export function InkCanvas({ note }: { note: Note }) {
     // Con la clase grabándose, cada trazo guarda el segundo en que se escribió.
     const el = recordingElapsed();
     if (el !== null && recordingNote() === noteIdRef.current) s = { ...s, t: Math.round(el / 1000) };
+    if (useTools.getState().layer === 'draft') s = { ...s, layer: 'draft' };
     undo.current.push(latest.current);
     if (undo.current.length > 80) undo.current.shift();
     redo.current = [];
@@ -215,6 +222,10 @@ export function InkCanvas({ note }: { note: Note }) {
   );
 
   const pageH = sheetH(note.sheet);
+  const layer = useTools((t) => t.layer);
+  const setLayer = useTools((t) => t.setLayer);
+  const showDraft = useTools((t) => t.showDraft);
+  const setShowDraft = useTools((t) => t.setShowDraft);
   const noteIdRef = useRef(note.id);
   noteIdRef.current = note.id;
   const bgPick = useRef<HTMLInputElement>(null);
@@ -228,16 +239,40 @@ export function InkCanvas({ note }: { note: Note }) {
     if (hit?.t !== undefined) seekRef.current?.(hit.t);
   }, []);
   const [curSheet, setCurSheet] = useState(0);
-  /** Qué hoja se está viendo, para marcarla en las miniaturas. Solo mientras el panel está abierto. */
+  /**
+   * Ventana de hojas montadas. Con hojas continuas y rollo un cuaderno llega a cientos de hojas:
+   * montarlas todas cuesta en memoria y hace que cada trazo recorra todo el árbol. Se monta solo
+   * lo que se ve (más un margen) y el resto se sustituye por dos separadores del alto que
+   * ocuparían, así la barra de desplazamiento no cambia de tamaño.
+   *
+   * El alto de hoja se mide de una hoja real: así vale para cualquier tamaño y zoom.
+   */
+  const [win, setWin] = useState({ from: 0, to: WINDOW });
+  const sheetPx = useRef(0);
+
+  const measure = useCallback(() => {
+    const sc = scrollRef.current;
+    if (!sc) return;
+    const one = sc.querySelector('.ink-sheet') as HTMLElement | null;
+    if (one?.offsetHeight) sheetPx.current = one.offsetHeight + 22;
+  }, []);
+
+  /** Qué hoja se está viendo (para las miniaturas) y qué hojas hay que montar. */
   const onScrollSheet = useCallback(() => {
     const sc = scrollRef.current;
     if (!sc) return;
-    const sheets = sc.querySelectorAll('.ink-sheet');
-    const mid = sc.scrollTop + sc.clientHeight / 3;
-    let i = 0;
-    for (let k = 0; k < sheets.length; k++) if ((sheets[k] as HTMLElement).offsetTop <= mid) i = k;
-    setCurSheet(i);
-  }, []);
+    measure();
+    const h = sheetPx.current;
+    if (!h) return;
+    const first = Math.floor(sc.scrollTop / h);
+    setCurSheet(Math.max(0, first));
+    setWin((w) => {
+      const from = Math.max(0, first - PAD);
+      const to = first + Math.ceil(sc.clientHeight / h) + PAD;
+      return from === w.from && to === w.to ? w : { from, to };
+    });
+  }, [measure]);
+
   const [crop, setCrop] = useState<{ strokes: Stroke[]; box: { x: number; y: number; w: number; h: number } } | null>(null);
 
   /* ---------- Lazo ---------- */
@@ -326,7 +361,9 @@ export function InkCanvas({ note }: { note: Note }) {
 
   // Agrupar por hoja conservando los arreglos que no cambiaron: escribir en una hoja no redibuja las demás.
   const groups = useRef(new Map<number, Stroke[]>());
-  const byPage = useMemo(() => (groups.current = stableGroups(groups.current, strokes ?? [])), [strokes]);
+  // Con el borrador oculto, esos trazos simplemente no se dibujan (siguen guardados).
+  const shown = useMemo(() => (showDraft ? (strokes ?? []) : (strokes ?? []).filter((st) => st.layer !== 'draft')), [strokes, showDraft]);
+  const byPage = useMemo(() => (groups.current = stableGroups(groups.current, shown)), [shown]);
 
   usePinchZoom(scrollRef, inkZoom, setInkZoom, { min: 0.5, max: 3 });
   let lastUsed = -1;
@@ -336,6 +373,12 @@ export function InkCanvas({ note }: { note: Note }) {
   // Hojas continuas: en cuanto hay tinta en la última, se ofrece otra debajo. La hoja de
   // más no se guarda: si borras lo que escribiste, se retira sola y no deja hojas sueltas.
   const pages = inkAuto && lastUsed + 1 >= reserved ? reserved + 1 : reserved;
+  useEffect(() => {
+    measure();
+    onScrollSheet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pages, inkZoom, note.sheet, strokes === null]);
+
   const zoomStep = (dir: 1 | -1) => {
     const i = INK_ZOOMS.findIndex((v) => v >= inkZoom - 0.001);
     const idx = (i === -1 ? INK_ZOOMS.length - 1 : i) + dir;
@@ -440,6 +483,11 @@ export function InkCanvas({ note }: { note: Note }) {
   const color = setting.color;
   const size = setting.size;
 
+
+  // Virtualización: con pocas hojas se montan todas (cero riesgo en el caso normal).
+  const virtual = pages >= VIRTUAL_FROM && sheetPx.current > 0;
+  const from = virtual ? Math.min(win.from, Math.max(0, pages - 1)) : 0;
+  const to = virtual ? Math.min(pages, Math.max(win.to, from + 1)) : pages;
   return (
     <div className="ink-wrap" tabIndex={-1} onKeyDown={onKeyDown}>
       <div className="ink-toolbar" role="toolbar" aria-label="Herramientas de dibujo">
@@ -505,6 +553,52 @@ export function InkCanvas({ note }: { note: Note }) {
         )}
         <button className="btn ghost sm" onClick={() => setSheetsOpen(true)} title="Organizar hojas: reordenar arrastrando y fusionar" disabled={pages < 2}>
           <Icon name="layers" size={16} /> Hojas
+        </button>
+        <select
+          className="select xs"
+          value=""
+          onChange={(e) => {
+            const kind = e.target.value as FlowTemplate;
+            e.target.value = '';
+            if (!kind) return;
+            pushUndo();
+            const add = flowTemplate(kind).map((pts) => ({
+              id: uid(),
+              page: curSheet,
+              tool: 'pen' as const,
+              color: 'auto',
+              size: 2.4,
+              points: pts,
+              ...(useTools.getState().layer === 'draft' ? { layer: 'draft' as const } : null),
+            }));
+            persist([...latest.current, ...add]);
+            useUI.getState().showToast('Flujograma puesto en la hoja: escribe dentro de las cajas.');
+          }}
+          aria-label="Plantilla de flujograma"
+          title="Poner un esqueleto de flujograma en la hoja que estás viendo"
+        >
+          <option value="">Flujograma…</option>
+          {FLOW_TEMPLATES.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+        <div className="seg xs" role="radiogroup" aria-label="Capa del lienzo">
+          <button role="radio" aria-checked={layer === 'draft'} className={layer === 'draft' ? 'active' : ''} onClick={() => setLayer('draft')} title="Escribir en el borrador: va debajo y más tenue">
+            Borrador
+          </button>
+          <button role="radio" aria-checked={layer === 'clean'} className={layer === 'clean' ? 'active' : ''} onClick={() => setLayer('clean')} title="Escribir en la capa limpia">
+            Limpio
+          </button>
+        </div>
+        <button
+          className={`icon-btn${showDraft ? ' active' : ''}`}
+          onClick={() => setShowDraft(!showDraft)}
+          aria-pressed={showDraft}
+          title={showDraft ? 'Ocultar el borrador (no se borra)' : 'Mostrar el borrador'}
+        >
+          <Icon name="eye" size={16} />
         </button>
         <button
           className={`icon-btn${audioOpen ? ' active' : ''}`}
@@ -603,7 +697,8 @@ export function InkCanvas({ note }: { note: Note }) {
           <div className="loading">Cargando lienzo…</div>
         ) : (
           <>
-            {Array.from({ length: pages }, (_, i) => (
+            {virtual && from > 0 && <div style={{ height: from * sheetPx.current }} aria-hidden="true" />}
+            {Array.from({ length: to - from }, (_, k) => from + k).map((i) => (
               <div className="ink-sheet" key={i}>
                 <div className="ink-page-head">
                   <span className="muted small">Hoja {i + 1}</span>
@@ -647,6 +742,7 @@ export function InkCanvas({ note }: { note: Note }) {
                 />
               </div>
             ))}
+            {virtual && to < pages && <div style={{ height: (pages - to) * sheetPx.current }} aria-hidden="true" />}
             {!inkAuto && (
               <button className="btn ghost add-page" onClick={() => update(note.id, { inkPages: pages + 1 })}>
                 <Icon name="plus" size={16} /> Añadir hoja
@@ -660,6 +756,7 @@ export function InkCanvas({ note }: { note: Note }) {
         <InkCropModal
           strokes={crop.strokes}
           box={crop.box}
+          pageH={pageH}
           topicId={useTopicStore.getState().lastTopicId}
           onToNote={(t) => useBridge.getState().insertIntoNote(escapeHtml(t).replace(/\n/g, '<br>'), { noteId: note.id, append: true })}
           onClose={() => setCrop(null)}
@@ -668,6 +765,7 @@ export function InkCanvas({ note }: { note: Note }) {
       {sheetsOpen && (
         <SheetsDialog
           pages={reserved}
+          pageH={pageH}
           strokes={strokes ?? EMPTY}
           images={images}
           onReorder={reorderSheets}
@@ -871,7 +969,8 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
     if (!c || c.kind !== 'draw' || c.snapped || !useTools.getState().snapShapes) return;
     const shape = recognizeShape(c.pts);
     if (!shape) return;
-    c.pts = shape.points;
+    // Una flecha que termina cerca de una caja se engancha a su borde: el algoritmo queda conectado.
+    c.pts = shape.kind === 'arrow' ? snapArrowToBoxes(shape.points, strokes) : shape.points;
     c.snapped = true;
     c.st = { ...c.st, pressure: false };
     c.drawn = 0;

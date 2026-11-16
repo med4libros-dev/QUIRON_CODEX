@@ -7,6 +7,8 @@ import type { Stroke } from '../../types';
 
 interface Props {
   pages: number;
+  /** Alto lógico de la hoja, para que las miniaturas no salgan deformadas. */
+  pageH: number;
   strokes: Stroke[];
   images: InkImage[];
   /** Nuevo orden de las hojas: `order[i]` es la hoja que pasa a la posición i. */
@@ -22,7 +24,7 @@ const THUMB = 190;
  * Organizar hojas: miniaturas que puedes arrastrar para reordenar y fusionar con la anterior.
  * Las miniaturas se dibujan de los trazos que ya tienes, no se guarda ninguna imagen.
  */
-export function SheetsDialog({ pages, strokes, images, onReorder, onMerge, onClose }: Props) {
+export function SheetsDialog({ pages, pageH, strokes, images, onReorder, onMerge, onClose }: Props) {
   const [order, setOrder] = useState<number[]>(() => Array.from({ length: pages }, (_, i) => i));
   const [thumbs, setThumbs] = useState<Record<number, string>>({});
   const [drag, setDrag] = useState<number | null>(null);
@@ -37,7 +39,7 @@ export function SheetsDialog({ pages, strokes, images, onReorder, onMerge, onClo
       for (let p = 0; p < pages; p++) {
         const mine = strokes.filter((s) => s.page === p);
         const pics = images.filter((i) => i.page === p);
-        out[p] = mine.length || pics.length ? await renderInkPage(mine, THUMB, pics) : '';
+        out[p] = mine.length || pics.length ? await renderInkPage(mine, THUMB, pics, pageH) : '';
         if (!alive) return;
       }
       if (alive) setThumbs(out);

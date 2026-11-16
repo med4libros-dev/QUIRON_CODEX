@@ -144,6 +144,17 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - **Reconocimiento en segundo plano** (`lib/inkOcrAuto.ts`) y **sincronización automática** (`startSyncWatch` + `settings.syncAuto`), ambos apagados de fábrica y con reglas para no estorbar ni reemplazar nada en silencio.
 - **Accesibilidad**: `--border-strong` sube a 3:1 contra la lámina (WCAG 1.4.11), los campos recuperan el anillo de foco con `:focus-visible` y se retiran los últimos verdes del tema anterior.
 
+### v0.13 · Lo que faltaba ✅ (noviembre 2026)
+- **Arreglo de la 0.12**: `buildPdf` recibe `sheet` y usa `sheetH`; las miniaturas, el OCR y el recorte del lazo también. Una nota apaisada o en rollo ya no se exporta deformada.
+- **Transcribir la clase** (`lib/classAudio.ts:transcribeClass`, `Note.classText`): el audio va por `callAi({ audio })`, que solo acepta Gemini (la API de Claude no recibe audio) y lo dice con un mensaje claro. El grabador baja a 32 kbps para que una hora quepa en el límite de 16 MB.
+- **Virtualización del lienzo** (`InkCanvas`): ventana de hojas montadas con separadores arriba y abajo; el alto se mide de una hoja real, así vale para cualquier tamaño y zoom. Por debajo de 12 hojas no se virtualiza.
+- **Flashcards desde el margen del PDF**: `renderInkCrop` acepta un ancho de página mayor que 1000, que es donde vive lo escrito en la franja.
+- **Replanificación adaptativa** (`planner.ts:catchUpMoves`, `lateCount`): reparte el atraso en los próximos 21 días por capacidad real, con los repasos limitados a 7 días; lo que no cabe se queda y se informa.
+- **Mini-examen del día** (`exam/MiniExam.tsx`): cinco preguntas de los temas del día, reusando `Runner` en modo estudio.
+- **Flujogramas** (`lib/shapes.ts`: `flowTemplate`, `snapArrowToBoxes`): plantillas en tinta normal (el lazo y el borrador las tratan como a todo lo demás) y enganche de flechas al borde de las cajas cercanas.
+- **Capas** (`Stroke.layer`, `tools.layer`/`showDraft`): el borrador se dibuja al 38 % y se puede ocultar sin borrarlo.
+- **PWA** (`public/manifest.webmanifest`, `public/sw.js`): instalable en Edge, red primero y caché como respaldo; no se registra en la app de escritorio ni en el HTML de un solo archivo.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

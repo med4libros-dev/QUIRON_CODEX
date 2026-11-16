@@ -1,4 +1,6 @@
+import { callAi } from './ai';
 import { idb } from './idb';
+import { useNotes } from '../store/notes';
 
 /**
  * Grabar la clase y amarrarla a lo que escribes: cada trazo guarda el segundo en que lo hiciste,
@@ -39,7 +41,8 @@ export async function startRecording(noteId: string): Promise<void> {
   if (!audioSupported()) throw new Error('Este equipo no permite grabar audio desde la app.');
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   chunks = [];
-  rec = new MediaRecorder(stream);
+  // 32 kbps: una clase de una hora cabe en ~14 MB, que es lo que admite una petición con audio.
+  rec = new MediaRecorder(stream, { audioBitsPerSecond: 32000 });
   rec.ondataavailable = (e) => {
     if (e.data.size) chunks.push(e.data);
   };
@@ -70,6 +73,37 @@ export async function stopRecording(): Promise<ClassRecording | null> {
 }
 
 export const loadRecording = (noteId: string) => idb.get<Blob>('pdfs', audioKey(noteId));
+
+/** Límite práctico de una petición con audio en línea. Más largo que eso, no se manda. */
+const MAX_BYTES = 16 * 1024 * 1024;
+
+const SYSTEM_TRANSCRIBE =
+  'Transcribes la grabación de una clase de medicina en español (México). Devuelve ÚNICAMENTE la transcripción, ' +
+  'en párrafos, con marcas de tiempo [mm:ss] al principio de cada párrafo o cuando cambie de tema. ' +
+  'No resumas, no corrijas los datos, no agregues nada que no se diga. Conserva las siglas tal como se pronuncian. ' +
+  'Si un tramo es inaudible escribe [inaudible].';
+
+/**
+ * Transcribe la clase grabada. Solo con el motor Gemini: la API de Claude no recibe audio.
+ * La transcripción se guarda en la nota (`classText`) y entra en la búsqueda global.
+ */
+export async function transcribeClass(noteId: string): Promise<string> {
+  const blob = await loadRecording(noteId);
+  if (!blob) throw new Error('Esta nota no tiene ninguna clase grabada.');
+  if (blob.size > MAX_BYTES) {
+    throw new Error(`La grabación pesa ${Math.round(blob.size / 1024 / 1024)} MB y el límite para transcribir es ${MAX_BYTES / 1024 / 1024} MB. Graba la clase en partes.`);
+  }
+  const dataUrl = await new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = () => rej(new Error('No se pudo leer la grabación'));
+    r.readAsDataURL(blob);
+  });
+  const raw = await callAi({ system: SYSTEM_TRANSCRIBE, user: 'Transcribe esta clase.', audio: [dataUrl], maxTokens: 8000 });
+  const text = raw.replace(/^```[a-z]*\s*|\s*```$/g, '').trim();
+  useNotes.getState().updateNote(noteId, { classText: text, classTextAt: Date.now() });
+  return text;
+}
 export const deleteRecording = (noteId: string) => idb.del('pdfs', audioKey(noteId));
 
 /** mm:ss a partir de segundos. */

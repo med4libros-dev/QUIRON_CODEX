@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Icon } from '../../components/Icon';
-import { audioSupported, clock, deleteRecording, loadRecording, recordingElapsed, recordingNote, startRecording, stopRecording } from '../../lib/classAudio';
+import { audioSupported, clock, deleteRecording, loadRecording, recordingElapsed, recordingNote, startRecording, stopRecording, transcribeClass } from '../../lib/classAudio';
+import { useNotes } from '../../store/notes';
 import { useUI } from '../../store/ui';
 
 interface Props {
@@ -22,8 +23,22 @@ export function ClassAudioBar({ noteId, seekRef, onListening }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [url, setUrl] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
+  const [busy, setBusy] = useState(false);
   const audio = useRef<HTMLAudioElement>(null);
   const showToast = useUI((s) => s.showToast);
+  const note = useNotes((s) => s.notes.find((n) => n.id === noteId));
+
+  const transcribe = async () => {
+    setBusy(true);
+    try {
+      const t = await transcribeClass(noteId);
+      showToast(t ? 'Clase transcrita: ya entra en la búsqueda' : 'No se entendió nada en la grabación');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'No se pudo transcribir');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -109,6 +124,9 @@ export function ClassAudioBar({ noteId, seekRef, onListening }: Props) {
           >
             <Icon name="target" size={15} /> Tocar para saltar
           </button>
+          <button className="btn ghost sm" onClick={() => void transcribe()} disabled={busy}>
+            <Icon name="text" size={15} /> {busy ? 'Transcribiendo…' : note?.classText ? 'Volver a transcribir' : 'Transcribir'}
+          </button>
           <button
             className="icon-btn xs"
             onClick={() => {
@@ -127,6 +145,12 @@ export function ClassAudioBar({ noteId, seekRef, onListening }: Props) {
         </>
       )}
       {!url && !rec && <span className="muted small">Para clases y seminarios. No la uses con un paciente delante.</span>}
+      {note?.classText && !rec && (
+        <details className="class-text">
+          <summary className="small">Transcripción ({note.classText.length.toLocaleString('es-MX')} caracteres)</summary>
+          <p>{note.classText}</p>
+        </details>
+      )}
     </div>
   );
 }

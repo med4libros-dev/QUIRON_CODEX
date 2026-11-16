@@ -116,6 +116,7 @@ export function NotesPanel() {
         strokes,
         inkPages: fresh.inkPages,
         images,
+        sheet: fresh.sheet,
         subtitle: [nb ? `Cuaderno: ${nb.name}` : '', noteDocName ? `Fuente: ${noteDocName}` : ''].filter(Boolean).join('  ·  ') || undefined,
       });
     } catch (e) {
@@ -143,6 +144,7 @@ export function NotesPanel() {
           strokes: (await idb.get<Stroke[]>('ink', n.id)) ?? [],
           inkPages: n.inkPages,
           images: await loadInkImages(n.id),
+          sheet: n.sheet,
           subtitle: n.docId ? `Fuente: ${docs.find((d) => d.id === n.docId)?.name ?? ''}` : undefined,
         });
       }

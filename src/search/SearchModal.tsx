@@ -112,11 +112,18 @@ function SearchInner({ onClose }: { onClose: () => void }) {
     for (const n of notes) {
       const text = htmlToText(n.html);
       const ink = n.inkText ?? '';
+      const clase = n.classText ?? '';
       const tags = (n.tags ?? []).join(' ');
-      if (!norm(`${n.title} ${text} ${ink} ${tags}`).includes(needle)) continue;
-      // Si la coincidencia está en lo escrito a mano, el fragmento sale de ahí.
+      if (!norm(`${n.title} ${text} ${ink} ${clase} ${tags}`).includes(needle)) continue;
+      // El fragmento sale de donde esté la coincidencia: texto, letra a mano o la clase grabada.
       const inText = norm(text).includes(needle);
-      const snippet = inText ? around(text, needle) : norm(ink).includes(needle) ? `✍ ${around(ink, needle)}` : around(text || ink, needle);
+      const snippet = inText
+        ? around(text, needle)
+        : norm(ink).includes(needle)
+          ? `✍ ${around(ink, needle)}`
+          : norm(clase).includes(needle)
+            ? `🎙 ${around(clase, needle)}`
+            : around(text || ink || clase, needle);
       push({ key: `n${n.id}`, group: 'Notas', title: n.title || 'Sin título', snippet, go: () => openNote(n.id) }, 8);
     }
     for (const i of hy)

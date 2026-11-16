@@ -145,3 +145,152 @@ export const applyXf = (st: Stroke, f: Xf): Stroke => ({
   size: Math.max(0.5, r1(st.size * f.s)),
   points: st.points.map((p) => [r1(f.ox + (p[0] - f.ox) * f.s + f.dx), r1(f.oy + (p[1] - f.oy) * f.s + f.dy), p[2] ?? 0.5]),
 });
+
+/* ---------- Flujogramas ---------- */
+
+/** Caja de un trazo, en coordenadas de hoja. */
+const boxOf = (pts: P[]) => {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const p of pts) {
+    if (p[0] < x0) x0 = p[0];
+    if (p[0] > x1) x1 = p[0];
+    if (p[1] < y0) y0 = p[1];
+    if (p[1] > y1) y1 = p[1];
+  }
+  return { x0, y0, x1, y1 };
+};
+
+/** ¿Este trazo parece una caja (rectángulo cerrado) de al menos 60 × 30? */
+function looksLikeBox(s: Stroke): boolean {
+  const b = boxOf(s.points);
+  const w = b.x1 - b.x0;
+  const h = b.y1 - b.y0;
+  if (w < 60 || h < 30) return false;
+  const a = s.points[0];
+  const z = s.points[s.points.length - 1];
+  return Math.hypot(a[0] - z[0], a[1] - z[1]) < Math.min(w, h) * 0.4;
+}
+
+/** Punto del borde de la caja más cercano a `p` (sin entrar en la caja). */
+function edgePoint(b: { x0: number; y0: number; x1: number; y1: number }, p: P): P {
+  const cx = (b.x0 + b.x1) / 2;
+  const cy = (b.y0 + b.y1) / 2;
+  const dx = p[0] - cx;
+  const dy = p[1] - cy;
+  // El lado al que apunta: el eje con mayor desplazamiento relativo manda.
+  const rx = Math.abs(dx) / Math.max(1, (b.x1 - b.x0) / 2);
+  const ry = Math.abs(dy) / Math.max(1, (b.y1 - b.y0) / 2);
+  if (rx > ry) return [dx > 0 ? b.x1 : b.x0, Math.min(b.y1, Math.max(b.y0, p[1])), 0.5];
+  return [Math.min(b.x1, Math.max(b.x0, p[0])), dy > 0 ? b.y1 : b.y0, 0.5];
+}
+
+/**
+ * Engancha una flecha recién reconocida a las cajas que tenga cerca: si su punta o su cola
+ * caen a menos de `snap` de una caja, se pegan al borde de esa caja. Así un algoritmo
+ * dibujado a mano queda conectado de verdad y no con flechas que no llegan.
+ *
+ * Devuelve los puntos corregidos, o los mismos si no había nada cerca.
+ */
+export function snapArrowToBoxes(points: P[], others: Stroke[], snap = 46): P[] {
+  if (points.length < 2) return points;
+  const boxes = others.filter(looksLikeBox).map((s) => boxOf(s.points));
+  if (!boxes.length) return points;
+  const near = (p: P) =>
+    boxes
+      .map((b) => ({ b, d: Math.hypot(p[0] - Math.min(b.x1, Math.max(b.x0, p[0])), p[1] - Math.min(b.y1, Math.max(b.y0, p[1]))) }))
+      .filter((x) => x.d <= snap)
+      .sort((a, z) => a.d - z.d)[0]?.b;
+
+  const tail = points[0];
+  const head = points[points.length - 1];
+  const bTail = near(tail);
+  const bHead = near(head);
+  if (!bTail && !bHead) return points;
+  const a = bTail ? edgePoint(bTail, head) : tail;
+  const z = bHead ? edgePoint(bHead, tail) : head;
+  if (Math.hypot(a[0] - z[0], a[1] - z[1]) < 12) return points;
+  return arrowPoints(a, z);
+}
+
+/** Flecha limpia entre dos puntos (línea + punta). */
+function arrowPoints(a: P, b: P): P[] {
+  const out: P[] = [];
+  segment(a, b, out);
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+  const len = Math.min(26, dist(a, b) * 0.3);
+  for (const s of [1, -1]) {
+    const tip: P[] = [];
+    segment(b, [r1(b[0] - len * Math.cos(ang - (s * Math.PI) / 7)), r1(b[1] - len * Math.sin(ang - (s * Math.PI) / 7)), 0.5], tip);
+    out.push(...tip);
+  }
+  return out;
+}
+
+export type FlowTemplate = 'algoritmo' | 'si-no' | 'tres-pasos';
+
+export const FLOW_TEMPLATES: { id: FlowTemplate; label: string; hint: string }[] = [
+  { id: 'algoritmo', label: 'Algoritmo diagnóstico', hint: 'Sospecha → prueba → rombo sí/no → dos ramas' },
+  { id: 'si-no', label: 'Decisión sí / no', hint: 'Un rombo con dos salidas' },
+  { id: 'tres-pasos', label: 'Tres pasos en columna', hint: 'Tres cajas encadenadas' },
+];
+
+const rect = (x: number, y: number, w: number, h: number): P[] =>
+  poly([
+    [x, y, 0.5],
+    [x + w, y, 0.5],
+    [x + w, y + h, 0.5],
+    [x, y + h, 0.5],
+    [x, y, 0.5],
+  ]);
+
+const diamond = (cx: number, cy: number, w: number, h: number): P[] =>
+  poly([
+    [cx, cy - h / 2, 0.5],
+    [cx + w / 2, cy, 0.5],
+    [cx, cy + h / 2, 0.5],
+    [cx - w / 2, cy, 0.5],
+    [cx, cy - h / 2, 0.5],
+  ]);
+
+/**
+ * Esqueleto de flujograma en tinta: cajas, rombos y flechas vacíos para que escribas dentro.
+ * Son trazos normales, así que el lazo los mueve y el borrador los quita como a todo lo demás.
+ */
+export function flowTemplate(kind: FlowTemplate, pageW = 1000): P[][] {
+  const m = pageW * 0.12;
+  const w = pageW - m * 2;
+  const bw = Math.min(360, w * 0.46);
+  const cx = pageW / 2;
+  if (kind === 'tres-pasos') {
+    const out: P[][] = [];
+    for (let i = 0; i < 3; i++) {
+      const y = 140 + i * 190;
+      out.push(rect(cx - bw / 2, y, bw, 100));
+      if (i < 2) out.push(arrowPoints([cx, y + 100, 0.5], [cx, y + 185, 0.5]));
+    }
+    return out;
+  }
+  if (kind === 'si-no') {
+    return [
+      diamond(cx, 220, bw, 170),
+      arrowPoints([cx - bw / 2, 220, 0.5], [cx - bw / 2 - 90, 220, 0.5]),
+      arrowPoints([cx + bw / 2, 220, 0.5], [cx + bw / 2 + 90, 220, 0.5]),
+      rect(m, 160, 150, 120),
+      rect(pageW - m - 150, 160, 150, 120),
+    ];
+  }
+  return [
+    rect(cx - bw / 2, 110, bw, 90),
+    arrowPoints([cx, 200, 0.5], [cx, 265, 0.5]),
+    rect(cx - bw / 2, 265, bw, 90),
+    arrowPoints([cx, 355, 0.5], [cx, 420, 0.5]),
+    diamond(cx, 500, bw, 160),
+    arrowPoints([cx - bw / 2, 500, 0.5], [m + 160, 500, 0.5]),
+    arrowPoints([cx + bw / 2, 500, 0.5], [pageW - m - 160, 500, 0.5]),
+    rect(m, 580, 170, 110),
+    rect(pageW - m - 170, 580, 170, 110),
+  ];
+}

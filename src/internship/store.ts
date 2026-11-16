@@ -12,6 +12,8 @@ export interface InternshipState {
   setConfig: (c: InternshipConfig) => void;
   toggleDone: (lessonId: string, date: string) => void;
   resetPlan: () => void;
+  /** Reparte en los días que vienen lo que quedó sin hacer en días pasados. */
+  catchUp: (moves: Record<string, string>) => void;
   activateSurvival: (date: string, moves: Record<string, string>) => void;
   undoSurvival: (date: string) => void;
 }
@@ -32,6 +34,7 @@ export const useInternship = createStore<InternshipState>(
       }),
     // Un plan nuevo descarta los ajustes: las fechas ya no corresponden.
     resetPlan: () => set({ config: null, survival: {}, shifts: {} }),
+    catchUp: (moves) => set((s) => ({ shifts: { ...s.shifts, ...moves } })),
     activateSurvival: (date, moves) =>
       set((s) => ({
         survival: { ...s.survival, [date]: Object.keys(moves) },

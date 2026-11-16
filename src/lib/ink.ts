@@ -18,7 +18,7 @@ export const SHEETS: { id: SheetKind; label: string; h: number; hint: string }[]
 
 export const sheetH = (k: SheetKind | undefined): number => SHEETS.find((s) => s.id === k)?.h ?? PAGE_H;
 
-export type StrokeLike = Pick<Stroke, 'tool' | 'color' | 'size' | 'points'>;
+export type StrokeLike = Pick<Stroke, 'tool' | 'color' | 'size' | 'points'> & { layer?: 'draft' };
 
 /** Catálogo de instrumentos: nombre, rango de grosor y paleta sugerida. */
 export const DRAW_TOOLS: Record<DrawTool, { label: string; min: number; max: number; palette: string[] }> = {
@@ -74,6 +74,8 @@ export function drawStroke(ctx: CanvasRenderingContext2D, s: StrokeLike, autoCol
   ctx.lineJoin = 'round';
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
+  // El borrador va debajo y más tenue: se ve lo suficiente para calcar encima.
+  if (s.layer === 'draft') ctx.globalAlpha = 0.38;
 
   // Rotulador y marcatextos: ancho constante, un solo trazado (sin manchas en las uniones).
   if (s.tool === 'highlighter' || s.tool === 'marker') {
@@ -181,11 +183,13 @@ export async function renderInkCrop(
   widthPx = 1200,
   images: { x: number; y: number; w: number; h: number; src: string }[] = [],
   pageH = PAGE_H,
+  // En el margen del PDF lo escrito tiene x > 1000, así que el recorte puede pasarse del ancho de hoja.
+  pageW = PAGE_W,
 ): Promise<string> {
   const pad = 16;
   const x = Math.max(0, box.x - pad);
   const y = Math.max(0, box.y - pad);
-  const w = Math.min(PAGE_W - x, box.w + pad * 2);
+  const w = Math.min(pageW - x, box.w + pad * 2);
   const h = Math.min(pageH - y, box.h + pad * 2);
   if (w <= 0 || h <= 0) return '';
   const c = document.createElement('canvas');

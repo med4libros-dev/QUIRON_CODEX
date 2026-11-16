@@ -115,6 +115,18 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.13
+- **Corrección**: al exportar una nota a PDF se respeta el tamaño de hoja. En la 0.12 una nota apaisada o en rollo salía deformada porque la exportación seguía fija en A4.
+- **Transcribir la clase grabada**: botón «Transcribir» en la barra de grabación. Pasa el audio a texto con marcas de tiempo, lo guarda en la nota y entra en Ctrl+K. Necesita el motor **Gemini**: la API de Claude no recibe audio.
+- **Lienzo rápido con cuadernos largos**: con hojas continuas y rollo un cuaderno llega a cientos de hojas; ahora solo se monta lo que se ve, y la barra de desplazamiento conserva su tamaño.
+- **Flashcards desde el margen del PDF**: botón nuevo en la barra del lector que lee lo escrito en la franja y lo pasa a texto o a tarjeta.
+- **Ponerme al día** (en «Pendientes»): reparte lo atrasado en los próximos 21 días con espacio, saltándose guardias y días en modo supervivencia. Si algo no cabe te dice cuánto quedó fuera en vez de reventar un día.
+- **Mini-examen del día**: cinco casos de los temas de hoy, en modo estudio. Solo usa el banco que ya tienes.
+- **Flujogramas**: tres plantillas de algoritmo en tinta (cajas y rombos vacíos para escribir dentro) y flechas que se enganchan solas al borde de las cajas cercanas.
+- **Capas**: borrador debajo y más tenue, limpio encima. El borrador se oculta sin borrarse.
+- **Instalable (PWA)**: la versión web se instala como aplicación en Edge y abre sin internet. No guarda nada tuyo en la caché: tus datos siguen en IndexedDB.
+- **Símbolos al exportar**: más griego y notación médica se transliteran con nombre completo en lugar de perderse.
+
 ### v0.12
 - **Lazo → texto, fórmula o flashcard**: encierra un párrafo escrito a mano y el botón «Aa» de la barra de selección lo transcribe. Lee solo ese recorte (no la hoja completa), lo puedes corregir y llevártelo al editor, al portapapeles o a una tarjeta.
 - **Margen de notas junto al PDF**: una franja en blanco a la derecha de la guía para escribir sin encimar el texto; 30 % o 60 % del ancho de la página. La guía conserva su tamaño y lo que ya habías anotado no se mueve.

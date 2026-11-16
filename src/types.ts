@@ -66,6 +66,8 @@ export interface Stroke {
   points: number[][];
   /** Segundo de la grabación de clase en que se escribió, si había una en curso. */
   t?: number;
+  /** Capa: «draft» es el borrador de debajo; sin valor, va en la capa limpia. */
+  layer?: 'draft';
 }
 export type SheetKind = 'a4' | 'carta' | 'apaisada' | 'rollo';
 export type PaperStyle = 'blank' | 'lined' | 'margin' | 'grid' | 'dots' | 'graph' | 'ecg' | 'half' | 'plate' | 'cornell' | 'columns';
@@ -96,6 +98,9 @@ export interface Note {
   /** Transcripción de lo escrito a mano (la hace el motor de IA cuando tú lo pides). */
   inkText?: string;
   inkTextAt?: number;
+  /** Transcripción de la clase grabada (solo con el motor Gemini). */
+  classText?: string;
+  classTextAt?: number;
   /** Etiquetas libres para filtrar («guardia», «dudas», «ENARM»…). */
   tags?: string[];
   createdAt: number;

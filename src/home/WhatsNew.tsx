@@ -8,12 +8,12 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'lasso', title: 'Lo que encierras con el lazo, leído', text: 'Encierra un párrafo escrito a mano y el botón «Aa» lo pasa a texto, a fórmula o a flashcard. Transcribe solo ese recorte, no la hoja entera, y lo puedes corregir antes de llevártelo.' },
-  { icon: 'columns', title: 'Margen de notas junto al PDF', text: 'En la barra del lector: una franja en blanco a la derecha de la guía para escribir sin encimar el texto. Dos tamaños (30 % y 60 %). Lo que ya habías anotado no se mueve.' },
-  { icon: 'layers', title: 'Miniaturas, tamaños de hoja y rollo', text: 'Columna de miniaturas al lado del lienzo para saber dónde vas; A4, carta, apaisada o rollo continuo; y una imagen tuya de fondo fijo (una lámina, un formato del hospital) para escribir encima.' },
-  { icon: 'mic', title: 'Grabar la clase y volver a ella', text: 'Mientras grabas, cada trazo guarda su minuto. Después, «Tocar para saltar» y un toque en el apunte te lleva al momento en que lo escribiste. Para clases y seminarios, no para pacientes. El audio no sale de tu equipo ni entra en los respaldos.' },
-  { icon: 'target', title: 'Examen largo', text: 'Varios bloques cronometrados seguidos, con descanso entre ellos, para ensayar la jornada completa y no solo un bloque suelto. Los números los pones tú.' },
-  { icon: 'swap', title: 'Dos cosas que ahora pasan solas', text: 'En Preferencias puedes encender que tu letra se transcriba en segundo plano (entra sola al buscador) y que lo que deje tu otra computadora se traiga sin preguntar, siempre que aquí no haya cambios sin respaldar.' },
+  { icon: 'mic', title: 'La clase grabada, ahora transcrita', text: 'Botón «Transcribir» en la barra de grabación: pasa la clase a texto con marcas de tiempo y entra en Ctrl+K. Necesita el motor Gemini, porque la API de Claude no recibe audio.' },
+  { icon: 'swap', title: 'Ponerme al día', text: 'En «Pendientes»: reparte lo que quedó atrás en los próximos días con espacio, saltándose las guardias. Si algo no cabe, te dice cuánto quedó fuera en vez de reventar un día.' },
+  { icon: 'target', title: 'Mini-examen del día', text: 'Cinco casos de los temas que te tocaban hoy, con explicación inmediata y la cita de la GPC. Sale del banco que ya tienes; si no hay preguntas de esos temas, lo dice.' },
+  { icon: 'flow', title: 'Flujogramas y capas', text: 'Plantillas de algoritmo en tinta para escribir dentro, flechas que se enganchan solas a las cajas, y una capa de borrador que va debajo, más tenue, y se puede ocultar sin borrarla.' },
+  { icon: 'layers', title: 'El lienzo ya no se arrastra', text: 'Con cuadernos de cientos de hojas solo se monta lo que se ve. Y al exportar a PDF se respeta el tamaño de hoja: una nota apaisada o en rollo ya no sale deformada.' },
+  { icon: 'monitor', title: 'Instalable en Edge', text: 'La versión web se instala como aplicación y abre sin internet. En la app de escritorio no cambia nada.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

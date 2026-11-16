@@ -32,6 +32,12 @@ export interface ToolsState {
   setBarrel: (b: 'eraser' | 'lasso' | 'none') => void;
   /** Formas rectas al dejar el lápiz quieto. */
   snapShapes: boolean;
+  /** Capa en la que se escribe ahora: borrador (debajo, tenue) o limpio. */
+  layer: 'clean' | 'draft';
+  setLayer: (l: 'clean' | 'draft') => void;
+  /** Mostrar u ocultar la capa de borrador. */
+  showDraft: boolean;
+  setShowDraft: (v: boolean) => void;
   setSnapShapes: (v: boolean) => void;
   setToolSetting: (tool: DrawTool, patch: Partial<ToolSetting>) => void;
   setCanvasTool: (t: DrawTool) => void;
@@ -69,6 +75,10 @@ export const useTools = createStore<ToolsState>(
     setBarrel: (barrel) => set({ barrel }),
     snapShapes: true,
     setSnapShapes: (snapShapes) => set({ snapShapes }),
+    layer: 'clean',
+    setLayer: (layer) => set({ layer }),
+    showDraft: true,
+    setShowDraft: (showDraft) => set({ showDraft }),
     setToolSetting: (tool, patch) => set((s) => ({ settings: { ...s.settings, [tool]: { ...s.settings[tool], ...patch } } })),
     setCanvasTool: (canvasTool) => set({ canvasTool }),
     setPdfTool: (pdfTool) => set({ pdfTool }),
@@ -79,8 +89,8 @@ export const useTools = createStore<ToolsState>(
   {
     key: 'alq:tools',
     storage: 'local',
-    pick: ({ settings, canvasTool, pdfTool, hlColor, underlineWidth, stickyColor, penOnly, favorites, barrel, snapShapes }) => ({
-      settings, canvasTool, pdfTool, hlColor, underlineWidth, stickyColor, penOnly, favorites, barrel, snapShapes,
+    pick: ({ settings, canvasTool, pdfTool, hlColor, underlineWidth, stickyColor, penOnly, favorites, barrel, snapShapes, layer, showDraft }) => ({
+      settings, canvasTool, pdfTool, hlColor, underlineWidth, stickyColor, penOnly, favorites, barrel, snapShapes, layer, showDraft,
     }),
   },
 );

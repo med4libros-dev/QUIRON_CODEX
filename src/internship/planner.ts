@@ -382,3 +382,68 @@ export function applyReinforcement(plan: PlanResult, weak: string[], today: stri
   }
   return { ...plan, days };
 }
+
+/* ---------- Ponerse al día ---------- */
+
+/**
+ * Replanificación adaptativa: toma lo que quedó sin hacer en días ya pasados y lo reparte en los
+ * días que vienen, respetando la capacidad de cada uno y saltándose las guardias.
+ *
+ * A diferencia del modo supervivencia (que vacía *hoy*), esto limpia el atraso acumulado: la
+ * semana de guardias que te tiró el plan deja de arrastrarse como una lista de pendientes.
+ *
+ * Reglas:
+ *  - Lo más atrasado va primero, y dentro de un mismo día lo pesado antes que lo ligero.
+ *  - Un repaso no se aleja más de 7 días: pasado eso ya no es repaso espaciado.
+ *  - Nunca se mete nada en un día de guardia ni en un día en modo supervivencia.
+ *  - Si no cabe en ningún lado, se deja donde está en vez de reventar un día.
+ */
+export function catchUpMoves(
+  plan: PlanResult,
+  today: string,
+  done: Record<string, string>,
+  survival: Record<string, string[]>,
+  shifts: Record<string, string> = {},
+  horizonDays = 21,
+): Record<string, string> {
+  const late: { id: string; minutes: number; kind: Lesson['kind']; from: string }[] = [];
+  for (const [key, day] of plan.days) {
+    if (key >= today) continue;
+    for (const l of day.lessons) {
+      if (done[l.id] || shifts[l.id]) continue;
+      late.push({ id: l.id, minutes: l.minutes, kind: l.kind, from: key });
+    }
+  }
+  if (!late.length) return {};
+  const order = { new: 0, final: 1, review: 2 } as const;
+  late.sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : order[a.kind] - order[b.kind] || b.minutes - a.minutes));
+
+  const d0 = fromKey(today);
+  const candidates: { key: string; spare: number }[] = [];
+  for (let i = 0; i <= horizonDays; i++) {
+    const k = toKey(addDays(d0, i));
+    const d = plan.days.get(k);
+    if (!d || d.guardia || survival[k]) continue;
+    candidates.push({ key: k, spare: d.capacity - loadOf(d, done) });
+  }
+
+  const moves: Record<string, string> = {};
+  for (const l of late) {
+    const near = l.kind === 'review' ? candidates.filter((c) => diffDays(today, c.key) <= 7) : candidates;
+    const c = near.filter((x) => x.spare >= l.minutes).sort((a, b) => (a.key < b.key ? -1 : 1))[0];
+    if (!c) continue;
+    moves[l.id] = c.key;
+    c.spare -= l.minutes;
+  }
+  return moves;
+}
+
+/** Cuántas lecciones quedaron atrás sin hacer (lo que «Ponerme al día» repartiría). */
+export function lateCount(plan: PlanResult, today: string, done: Record<string, string>, shifts: Record<string, string> = {}): number {
+  let n = 0;
+  for (const [key, day] of plan.days) {
+    if (key >= today) continue;
+    for (const l of day.lessons) if (!done[l.id] && !shifts[l.id]) n++;
+  }
+  return n;
+}

@@ -1,10 +1,12 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { Suspense, lazy, useMemo, useState, type CSSProperties } from 'react';
 import { Icon } from '../components/Icon';
 import { WEEKDAYS, addDays, addMonths, fmt, formatMinutes, fromKey, startOfMonth, startOfWeek, toKey, todayKey } from '../lib/date';
 import { SPECIALTIES, SPECIALTY, TOPIC, TOPICS, gpcSearchUrl } from './curriculum';
 import { useCurriculum } from './curriculumStore';
 import { openTopicNote } from './openLesson';
-import { applyAdjustments, applyReinforcement, diffDays, generatePlan, survivalMoves, type PlanResult } from './planner';
+const MiniExam = lazy(() => import('../exam/MiniExam').then((m) => ({ default: m.MiniExam })));
+
+import { applyAdjustments, applyReinforcement, catchUpMoves, diffDays, generatePlan, lateCount, survivalMoves, type PlanResult } from './planner';
 import { SetupWizard } from './SetupWizard';
 import { useInternship } from './store';
 import { useTopicStore } from './topicStore';
@@ -69,6 +71,7 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
   const [selected, setSelected] = useState(() => clamp(today));
   const [month, setMonth] = useState(() => startOfMonth(fromKey(clamp(today))));
   const [showAllOverdue, setShowAllOverdue] = useState(false);
+  const [mini, setMini] = useState<string[] | null>(null);
 
   const dayIndex = diffDays(config.start, today) + 1;
   const total = plan.keys.length;
@@ -147,6 +150,7 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
               done={done}
               onToggle={(id) => toggleDone(id, today)}
               onBackToToday={selected !== today && plan.days.has(today) ? () => setSelected(today) : undefined}
+              onMini={selectedPlan?.lessons.length ? () => setMini([...new Set(selectedPlan.lessons.map((l) => l.topicId))]) : undefined}
               onSurvival={
                 selected === today && selectedPlan && !selectedPlan.guardia && selectedPlan.lessons.some((l) => !done[l.id])
                   ? () => {
@@ -167,6 +171,30 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
                 <h4>Pendientes</h4>
                 <span className="muted small">{overdue.length} de las últimas 3 semanas</span>
                 <span className="spacer" />
+                <button
+                  className="btn ghost sm"
+                  onClick={() => {
+                    const st = useInternship.getState();
+                    const moves = catchUpMoves(plan, today, st.done, st.survival, st.shifts);
+                    const n = Object.keys(moves).length;
+                    if (!n) {
+                      useUI.getState().showToast('No cabe nada en los próximos 21 días. Prueba con «Ya las estudié» o ajusta el plan.');
+                      return;
+                    }
+                    const left = lateCount(plan, today, st.done, st.shifts) - n;
+                    st.catchUp(moves);
+                    useUI
+                      .getState()
+                      .showToast(
+                        left > 0
+                          ? `${n} repartida${n === 1 ? '' : 's'} en los días que vienen. ${left} no cabían: vuelve a tocar en unos días o márcalas como estudiadas.`
+                          : `${n} lección${n === 1 ? '' : 'es'} repartida${n === 1 ? '' : 's'} en los días que vienen.`,
+                      );
+                  }}
+                  title="Repartir lo atrasado en los próximos días con espacio, saltándose las guardias"
+                >
+                  <Icon name="swap" size={14} /> Ponerme al día
+                </button>
                 <button
                   className="btn ghost sm"
                   onClick={() => overdue.forEach(({ lesson }) => toggleDone(lesson.id, today))}
@@ -387,6 +415,11 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
         </aside>
       </div>
       {caseOpen && <CaseQuick defaultTopic={todayPlan?.lessons[0]?.topicId ?? null} onClose={() => setCaseOpen(false)} />}
+      {mini && (
+        <Suspense fallback={null}>
+          <MiniExam topicIds={mini} onClose={() => setMini(null)} />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -480,6 +513,7 @@ function DayCard({
   onToggle,
   onBackToToday,
   onSurvival,
+  onMini,
 }: {
   plan?: DayPlan;
   date: string;
@@ -488,6 +522,8 @@ function DayCard({
   onToggle: (id: string) => void;
   onBackToToday?: () => void;
   onSurvival?: () => void;
+  /** Cinco casos de los temas de hoy. */
+  onMini?: () => void;
 }) {
   const lessons = plan?.lessons ?? [];
   const mins = lessons.reduce((a, l) => a + l.minutes, 0);
@@ -545,6 +581,11 @@ function DayCard({
           {first && (
             <button className="btn primary big" onClick={() => openTopicNote(TOPIC[first.topicId], { prefer: first.kind === 'new' ? 'GER' : 'GRR' })}>
               <Icon name="play" size={16} /> Empezar
+            </button>
+          )}
+          {onMini && (
+            <button className="btn ghost" onClick={onMini} title="Cinco casos de los temas de hoy, con explicación inmediata">
+              <Icon name="target" size={15} /> Mini-examen
             </button>
           )}
           {onSurvival && (

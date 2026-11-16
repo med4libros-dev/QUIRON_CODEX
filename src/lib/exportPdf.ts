@@ -1,16 +1,23 @@
 // pdf-lib (~400 KB) se carga solo al exportar: no pesa en el arranque.
 import type { Color, PDFFont, PDFPage } from 'pdf-lib';
 import { htmlToBlocks } from './html';
-import { PAGE_H, PAGE_W, renderInkPage } from './ink';
-import type { Stroke } from '../types';
+import { PAGE_W, renderInkPage, sheetH } from './ink';
+import type { SheetKind, Stroke } from '../types';
 
 const A4: [number, number] = [595.28, 841.89];
 const M = 56;
 
-/* Las fuentes estándar de PDF solo cubren Latin-1 (español completo). Símbolos frecuentes en medicina
-   se transliteran para que el PDF nunca salga con caracteres rotos. */
+/* Las fuentes estándar de PDF solo cubren Latin-1 (español completo). Incrustar una fuente Unicode
+   pediría fontkit, que este proyecto no trae; mientras tanto, los símbolos frecuentes en medicina se
+   transliteran con nombre completo para que el PDF nunca salga con caracteres rotos ni perdidos. */
 const MAP: Record<string, string> = {
-  'α': 'alfa', 'β': 'beta', 'γ': 'gamma', 'δ': 'delta', 'Δ': 'Delta', 'ε': 'epsilon', 'κ': 'kappa',
+  'α': 'alfa', 'β': 'beta', 'γ': 'gamma', 'δ': 'delta', 'Δ': 'Delta', 'ε': 'epsilon', 'ζ': 'zeta',
+  'η': 'eta', 'θ': 'theta', 'Θ': 'Theta', 'ι': 'iota', 'ξ': 'xi', 'ρ': 'rho', 'υ': 'upsilon',
+  'φ': 'fi', 'Φ': 'Fi', 'χ': 'ji', 'ψ': 'psi', 'Ψ': 'Psi', 'Ω': 'Omega', 'Σ': 'Sigma', 'Λ': 'Lambda',
+  'Γ': 'Gamma', 'Π': 'Pi', 'ν': 'nu', 'ο': 'o', 'Α': 'Alfa', 'Β': 'Beta',
+  '⁻': '-', '⁺': '+', '¹': '1', '²': '2', '³': '3', '⁴': '4', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+  '⇒': '=>', '⇔': '<=>', '↗': '(sube)', '↘': '(baja)', '∆': 'Delta', '∑': 'suma', '√': 'raiz',
+  '∅': 'vacio', '∴': 'por tanto', '•': '-', '·': '-', '‰': 'por mil', '≅': '~=', '≡': '==',
   'λ': 'lambda', 'μ': 'mu', 'π': 'pi', 'σ': 'sigma', 'τ': 'tau', 'ω': 'omega', '→': '->', '←': '<-',
   '↔': '<->', '↑': '(aumenta)', '↓': '(disminuye)', '≥': '>=', '≤': '<=', '≈': '~', '≠': '!=',
   '✓': '(v)', '✔': '(v)', '✗': '(x)', '−': '-', ' ': ' ', '\t': ' ', '′': "'", '″': '"', '∞': 'inf', '📑': '»', '☐': '[ ]', '☑': '[x]',
@@ -73,9 +80,12 @@ export interface ExportInput {
   strokes?: Stroke[];
   inkPages?: number;
   images?: { page: number; x: number; y: number; w: number; h: number; src: string }[];
+  /** Tamaño de hoja del lienzo: una nota apaisada o en rollo no es A4. */
+  sheet?: SheetKind;
 }
 
-export async function buildPdf({ title, html, subtitle, strokes = [], inkPages = 1, images = [] }: ExportInput): Promise<Uint8Array> {
+export async function buildPdf({ title, html, subtitle, strokes = [], inkPages = 1, images = [], sheet }: ExportInput): Promise<Uint8Array> {
+  const pageH = sheetH(sheet);
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
   const pdf = await PDFDocument.create();
   pdf.setTitle(title);
@@ -191,15 +201,15 @@ export async function buildPdf({ title, html, subtitle, strokes = [], inkPages =
     const pageStrokes = strokes.filter((s) => s.page === p);
     const pageImgs = images.filter((i) => i.page === p);
     if (!pageStrokes.length && !pageImgs.length) continue;
-    const png = await pdf.embedPng(await renderInkPage(pageStrokes, 1400, pageImgs));
+    const png = await pdf.embedPng(await renderInkPage(pageStrokes, 1400, pageImgs, pageH));
     if (blocks.length || p > 0) newPage();
     write(`Lienzo · hoja ${p + 1}`, bold, 11, muted);
     y -= 6;
     let w = maxW;
-    let h = (w * PAGE_H) / PAGE_W;
+    let h = (w * pageH) / PAGE_W;
     if (h > y - M) {
       h = y - M;
-      w = (h * PAGE_W) / PAGE_H;
+      w = (h * PAGE_W) / pageH;
     }
     page.drawImage(png, { x: M + (maxW - w) / 2, y: y - h, width: w, height: h });
     y -= h;

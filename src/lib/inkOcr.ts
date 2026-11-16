@@ -1,6 +1,6 @@
 import { callAi } from './ai';
 import { idb } from './idb';
-import { renderInkCrop, renderInkPage } from './ink';
+import { renderInkCrop, renderInkPage, sheetH } from './ink';
 import { loadInkImages } from './inkImages';
 import { useNotes } from '../store/notes';
 import { useSettings } from '../store/settings';
@@ -46,7 +46,8 @@ export async function renderNoteSheet(noteId: string, page: number): Promise<str
   const mine = strokes.filter((s) => s.page === page);
   const pics = imgs.filter((i) => i.page === page);
   if (!mine.length && !pics.length) return '';
-  return renderInkPage(mine, WIDTH, pics);
+  const note = useNotes.getState().notes.find((n) => n.id === noteId);
+  return renderInkPage(mine, WIDTH, pics, sheetH(note?.sheet));
 }
 
 /** ¿Qué hojas de esta nota tienen algo escrito o pegado? */
@@ -89,9 +90,11 @@ export async function recognizeCrop(
   strokes: Stroke[],
   box: { x: number; y: number; w: number; h: number },
   mode: 'text' | 'formula' = 'text',
+  pageH?: number,
+  pageW?: number,
 ): Promise<string> {
   if (!strokes.length) return '';
-  const img = await renderInkCrop(strokes, box);
+  const img = await renderInkCrop(strokes, box, 1200, [], pageH, pageW);
   if (!img) return '';
   const raw = await callAi({
     system: mode === 'formula' ? FORMULA : systemWithGlossary(),

@@ -10,6 +10,11 @@ import { STICKY_COLORS, useTools } from '../../store/tools';
 import { HIGHLIGHT_META, HIGHLIGHT_ORDER, type DocMeta } from '../../types';
 import { BookmarksMenu } from './BookmarksMenu';
 import { FindBar } from './FindBar';
+import { InkCropModal } from '../notes/InkCropModal';
+import { strokesBox } from '../../lib/shapes';
+import { useTopicStore } from '../../internship/topicStore';
+import { useBridge } from '../../store/bridge';
+import { escapeHtml } from '../../lib/html';
 import { FileManager } from './FileManager';
 import { PdfViewer, type PdfTool } from './PdfViewer';
 
@@ -68,6 +73,8 @@ export function PdfWorkspace() {
   const spread = useSettings((s) => s.pdfSpread);
   const nmargin = useSettings((s) => s.pdfMargin);
   const setPdfMargin = useSettings((s) => s.setPdfMargin);
+  const [marginCrop, setMarginCrop] = useState(false);
+  const inks = useLibrary((st) => (activeDocId ? st.inks[activeDocId] : undefined));
   const setPdfSpread = useSettings((s) => s.setPdfSpread);
   const focusOn = useUI((s) => s.focus);
   /** El puntero está cerca del borde de arriba: se muestran los controles flotantes. */
@@ -281,6 +288,16 @@ export function PdfWorkspace() {
               >
                 <Icon name="columns" />
               </button>
+              {nmargin > 0 && (
+                <button
+                  className="icon-btn"
+                  onClick={() => setMarginCrop(true)}
+                  title="Pasar lo escrito en el margen de esta página a texto o a flashcard"
+                  aria-label="Leer el margen de esta página"
+                >
+                  <Icon name="cards" />
+                </button>
+              )}
               <button
                 className={`icon-btn${spread ? ' active' : ''}`}
                 onClick={() => setPdfSpread(!spread)}
@@ -364,6 +381,28 @@ export function PdfWorkspace() {
       )}
 
       {doc && findOpen && <FindBar docId={doc.id} onFind={setFind} onGo={(p) => goTo(doc.id, p)} onClose={() => setFindOpen(false)} />}
+      {marginCrop &&
+        (() => {
+          // Lo escrito en la franja tiene x > 1000 (el ancho lógico de la página).
+          const mine = (inks ?? []).filter((st) => st.page === page && st.points.some((pt) => pt[0] > 1000));
+          const box = strokesBox(mine);
+          if (!mine.length || !box) {
+            useUI.getState().showToast('No hay nada escrito en el margen de esta página.');
+            setMarginCrop(false);
+            return null;
+          }
+          return (
+            <InkCropModal
+              strokes={mine}
+              box={box}
+              pageH={box.y + box.h + 80}
+              pageW={box.x + box.w + 80}
+              topicId={useTopicStore.getState().lastTopicId}
+              onToNote={(t) => useBridge.getState().insertIntoNote(escapeHtml(t).replace(/\n/g, '<br>'), { append: true })}
+              onClose={() => setMarginCrop(false)}
+            />
+          );
+        })()}
 
       {doc && tool !== 'select' && (
         <div className="subbar">

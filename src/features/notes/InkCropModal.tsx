@@ -9,8 +9,12 @@ import type { Stroke } from '../../types';
 interface Props {
   /** Los trazos encerrados con el lazo, ya filtrados. */
   strokes: Stroke[];
-  /** Caja de la selección en coordenadas de hoja (1000 × 1414). */
+  /** Caja de la selección en coordenadas de hoja (ancho lógico 1000). */
   box: { x: number; y: number; w: number; h: number };
+  /** Alto lógico de la hoja, para no recortar de más. */
+  pageH: number;
+  /** Ancho lógico; en el margen del PDF la zona útil pasa de 1000. */
+  pageW?: number;
   /** Tema al que pertenece la nota, para que la flashcard quede ligada. */
   topicId?: string | null;
   /** Vuelca el texto al final de la nota de texto. */
@@ -26,7 +30,7 @@ type Mode = 'text' | 'formula';
  *
  * Sale de este equipo únicamente la imagen del recorte, y solo cuando lo pides.
  */
-export function InkCropModal({ strokes, box, topicId, onToNote, onClose }: Props) {
+export function InkCropModal({ strokes, box, pageH, pageW, topicId, onToNote, onClose }: Props) {
   const [mode, setMode] = useState<Mode>('text');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(true);
@@ -41,7 +45,7 @@ export function InkCropModal({ strokes, box, topicId, onToNote, onClose }: Props
     setBusy(true);
     setError('');
     try {
-      const t = await recognizeCrop(strokes, box, m);
+      const t = await recognizeCrop(strokes, box, m, pageH, pageW);
       setText(t);
       if (!t) setError('No se leyó nada en la selección.');
     } catch (e) {

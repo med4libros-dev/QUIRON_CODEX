@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { WidgetApp } from './widget/WidgetApp';
 import { widgetKind } from './lib/widgets';
+import { isDesktop } from './lib/platform';
 // Se carga pronto: aplica tus cambios del temario antes de dibujar el plan.
 import { useCurriculum } from './internship/curriculumStore';
 import { startAutoBackup } from './lib/backup';
@@ -33,6 +34,9 @@ if (asWidget) {
 function startMainWindow() {
 // Respaldo automático en la carpeta elegida (si la hay y tiene permiso).
 startAutoBackup();
+// PWA: instalable en Edge y abre sin conexión. Solo en el navegador, servida por http(s):
+// en la app de escritorio y en el HTML de un solo archivo no hace falta y estorbaría.
+registerServiceWorker();
 // App de escritorio: los enlaces externos se abren en el navegador.
 installExternalLinkHandler();
 // Se quitó el hub de NotebookLM: borra sus datos guardados de versiones anteriores.
@@ -45,4 +49,20 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+}
+
+
+/**
+ * Registra el service worker que hace a la app instalable y capaz de abrir sin internet.
+ * No guarda nada tuyo: tus PDFs, tinta y notas viven en IndexedDB, aparte de esta caché.
+ */
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (isDesktop()) return;
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return;
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* sin service worker la app funciona igual, solo no se instala */
+    });
+  });
 }

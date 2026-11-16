@@ -308,9 +308,23 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 
 - Accesibilidad: `--border-strong` pasa a `#938565` / `#7a6a57` para llegar a 3:1 contra `--surface` (WCAG 1.4.11, el borde identifica el control); `.input:focus-visible` recupera el anillo que `outline: none` se comía; `::selection` y el borrador de recorte dejan el verde del tema anterior.
 
+## v0.13 · Lo que faltaba
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Tamaño de hoja al exportar | `lib/exportPdf.ts` (`ExportInput.sheet`), `SheetsDialog`, `inkOcr` | `renderInkPage`/`renderInkCrop` reciben el alto; antes la exportación seguía fija en 1414 y deformaba lo apaisado y el rollo |
+| Transcribir la clase | `lib/classAudio.ts:transcribeClass`, `lib/ai.ts` (`AiCall.audio`), `Note.classText` | El audio viaja como `inlineData` de Gemini; con Claude se rechaza con un mensaje que dice qué cambiar. Grabación a 32 kbps y tope de 16 MB por petición |
+| Virtualización del lienzo | `InkCanvas` (`win`, `sheetPx`, `VIRTUAL_FROM`) | Solo se montan las hojas visibles ±2; dos separadores conservan el alto total. El alto de hoja se mide del DOM, no se calcula |
+| Margen → tarjeta | `features/pdf/PdfWorkspace.tsx`, `renderInkCrop(pageW)` | Los trazos del margen tienen x > 1000, así que el recorte necesita un ancho mayor que el de la página |
+| Ponerme al día | `planner.ts:catchUpMoves`, `lateCount`, `store.catchUp` | Reparte por capacidad real en 21 días; los repasos no se alejan más de 7; nada entra en guardias ni en días en supervivencia; lo que no cabe se queda |
+| Mini-examen | `exam/MiniExam.tsx` | Reusa `Runner` en modo estudio con los temas del día; se carga con `lazy` para no engordar el arranque |
+| Flujogramas | `lib/shapes.ts:flowTemplate`, `snapArrowToBoxes` | Las plantillas son trazos normales; el enganche busca cajas (rectángulo cerrado ≥ 60 × 30) a ≤ 46 de la punta o la cola |
+| Capas | `Stroke.layer`, `tools.layer`/`showDraft`, `drawStroke` | El borrador se pinta al 38 %; ocultarlo solo lo filtra antes de agrupar por hoja |
+| PWA | `public/manifest.webmanifest`, `public/sw.js`, `main.tsx:registerServiceWorker` | Red primero, caché como respaldo; se salta todo lo que no sea del mismo origen (las APIs de IA nunca se cachean) y no se registra en Tauri ni en `file://` |
+
 ## Modelo de datos (resumen)
 
-`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
+`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
 
 ## Próximos pasos sugeridos
 
