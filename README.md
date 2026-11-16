@@ -63,7 +63,7 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 - **Herramientas → Nota SOAP** (barra lateral): elige tipo de nota y tema, llena signos vitales y hallazgos, copia. Los datos del paciente no se guardan.
 - **Perlas HY**: mnemotecnias y datos de alto rendimiento por tema; exporta/importa para compartir.
 - **Música**: botón redondo abajo a la izquierda → «Elegir carpeta».
-- **Estilo**: Ajustes → «Estilo: Cristal / Mate».
+- **Estilo**: pack «Códice», único. Ajustes → «Tema» para día, noche o automático.
 
 ### Fase 3b
 - **Simulacros** (barra lateral): genera casos tipo ENARM desde tu GER (necesita tu API key de Anthropic) o escríbelos; resuélvelos en bloques cronometrados.
@@ -114,6 +114,11 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
+
+### v0.11 (Códice)
+- **Identidad propia**: un solo pack visual, «Códice», hecho a medida para esta app. Papel cálido en los tres niveles (mesa → lámina → página, y la página siempre es la más clara), filetes de tinta en lugar de sombras y desenfoques, esquinas casi rectas, versales pequeñas en los rótulos y la serif **Lora** —incrustada en la app, sin pedir nada a internet— para los títulos y para todo lo que se lee. Se fueron el cristal esmerilado y los resplandores de colores.
+- **Once estilos de hoja**: rayada, con margen, mitad dibujo y mitad renglón, lisa, punteada, cuadrícula, milimetrada, papel de electro, lámina con pie, Cornell y dos columnas. Agrupados en el selector por para qué sirve cada uno.
+- **Hojas continuas**: al escribir en la última hoja sale otra debajo, como en los cuadernos digitales. La hoja de más no se guarda; si borras lo que escribiste, se retira sola. Se apaga con la flecha de la barra del lienzo.
 
 ### v0.10
 - **Widgets flotantes** (solo app de escritorio): ventanitas siempre encima con la **cápsula de estudio** (hora, minutos de hoy, tema que toca), los **pendientes del turno** por hora, el **repaso pendiente** y la **captura rápida**. Se arrastran de su barra y se cierran con su ✕.

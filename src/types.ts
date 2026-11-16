@@ -65,7 +65,7 @@ export interface Stroke {
   size: number;
   points: number[][];
 }
-export type PaperStyle = 'blank' | 'lined' | 'grid' | 'cornell' | 'columns';
+export type PaperStyle = 'blank' | 'lined' | 'margin' | 'grid' | 'dots' | 'graph' | 'ecg' | 'half' | 'plate' | 'cornell' | 'columns';
 /** Cuaderno: agrupa notas por materia o por tema, sin importar de qué PDF vengan. */
 export interface Notebook {
   id: string;

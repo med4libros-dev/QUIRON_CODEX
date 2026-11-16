@@ -1,65 +1,79 @@
+@import './fonts.css';
+
 /* =========================================================
-   Quirón Codex — sistema visual («Cristal / Parnaso» y «Pistache»)
-   Calma, papel y verde suave. Esquinas casi rectas, poca sombra,
-   bordes finos y una sola familia de acento.
+   Quirón Codex — sistema visual «Códice»
+   Un cuaderno clínico, no un tablero: papel cálido, tinta oscura,
+   rojo de lámina anatómica para lo activo y verde quirúrgico para
+   lo secundario. Línea grabada en vez de rellenos; nada de brillos.
+   La hoja —el PDF, el lienzo, el editor— es siempre lo más luminoso.
    ========================================================= */
 
 :root,
 [data-theme='light'] {
-  --bg: #f1f3ea;
-  --surface: #fafbf6;
-  --surface-2: #edf0e3;
-  --surface-3: #e1e7d3;
-  --border: #dbe1cb;
-  --border-strong: #c2cbab;
-  --text: #1f2a1c;
-  --text-muted: #6b7561;
-  --accent: #5b7f35;
-  --accent-hover: #4c6c2b;
-  --accent-soft: rgba(147, 197, 114, 0.22);
-  --accent-line: #93c572;
-  --accent-text: #ffffff;
-  --danger: #b4452f;
-  --canvas-bg: #e5e9da;
-  --paper: #fdfdf8;
-  --rule: rgba(91, 127, 53, 0.15);
-  --ink: #1f2a1c;
-  --shadow-page: 0 1px 2px rgba(31, 42, 28, 0.1), 0 0 0 1px rgba(31, 42, 28, 0.04);
-  --shadow-float: 0 12px 32px rgba(31, 42, 28, 0.14), 0 0 0 1px rgba(31, 42, 28, 0.06);
-  --heat-0: #e2e7d5;
+  /* === CÓDICE · día ===
+     Tres papeles: mesa (fondo), lámina (la hoja) y cáscara (controles). */
+  --bg: #e9e2d2;
+  --surface: #f7f3e9;
+  --surface-2: #f1ebdd;
+  --surface-3: #e5dcc8;
+  --border: #d8cdb5;
+  --border-strong: #b9a983;
+  --text: #221d17;
+  --text-muted: #6b6050;
+  --accent: #9a2a22;
+  --accent-hover: #7d211b;
+  --accent-soft: rgba(154, 42, 34, 0.1);
+  --accent-line: #9a2a22;
+  --accent-text: #faf7ef;
+  --accent-2: #2f5d50;
+  --accent-2-soft: rgba(47, 93, 80, 0.12);
+  --danger: #a4341c;
+  --canvas-bg: #ddd4c0;
+  --paper: #fffdf7;
+  --rule: rgba(34, 29, 23, 0.14);
+  --ink: #221d17;
+  --shadow-page: 0 1px 0 #b9a983, 0 10px 22px rgba(70, 56, 36, 0.13);
+  --shadow-float: 0 14px 36px rgba(70, 56, 36, 0.18), 0 0 0 1px #d8cdb5;
+  --heat-0: #ddd4c0;
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --bg: #121611;
-  --surface: #171c16;
-  --surface-2: #1e241c;
-  --surface-3: #283023;
-  --border: #283023;
-  --border-strong: #3b4634;
-  --text: #e5eadd;
-  --text-muted: #97a38c;
-  --accent: #a9d18a;
-  --accent-hover: #c0e2a6;
-  --accent-soft: rgba(169, 209, 138, 0.13);
-  --accent-line: #a9d18a;
-  --accent-text: #17220f;
-  --danger: #e38a73;
-  --canvas-bg: #0d100c;
-  --paper: #1b2019;
-  --rule: rgba(169, 209, 138, 0.12);
-  --ink: #e5eadd;
-  --shadow-page: 0 1px 3px rgba(0, 0, 0, 0.5);
-  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --heat-0: #20271e;
+  /* === CÓDICE · noche ===
+     Sepia profundo en vez de negro; la hoja sigue siendo lo más claro. */
+  --bg: #17130f;
+  --surface: #1e1915;
+  --surface-2: #26201a;
+  --surface-3: #332a22;
+  --border: #393026;
+  --border-strong: #574937;
+  --text: #ece3d2;
+  --text-muted: #a4947c;
+  --accent: #d4674f;
+  --accent-hover: #e8836a;
+  --accent-soft: rgba(212, 103, 79, 0.15);
+  --accent-line: #d4674f;
+  --accent-text: #17130f;
+  --accent-2: #8fb3a4;
+  --accent-2-soft: rgba(143, 179, 164, 0.14);
+  --danger: #e0725a;
+  --canvas-bg: #110e0b;
+  --paper: #241e18;
+  --rule: rgba(236, 227, 210, 0.12);
+  --ink: #ece3d2;
+  --shadow-page: 0 2px 0 rgba(0, 0, 0, 0.6), 0 14px 30px rgba(0, 0, 0, 0.5);
+  --shadow-float: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px #393026;
+  --heat-0: #26201a;
   color-scheme: dark;
 }
 
 :root {
-  --r: 3px;
-  --r-lg: 4px;
+  --r: 2px;
+  --r-lg: 3px;
+  /* Controles y cifras en sans (se leen de reojo); texto y títulos en serif (se leen de verdad). */
   --font-ui: 'Segoe UI Variable Text', 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+  --font-display: 'Lora Codex', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-read: 'Lora Codex', 'Iowan Old Style', Georgia, serif;
 }
 
 *,
@@ -1454,6 +1468,51 @@ h4 {
 .ink-page[data-paper='grid'] {
   background-image: linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px);
   background-size: calc(var(--line) * 0.75) calc(var(--line) * 0.75);
+}
+/* Punteada: la retícula más discreta; guía el trazo sin salir en el recorte. */
+.ink-page[data-paper='dots'] {
+  background-image: radial-gradient(circle at center, var(--border-strong) 1px, transparent 1.2px);
+  background-size: calc(var(--line) * 0.5) calc(var(--line) * 0.5);
+  background-position: calc(var(--line) * 0.25) calc(var(--line) * 0.25);
+}
+/* Rayada con margen: el cuaderno de toda la vida, con el filete del margen en tinta. */
+.ink-page[data-paper='margin'] {
+  background-image: linear-gradient(90deg, transparent calc(12% - 1px), var(--accent-line) calc(12% - 1px), var(--accent-line) 12%, transparent 12%),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--line) - 1px), var(--rule) calc(var(--line) - 1px) var(--line));
+  background-position: 0 0, 0 calc(var(--line) * 2);
+}
+/* Milimetrada: cuadro fino con uno grueso cada cinco. Para curvas, ejes y gráficas. */
+.ink-page[data-paper='graph'] {
+  background-image: linear-gradient(color-mix(in srgb, var(--text) 26%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--text) 26%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 1px);
+  background-size: calc(var(--line) * 1.25) calc(var(--line) * 1.25), calc(var(--line) * 1.25) calc(var(--line) * 1.25),
+    calc(var(--line) * 0.25) calc(var(--line) * 0.25), calc(var(--line) * 0.25) calc(var(--line) * 0.25);
+}
+/* Papel de electro: cuadro de 1 mm y uno reforzado cada 5. Para calcar trazados y medir intervalos. */
+.ink-page[data-paper='ecg'] {
+  background-color: var(--paper);
+  background-image: linear-gradient(color-mix(in srgb, var(--accent) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--accent) 18%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent) 1px, transparent 1px);
+  background-size: calc(var(--line) * 1.1) calc(var(--line) * 1.1), calc(var(--line) * 1.1) calc(var(--line) * 1.1),
+    calc(var(--line) * 0.22) calc(var(--line) * 0.22), calc(var(--line) * 0.22) calc(var(--line) * 0.22);
+}
+/* Mitad y mitad: arriba en blanco para el dibujo, abajo rayado para la explicación. */
+.ink-page[data-paper='half'] {
+  background-image: linear-gradient(to bottom, transparent calc(45% - 1px), var(--border-strong) calc(45% - 1px), var(--border-strong) 45%, transparent 45%),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--line) - 1px), var(--rule) calc(var(--line) - 1px) var(--line));
+  background-size: 100% 100%, 100% 55%;
+  background-repeat: no-repeat, no-repeat;
+  background-position: 0 0, 0 100%;
+}
+/* Lámina: marco de grabado y banda de pie para rotular la figura. */
+.ink-page[data-paper='plate'] {
+  background-image: linear-gradient(to bottom, transparent calc(84% - 1px), var(--border-strong) calc(84% - 1px), var(--border-strong) 84%, transparent 84%);
+  background-repeat: no-repeat;
+  box-shadow: var(--shadow-page), inset 0 0 0 calc(var(--line) * 0.7) var(--paper), inset 0 0 0 calc(var(--line) * 0.7 + 1px) var(--border-strong);
 }
 .ink-page canvas {
   position: absolute;
@@ -3499,293 +3558,247 @@ textarea.soap-text {
 }
 
 /* =========================================================
-   Estilo «Cristal líquido» (data-look="glass")
-   Superficies translúcidas con desenfoque profundo sobre un fondo
-   de gradientes vivos. El papel (PDF, hojas, editor) sigue opaco
-   para no perder legibilidad. Rendimiento: el desenfoque se aplica
-   solo a la «carrocería» (barras, tarjetas, ventanas), nunca a las
-   páginas que se desplazan.
+   CÓDICE · identidad visual (data-look="codice")
+   Un códice de estudio, no un panel de SaaS. Tres niveles de papel
+   (mesa → lámina → página), filetes de tinta en lugar de sombras,
+   versales pequeñas para los rótulos y serif para lo que se lee.
+   El papel es el protagonista: siempre es la superficie más clara.
+   Sin desenfoques ni resplandores: nada compite con la hoja.
    ========================================================= */
 :root {
-  --glass-blur: blur(24px) saturate(165%);
-  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  --glow-a: #93c572;
-  --glow-b: #3fa7a0;
-  --glow-c: #6a7fd8;
-}
-[data-view='study'] {
-  --glow-a: #4fb3a8;
-  --glow-b: #5b8fd8;
-  --glow-c: #93c572;
-}
-[data-view='sources'] {
-  --glow-a: #5b8fd8;
-  --glow-b: #8a6fd8;
-  --glow-c: #3fa7a0;
-}
-[data-view='hy'] {
-  --glow-a: #e0a948;
-  --glow-b: #d9707e;
-  --glow-c: #93c572;
-}
-[data-view='calendar'],
-[data-view='progress'] {
-  --glow-a: #93c572;
-  --glow-b: #e0a948;
-  --glow-c: #4fb3a8;
+  /* Inertes: quedan definidos porque otras reglas los usan. */
+  --glass-blur: none;
+  --glass-hi: none;
+  --glow-a: var(--accent);
+  --glow-b: var(--accent-2);
+  --glow-c: var(--accent);
 }
 
-/* Paleta «Dark Academia / Parnaso»: espresso, fuego de Prometeo (ámbar) y pizarra (índigo). */
-[data-look='glass'][data-theme='dark'] {
-  --bg: transparent;
-  --glass-base: #1c1917;
-  --surface: rgba(28, 25, 23, 0.75);
-  --surface-2: rgba(255, 244, 228, 0.05);
-  --surface-3: rgba(255, 244, 228, 0.09);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.15);
-  --text: #ede4d3;
-  --text-muted: #a99d8a;
-  --accent: #f59e0b;
-  --accent-hover: #fb923c;
-  --accent-soft: rgba(245, 158, 11, 0.15);
-  --accent-line: #f59e0b;
-  --accent-text: #1c1917;
-  --accent-2: #818cf8;
-  --accent-2-soft: rgba(99, 102, 241, 0.18);
-  --danger: #f2826b;
-  --canvas-bg: rgba(12, 10, 9, 0.45);
-  --paper: #231f1c;
-  --ink: #ede4d3;
-  --rule: rgba(245, 158, 11, 0.1);
-  --heat-0: #2a2522;
-  --shadow-page: 0 2px 10px rgba(0, 0, 0, 0.55);
-  --shadow-float: 0 18px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
-  --glass-blur: blur(20px) saturate(140%);
-  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  --glow-alpha: 0.4;
-  --glow-a: #f59e0b;
-  --glow-b: #6366f1;
-  --glow-c: #fb923c;
+/* ---- Tokens del pack (día / noche) ---- */
+[data-look='codice'][data-theme='light'] {
+  --bg: #e9e2d2;
+  --glass-base: #e9e2d2;
+  --surface: #f6f1e4;
+  --surface-2: #efe8d8;
+  --surface-3: #e4dcc8;
+  --border: #d6cdb8;
+  --border-strong: #b9ac92;
+  --text: #241e18;
+  --text-muted: #6c6154;
+  --accent: #9a2a22;
+  --accent-hover: #7d2019;
+  --accent-soft: rgba(154, 42, 34, 0.1);
+  --accent-line: #9a2a22;
+  --accent-text: #fffdf7;
+  --accent-2: #2f5d50;
+  --accent-2-soft: rgba(47, 93, 80, 0.1);
+  --danger: #a33327;
+  --canvas-bg: #ded5c2;
+  --paper: #fffdf7;
+  --ink: #241e18;
+  --rule: rgba(47, 93, 80, 0.18);
+  --shadow-page: 0 1px 0 #b9ac92, 0 2px 6px rgba(36, 30, 24, 0.12);
+  --shadow-float: 0 12px 32px rgba(36, 30, 24, 0.18);
+  --glow-alpha: 0;
 }
-[data-look='glass'][data-theme='dark'][data-view='study'] {
-  --glow-a: #fb923c;
-  --glow-b: #6366f1;
-  --glow-c: #b45309;
-}
-[data-look='glass'][data-theme='dark'][data-view='sources'] {
-  --glow-a: #6366f1;
-  --glow-b: #818cf8;
-  --glow-c: #f59e0b;
-}
-[data-look='glass'][data-theme='dark'][data-view='hy'] {
-  --glow-a: #fb923c;
-  --glow-b: #f59e0b;
-  --glow-c: #6366f1;
-}
-/* Versión clara: pergamino iluminado con los mismos acentos (ámbar más profundo para contraste). */
-[data-look='glass'][data-theme='light'] {
-  --bg: transparent;
-  --glass-base: #efe7d9;
-  --surface: rgba(255, 250, 241, 0.62);
-  --surface-2: rgba(255, 250, 241, 0.42);
-  --surface-3: rgba(255, 250, 241, 0.7);
-  --border: rgba(255, 255, 255, 0.6);
-  --border-strong: rgba(60, 44, 30, 0.16);
-  --text: #2a231d;
-  --text-muted: #75685a;
-  --accent: #b45309;
-  --accent-hover: #92400e;
-  --accent-soft: rgba(245, 158, 11, 0.16);
-  --accent-line: #f59e0b;
-  --accent-text: #fffaf1;
-  --accent-2: #4f46e5;
-  --accent-2-soft: rgba(99, 102, 241, 0.12);
-  --canvas-bg: rgba(255, 250, 241, 0.2);
-  --paper: #fffcf6;
-  --ink: #2a231d;
-  --rule: rgba(180, 83, 9, 0.12);
-  --shadow-float: 0 18px 48px rgba(60, 44, 30, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.7);
-  --glass-blur: blur(20px) saturate(140%);
-  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-  --glow-alpha: 0.38;
-  --glow-a: #f59e0b;
-  --glow-b: #818cf8;
-  --glow-c: #fb923c;
+[data-look='codice'][data-theme='dark'] {
+  --bg: #17130f;
+  --glass-base: #17130f;
+  --surface: #221c16;
+  --surface-2: #2a231c;
+  --surface-3: #342b22;
+  --border: #3a3027;
+  --border-strong: #574a3c;
+  --text: #ece3d2;
+  --text-muted: #9d9183;
+  --accent: #d4674f;
+  --accent-hover: #e8836b;
+  --accent-soft: rgba(212, 103, 79, 0.14);
+  --accent-line: #d4674f;
+  --accent-text: #17130f;
+  --accent-2: #8fb3a4;
+  --accent-2-soft: rgba(143, 179, 164, 0.14);
+  --danger: #e07a62;
+  --canvas-bg: #110e0b;
+  --paper: #241e18;
+  --ink: #ece3d2;
+  --rule: rgba(143, 179, 164, 0.16);
+  --heat-0: #2a231c;
+  --shadow-page: 0 1px 0 #0b0907, 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-float: 0 14px 36px rgba(0, 0, 0, 0.55);
+  --glow-alpha: 0;
 }
 
-/* Acento secundario (pizarra): etiquetas, enlaces y navegación complementaria. */
-[data-look='glass'] :is(.badge:not(.grr):not(.ger), .chip.big i) {
+/* ---- Mesa: fibra de papel, muy tenue y barata de pintar ---- */
+[data-look='codice'] body {
+  background-color: var(--glass-base);
+}
+[data-look='codice'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--text) 4%, transparent) 0 1px,
+      transparent 1px 3px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--text) 3%, transparent) 0 1px,
+      transparent 1px 4px
+    );
+}
+[data-look='codice'] .app {
+  background: transparent;
+}
+
+/* ---- Filetes, no sombras: cada caja se separa con una línea ---- */
+[data-look='codice'] :is(.rail,
+.topbar,
+.card,
+.library,
+.calc,
+.temario-list,
+.pearl-menu) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+[data-look='codice'] .rail {
+  border: 0;
+  border-right: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+[data-look='codice'] .topbar {
+  border: 0;
+  border-bottom: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+[data-look='codice'] :is(.pdf-workspace, .notes-panel) > .toolbar,
+[data-look='codice'] :is(.subbar, .notes-context, .note-head, .ink-toolbar) {
+  background: var(--surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---- Esquinas de imprenta: casi rectas ---- */
+[data-look='codice'] :is(.btn,
+.seg,
+.input,
+.select,
+.card,
+.chip,
+.att-badge,
+.hy-item,
+.pocket-card) {
+  border-radius: 2px;
+}
+[data-look='codice'] :is(.seg button:first-child, .seg button:last-child) {
+  border-radius: 0;
+}
+[data-look='codice'] .modal {
+  border-radius: 3px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+}
+[data-look='codice'] .modal-backdrop {
+  background: color-mix(in srgb, var(--glass-base) 68%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ---- Guía activa: filete de tinta, no bloque relleno ---- */
+[data-look='codice'] .rail-btn {
+  border-radius: 0;
+  box-shadow: none;
+}
+[data-look='codice'] .rail-btn.active {
+  background: var(--surface-2);
+  box-shadow: inset 3px 0 0 var(--accent);
+  color: var(--text);
+}
+[data-look='codice'] .rail-btn.active i {
+  color: var(--accent);
+}
+
+/* ---- Rótulos en versales pequeñas ---- */
+[data-look='codice'] :is(.sec-label,
+.pocket-head h4,
+.modal-head h3,
+.fc-front) {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.08em;
+}
+[data-look='codice'] :is(.page-title, .day-title) {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+}
+
+/* ---- Lo que se lee va en serif ---- */
+[data-look='codice'] :is(.editor, .soap-text, .hy-quiz-card, .fc-back) {
+  font-family: var(--font-read);
+  font-size: 15.5px;
+  line-height: 1.62;
+}
+
+/* ---- Acento secundario (verde cardenillo) ---- */
+[data-look='codice'] :is(.badge:not(.grr):not(.ger), .chip.big i) {
   background: var(--accent-2-soft);
   color: var(--accent-2);
 }
-[data-look='glass'] :is(button.link, .badge.link-badge:hover, .hy-meta .link) {
+[data-look='codice'] :is(button.link, .badge.link-badge:hover, .hy-meta .link) {
   color: var(--accent-2);
 }
-[data-look='glass'] :is(.page-title,
-.day-title,
-.modal-head h3,
-.pocket-head h4,
-.fc-front) {
-  letter-spacing: 0.01em;
+[data-look='codice'] :is(.mp-orb, .mp-btn.main) {
+  background: var(--accent);
 }
-[data-look='glass'] :is(.mp-orb, .mp-btn.main) {
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-}
-[data-look='glass'] .mp-art {
+[data-look='codice'] .mp-art {
   background: linear-gradient(140deg, var(--accent), var(--accent-2));
 }
-
-/* Fondo vivo: gradientes que derivan muy despacio (transform = barato para la GPU). */
-[data-look='glass'] body {
-  background: var(--glass-base);
-}
-[data-look='glass'] body::before {
-  content: '';
-  position: fixed;
-  inset: -20%;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(48% 52% at 18% 22%, color-mix(in srgb, var(--glow-a) calc(var(--glow-alpha) * 100%), transparent), transparent 70%),
-    radial-gradient(44% 50% at 82% 18%, color-mix(in srgb, var(--glow-b) calc(var(--glow-alpha) * 90%), transparent), transparent 70%),
-    radial-gradient(52% 56% at 70% 86%, color-mix(in srgb, var(--glow-c) calc(var(--glow-alpha) * 80%), transparent), transparent 72%),
-    radial-gradient(30% 34% at 12% 88%, color-mix(in srgb, var(--glow-b) calc(var(--glow-alpha) * 55%), transparent), transparent 70%);
-  animation: glass-drift 48s ease-in-out infinite alternate;
-  transition: background 1.2s ease;
-}
-@keyframes glass-drift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(3%, -2%, 0) scale(1.06);
-  }
-  100% {
-    transform: translate3d(-3%, 2%, 0) scale(1.02);
-  }
-}
-[data-look='glass'] .app {
-  background: transparent;
+[data-look='codice'] .btn.primary {
+  box-shadow: none;
 }
 
-/* Carrocería de cristal */
-[data-look='glass'] :is(.rail,
-.topbar,
-.card,
-.modal,
-.pearl-menu,
-.library,
-.mini-player,
-.calc,
-.temario-list) {
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-hi), 0 8px 28px rgba(0, 0, 0, 0.12);
-}
-[data-look='glass'] :is(.pdf-workspace, .notes-panel) > .toolbar,
-[data-look='glass'] :is(.subbar, .notes-context, .note-head, .ink-toolbar) {
-  background: var(--surface);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-}
-[data-look='glass'] .card {
-  border-radius: 10px;
-}
-[data-look='glass'] .modal {
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
-  background: var(--surface);
-}
-[data-look='glass'][data-theme='dark'] .modal {
-  background: rgba(18, 26, 21, 0.72);
-}
-[data-look='glass'][data-theme='light'] .modal {
-  background: rgba(255, 255, 255, 0.78);
-}
-[data-look='glass'] .modal-backdrop {
-  background: rgba(4, 8, 6, 0.32);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-[data-look='glass'] .rail {
-  border-right: 1px solid var(--border);
-}
-[data-look='glass'] .rail-btn.active {
-  box-shadow: var(--glass-hi);
-}
-[data-look='glass'] .topbar {
-  border-bottom: 1px solid var(--border);
-}
-[data-look='glass'] :is(.btn, .input, .select, .seg, .chip, .att-badge) {
+/* ---- El papel manda: la página es siempre lo más claro ---- */
+[data-look='codice'] :is(.pdf-page, .ink-page, .editor, .flashcard, .soap-text, .hy-quiz-card) {
   backdrop-filter: none;
 }
-[data-look='glass'] :is(.input, .select, textarea.input) {
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  border-color: var(--border-strong);
-}
-[data-look='glass'] .btn.primary {
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-[data-look='glass'] .btn,
-[data-look='glass'] .seg,
-[data-look='glass'] .input,
-[data-look='glass'] .select {
-  border-radius: 8px;
-}
-[data-look='glass'] .seg button:first-child {
-  border-radius: 7px 0 0 7px;
-}
-[data-look='glass'] .seg button:last-child {
-  border-radius: 0 7px 7px 0;
-}
-[data-look='glass'] :is(.hy-item,
-.att,
-.lesson,
-.case-list li,
-.pocket-card) {
-  background: var(--surface-2);
-}
-[data-look='glass'] :is(.hy-item,
-.pocket-card) {
-  border-radius: 10px;
-}
-[data-look='glass'] .split-divider {
-  background: transparent;
-}
-[data-look='glass'] .toast {
-  background: rgba(14, 20, 16, 0.78);
-  color: #eef3e8;
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
-}
-/* El papel no es cristal: el PDF, las hojas y el editor siguen opacos y nítidos. */
-[data-look='glass'] :is(.pdf-page, .ink-page, .editor, .flashcard, .soap-text, .hy-quiz-card) {
-  backdrop-filter: none;
-}
-[data-look='glass'] .editor-desk,
-[data-look='glass'] .ink-scroll,
-[data-look='glass'] .pdf-scroll {
+[data-look='codice'] .editor-desk,
+[data-look='codice'] .ink-scroll,
+[data-look='codice'] .pdf-scroll {
   background: var(--canvas-bg);
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  [data-look='glass'][data-theme='dark'] {
-    --surface: rgba(22, 32, 26, 0.92);
-  }
-  [data-look='glass'][data-theme='light'] {
-    --surface: rgba(250, 251, 246, 0.94);
-  }
+[data-look='codice'] :is(.hy-item, .att, .lesson, .case-list li, .pocket-card) {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
 }
-@media (prefers-reduced-transparency: reduce) {
-  [data-look='glass'][data-theme='dark'] {
-    --surface: rgba(22, 32, 26, 0.94);
-  }
-  [data-look='glass'][data-theme='light'] {
-    --surface: rgba(250, 251, 246, 0.95);
-  }
+/* Apertura de capítulo: doble filete arriba de la lección del día, sin manchas de luz. */
+[data-look='codice'] .day-card::before {
+  inset: 0 0 auto 0;
+  width: auto;
+  height: 4px;
+  background: linear-gradient(to bottom, var(--accent) 0 2px, transparent 2px 3px, var(--accent) 3px 4px);
+  opacity: 0.85;
+}
+[data-look='codice'] .split-divider {
+  background: var(--border);
+}
+[data-look='codice'] .toast {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: 2px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* ---------- Mini reproductor ---------- */
@@ -3799,7 +3812,7 @@ textarea.soap-text {
   border: 1px solid var(--border);
   box-shadow: var(--shadow-float);
 }
-[data-look='glass'] .mini-player {
+[data-look='codice'] .mini-player {
   border-top-color: rgba(255, 255, 255, 0.3);
 }
 .mini-player.pill {
@@ -4035,7 +4048,7 @@ textarea.soap-text {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-look='glass'] body::before {
+  [data-look='codice'] body::before {
     animation: none;
   }
 }
@@ -4046,8 +4059,8 @@ textarea.soap-text {
 }
 /* backdrop-filter crea un contexto de apilamiento: las barras deben quedar sobre el PDF
    para que sus menús (marcadores, biblioteca) no queden debajo de la capa de texto. */
-[data-look='glass'] :is(.pdf-workspace, .notes-panel) > .toolbar,
-[data-look='glass'] .subbar {
+[data-look='codice'] :is(.pdf-workspace, .notes-panel) > .toolbar,
+[data-look='codice'] .subbar {
   position: relative;
   z-index: 6;
 }
@@ -4066,7 +4079,7 @@ textarea.soap-text {
   color: var(--accent);
   margin-bottom: 4px;
 }
-[data-look='glass'] .rail-logo {
+[data-look='codice'] .rail-logo {
   background: linear-gradient(140deg, var(--accent), var(--accent-hover));
   color: var(--accent-text);
   border-radius: 9px;
@@ -4074,7 +4087,7 @@ textarea.soap-text {
 }
 /* Logotipo: centauro Quirón (emblema recortado, fondo transparente). */
 .rail-logo,
-[data-look='glass'] .rail-logo {
+[data-look='codice'] .rail-logo {
   width: 52px;
   height: 52px;
   margin: -4px auto 12px;
@@ -4210,7 +4223,7 @@ input[type='range'] {
     font-size: 10px;
   }
   .rail-logo,
-  [data-look='glass'] .rail-logo {
+  [data-look='codice'] .rail-logo {
     width: 44px;
     height: 44px;
     margin-bottom: 6px;
@@ -4510,7 +4523,7 @@ input[type='range'] {
   border-left: 4px solid #e8963c;
   border-radius: 12px;
 }
-[data-look='glass'] .ward-card {
+[data-look='codice'] .ward-card {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
 }
@@ -4672,11 +4685,11 @@ input[type='range'] {
   box-shadow: var(--shadow-float);
   overflow: hidden;
 }
-[data-look='glass'][data-theme='dark'] .search-box {
+[data-look='codice'][data-theme='dark'] .search-box {
   background: rgba(24, 21, 19, 0.88);
   backdrop-filter: var(--glass-blur);
 }
-[data-look='glass'][data-theme='light'] .search-box {
+[data-look='codice'][data-theme='light'] .search-box {
   background: rgba(255, 250, 241, 0.9);
   backdrop-filter: var(--glass-blur);
 }
@@ -4761,7 +4774,7 @@ kbd {
   box-shadow: var(--shadow-float);
   max-width: min(560px, calc(100vw - 24px));
 }
-[data-look='glass'] .tts-bar {
+[data-look='codice'] .tts-bar {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
 }
@@ -5422,7 +5435,7 @@ button.linkish:hover {
   box-shadow: var(--shadow-float);
   animation: pop-in 0.12s ease-out;
 }
-[data-look='glass'] .rail-pop {
+[data-look='codice'] .rail-pop {
   background: var(--glass-base, var(--surface));
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -5500,7 +5513,7 @@ button.linkish:hover {
 button.kpi:hover {
   border-color: var(--border-strong);
 }
-[data-look='glass'] .kpi {
+[data-look='codice'] .kpi {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   box-shadow: var(--glass-hi);
@@ -5836,7 +5849,7 @@ button.kpi:hover {
 /* =========================================================
    v0.6 — Menú «Más» del PDF, huecos y pulido
    ========================================================= */
-[data-look='glass'] ::selection {
+[data-look='codice'] ::selection {
   background: rgba(245, 158, 11, 0.32);
 }
 .more-menu {
@@ -5844,7 +5857,7 @@ button.kpi:hover {
   padding: 6px;
   gap: 2px;
 }
-[data-look='glass'] .more-menu {
+[data-look='codice'] .more-menu {
   background: var(--glass-base, var(--surface));
 }
 .more-menu button {
@@ -5996,10 +6009,10 @@ button.kpi:hover {
 /* =========================================================
    v0.6.5 — Ahorro de batería, carga de vistas, táctil y tableta
    ========================================================= */
-[data-saver='on'][data-look='glass'] body::before {
+[data-saver='on'][data-look='codice'] body::before {
   animation: none;
 }
-[data-saver='on'][data-look='glass'][data-theme] {
+[data-saver='on'][data-look='codice'][data-theme] {
   --glass-blur: blur(8px) saturate(115%);
 }
 [data-saver='on'] .view,
@@ -6008,7 +6021,7 @@ button.kpi:hover {
   animation: none;
 }
 @media (prefers-reduced-transparency: reduce) {
-  [data-look='glass'][data-theme] {
+  [data-look='codice'][data-theme] {
     --glass-blur: none;
   }
 }
@@ -6122,10 +6135,10 @@ button.kpi:hover {
 
 /* En Estudio nada compite con el lápiz: fondo quieto y paneles sin desenfoque
    (el desenfoque sobre un fondo animado obligaba a la GPU a recalcular toda la pantalla en cada cuadro). */
-[data-look='glass'][data-view='study'] body::before {
+[data-look='codice'][data-view='study'] body::before {
   animation: none;
 }
-[data-look='glass'][data-view='study'][data-theme] {
+[data-look='codice'][data-view='study'][data-theme] {
   --glass-blur: none;
 }
 [data-view='study'] .view {
@@ -6169,7 +6182,7 @@ button.kpi:hover {
   white-space: nowrap;
   touch-action: manipulation;
 }
-[data-look='glass'] .sel-bar {
+[data-look='codice'] .sel-bar {
   background: var(--bg);
 }
 

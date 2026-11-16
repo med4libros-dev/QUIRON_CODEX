@@ -37,8 +37,6 @@ export function NavRail() {
   const setView = useSettings((s) => s.setView);
   const theme = useSettings((s) => s.theme);
   const setTheme = useSettings((s) => s.setTheme);
-  const look = useSettings((s) => s.look);
-  const setLook = useSettings((s) => s.setLook);
   const [backupOpen, setBackupOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
   const [widgetsOpen, setWidgetsOpen] = useState(false);
@@ -200,10 +198,6 @@ export function NavRail() {
                   <span>
                     Tema: {THEME_LABEL[theme]}
                   </span>
-                </button>
-                <button role="menuitem" onClick={() => setLook(look === 'glass' ? 'pistache' : 'glass')} title={`Estilo: ${look === 'glass' ? 'Cristal líquido' : 'Pistache (mate)'} (clic para cambiar)`}>
-                  <Icon name="drop" size={17} />
-                  <span>Estilo: {look === 'glass' ? 'Cristal' : 'Mate'}</span>
                 </button>
               </>
             )}

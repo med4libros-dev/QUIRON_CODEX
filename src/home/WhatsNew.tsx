@@ -8,9 +8,9 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'layers', title: 'Widgets flotantes', text: 'Herramientas → Widgets: ventanitas que se quedan encima de cualquier programa. Cápsula de estudio (hora, minutos de hoy y el tema que toca), pendientes del turno por hora, repaso pendiente y captura rápida. Solo en la app de escritorio.' },
-  { icon: 'pencil', title: 'Captura rápida sin abrir la app', text: 'Ctrl+Alt+Q en cualquier lado abre una cajita para soltar una perla, una nota o una flashcard. Ctrl+Alt+K abre la búsqueda y Ctrl+Alt+G la cápsula de estudio.' },
-  { icon: 'swap', title: 'Todo al día entre ventanas', text: 'Lo que captures o marques en un widget aparece en la app al instante, y al revés, sin recargar nada.' },
+  { icon: 'book', title: 'Códice: la app ya no se ve genérica', text: 'Un solo estilo, hecho a medida: papel cálido, filetes de tinta en lugar de sombras, versales pequeñas en los rótulos y una serif propia (Lora) para los títulos y para todo lo que se lee. Se acabaron el cristal esmerilado y los resplandores de colores.' },
+  { icon: 'layers', title: 'Once estilos de hoja', text: 'Rayada, con margen, mitad dibujo y mitad renglón, lisa, punteada, cuadrícula, milimetrada, papel de electro, lámina con pie, Cornell y dos columnas. El selector está en la barra del lienzo, agrupado por para qué sirve cada una.' },
+  { icon: 'arrowDown', title: 'Hojas continuas', text: 'En cuanto escribes en la última hoja sale otra debajo, como en los cuadernos digitales. La hoja de más no se guarda: si borras lo que escribiste, se retira sola. Se apaga con el botón de la flecha en la barra del lienzo.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

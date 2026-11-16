@@ -4,7 +4,7 @@ import type { Theme, View } from '../types';
 export interface SettingsState {
   theme: Theme;
   /** Estilo visual: «glass» (cristal líquido) o «pistache» (papel mate). */
-  look: 'glass' | 'pistache';
+  look: 'codice';
   /** Tema efectivo (resuelto desde 'system'); no se guarda. */
   dark: boolean;
   view: View;
@@ -34,6 +34,9 @@ export interface SettingsState {
   /** Punta predictiva del lápiz (experimental): adelanta el trazo unos milisegundos. */
   inkPredict: boolean;
   setInkPredict: (v: boolean) => void;
+  /** Hojas continuas: en cuanto escribes en la última, aparece otra debajo. */
+  inkAuto: boolean;
+  setInkAuto: (v: boolean) => void;
   /** Tus abreviaturas, una por línea («IAM = infarto agudo de miocardio»): ayudan a leer tu letra. */
   inkGlossary: string;
   setInkGlossary: (v: string) => void;
@@ -61,7 +64,6 @@ export interface SettingsState {
   setNight: (n: 'off' | 'auto' | 'on', from?: number, to?: number) => void;
   setReminders: (on: boolean, hour?: number) => void;
   setTheme: (t: Theme) => void;
-  setLook: (l: 'glass' | 'pistache') => void;
   setDark: (d: boolean) => void;
   setView: (v: View) => void;
   setSplitRatio: (r: number) => void;
@@ -85,7 +87,7 @@ export interface SettingsState {
 export const useSettings = createStore<SettingsState>(
   (set) => ({
     theme: 'dark',
-    look: 'glass',
+    look: 'codice',
     dark: false,
     view: 'internado',
     splitRatio: 0.56,
@@ -105,6 +107,8 @@ export const useSettings = createStore<SettingsState>(
     enarmDate: null,
     inkPredict: false,
     setInkPredict: (inkPredict) => set({ inkPredict }),
+    inkAuto: true,
+    setInkAuto: (inkAuto) => set({ inkAuto }),
     pdfDark: false,
     setPdfDark: (pdfDark) => set({ pdfDark }),
     inkGlossary: '',
@@ -133,7 +137,6 @@ export const useSettings = createStore<SettingsState>(
     setNight: (night, from, to) => set((s) => ({ night, nightFrom: from ?? s.nightFrom, nightTo: to ?? s.nightTo })),
     setReminders: (reminders, hour) => set((s) => ({ reminders, reminderHour: hour ?? s.reminderHour })),
     setTheme: (theme) => set({ theme }),
-    setLook: (look) => set({ look }),
     setDark: (dark) => set({ dark }),
     setView: (view) => set({ view }),
     setSplitRatio: (r) => set({ splitRatio: Math.min(0.8, Math.max(0.2, r)) }),
@@ -160,8 +163,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel }) => ({
-      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel,
+    pick: ({ theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel }) => ({
+      theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel,
     }),
   },
 );

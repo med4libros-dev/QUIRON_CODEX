@@ -55,6 +55,8 @@ export function InkCanvas({ note }: { note: Note }) {
   const [mode, setMode] = useState<Mode>('draw');
   const tool: InkTool = mode === 'draw' ? drawTool : mode;
   const penOnly = useTools((s) => s.penOnly);
+  const inkAuto = useSettings((s) => s.inkAuto);
+  const setInkAuto = useSettings((s) => s.setInkAuto);
   const inkZoom = useSettings((s) => s.inkZoom);
   const setInkZoom = useSettings((s) => s.setInkZoom);
   const setPenOnly = useTools((s) => s.setPenOnly);
@@ -289,7 +291,10 @@ export function InkCanvas({ note }: { note: Note }) {
   let lastUsed = -1;
   for (const s of strokes ?? []) if (s.page > lastUsed) lastUsed = s.page;
   for (const im of images) if (im.page > lastUsed) lastUsed = im.page;
-  const pages = Math.max(1, note.inkPages, lastUsed + 1);
+  const reserved = Math.max(1, note.inkPages, lastUsed + 1);
+  // Hojas continuas: en cuanto hay tinta en la última, se ofrece otra debajo. La hoja de
+  // más no se guarda: si borras lo que escribiste, se retira sola y no deja hojas sueltas.
+  const pages = inkAuto && lastUsed + 1 >= reserved ? reserved + 1 : reserved;
   const zoomStep = (dir: 1 | -1) => {
     const i = INK_ZOOMS.findIndex((v) => v >= inkZoom - 0.001);
     const idx = (i === -1 ? INK_ZOOMS.length - 1 : i) + dir;
@@ -311,7 +316,7 @@ export function InkCanvas({ note }: { note: Note }) {
   };
   const insertPage = (at: number) => {
     remap((p) => (p >= at ? p + 1 : p));
-    update(note.id, { inkPages: pages + 1 });
+    update(note.id, { inkPages: reserved + 1 });
   };
   const movePage = (i: number, dir: 1 | -1) => {
     const j = i + dir;
@@ -365,7 +370,7 @@ export function InkCanvas({ note }: { note: Note }) {
         im.page === i ? { ...im, page: i - 1, y: im.y + dy } : im.page > i ? { ...im, page: im.page - 1 } : im,
       ),
     );
-    update(note.id, { inkPages: Math.max(1, pages - 1) });
+    update(note.id, { inkPages: Math.max(1, reserved - 1) });
   };
 
   const deletePage = (i: number) => {
@@ -384,7 +389,7 @@ export function InkCanvas({ note }: { note: Note }) {
         images: pics,
       });
     remap((p) => (p === i ? null : p > i ? p - 1 : p));
-    update(note.id, { inkPages: Math.max(1, pages - 1) });
+    update(note.id, { inkPages: Math.max(1, reserved - 1) });
   };
 
   useEffect(() => {
@@ -460,12 +465,32 @@ export function InkCanvas({ note }: { note: Note }) {
         <button className="btn ghost sm" onClick={() => setSheetsOpen(true)} title="Organizar hojas: reordenar arrastrando y fusionar" disabled={pages < 2}>
           <Icon name="layers" size={16} /> Hojas
         </button>
+        <button
+          className={`icon-btn${inkAuto ? ' active' : ''}`}
+          onClick={() => setInkAuto(!inkAuto)}
+          aria-pressed={inkAuto}
+          title={inkAuto ? 'Hojas continuas: activadas (al escribir en la última aparece otra)' : 'Hojas continuas: apagadas (las añades tú)'}
+        >
+          <Icon name="arrowDown" size={16} />
+        </button>
         <select className="select xs" value={note.paper} onChange={(e) => update(note.id, { paper: e.target.value as PaperStyle })} aria-label="Tipo de hoja">
-          <option value="lined">Rayada</option>
-          <option value="grid">Cuadrícula</option>
-          <option value="cornell">Cornell</option>
-          <option value="columns">Dos columnas</option>
-          <option value="blank">Lisa</option>
+          <optgroup label="Para escribir">
+            <option value="lined">Rayada</option>
+            <option value="margin">Rayada con margen</option>
+            <option value="half">Mitad dibujo, mitad renglón</option>
+            <option value="blank">Lisa</option>
+          </optgroup>
+          <optgroup label="Para dibujar y medir">
+            <option value="dots">Punteada</option>
+            <option value="grid">Cuadrícula</option>
+            <option value="graph">Milimetrada</option>
+            <option value="ecg">Papel de electro</option>
+            <option value="plate">Lámina con pie</option>
+          </optgroup>
+          <optgroup label="Para repasar">
+            <option value="cornell">Cornell</option>
+            <option value="columns">Dos columnas</option>
+          </optgroup>
         </select>
         <button className="icon-btn danger" onClick={clearAll} title="Borrar todo">
           <Icon name="trash" />
@@ -517,15 +542,17 @@ export function InkCanvas({ note }: { note: Note }) {
                 />
               </div>
             ))}
-            <button className="btn ghost add-page" onClick={() => update(note.id, { inkPages: pages + 1 })}>
-              <Icon name="plus" size={16} /> Añadir hoja
-            </button>
+            {!inkAuto && (
+              <button className="btn ghost add-page" onClick={() => update(note.id, { inkPages: pages + 1 })}>
+                <Icon name="plus" size={16} /> Añadir hoja
+              </button>
+            )}
           </>
         )}
       </div>
       {sheetsOpen && (
         <SheetsDialog
-          pages={pages}
+          pages={reserved}
           strokes={strokes ?? EMPTY}
           images={images}
           onReorder={reorderSheets}

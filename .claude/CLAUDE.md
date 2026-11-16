@@ -29,8 +29,13 @@ La librería en sí se instala aparte en tu equipo: `pip install "notebooklm-py[
 - `ui-ux-pro-max` (MIT · Next Level Builder) — biblioteca local: paletas, pares tipográficos, 120 pautas de UX, iconos y tipos de gráfica.
 - `design-system` (MIT · Next Level Builder) — tokens en tres capas (primitivo → semántico → componente), que es como ya está hecho `global.css`.
 Licencias en `.claude/skills/VERCEL-SKILLS-LICENSE.md` y `.claude/skills/UI-UX-PRO-MAX-LICENSE.md`.
-Nota: el sistema visual del proyecto («Pistache» y «Cristal líquido / Dark Academia») manda sobre cualquier
+Nota: el sistema visual del proyecto («Códice», pack único desde la 0.11) manda sobre cualquier
 sugerencia de estas skills; sirven para auditar y afinar, no para rehacer la identidad.
+Reglas del pack: tres niveles de papel (mesa → lámina → página, y la página siempre es la más clara);
+filetes de tinta en vez de sombras y desenfoques; esquinas casi rectas (2 px); versales pequeñas en los
+rótulos; serif propia (Lora, incrustada en `src/styles/fonts.css`) para títulos y para todo lo que se lee;
+nada de gradientes de color ni resplandores. Paleta: tinta roja `#9a2a22` (día) / `#d4674f` (noche) y
+cardenillo `#2f5d50` / `#8fb3a4`.
 
 # Pruebas
 - `playwright-skill` (MIT · TestDino) — guías de Playwright al día (selectores, esperas, trazas, flaky,
