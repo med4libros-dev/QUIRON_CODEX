@@ -280,6 +280,18 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - Los widgets son ventanas del mismo origen: comparten IndexedDB y localStorage con la app, por eso basta con avisar qué cambió.
 - En el navegador no hay widgets (no se puede poner una ventana sobre otra app) y la interfaz lo dice en lugar de fallar.
 
+## v0.11 · Códice
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Pack visual único | `src/styles/global.css` (sección «CÓDICE · identidad visual») | `settings.look` queda fija en `'codice'` y sale del guardado: un `'glass'` o `'pistache'` viejo ya no se aplica. Se retiró el selector de `NavRail` |
+| Tipografía incrustada | `src/styles/fonts.css` | Lora variable (400–700, normal e itálica), subconjunto latino con `pyftsubset --flavor=woff`, en base64 (~120 KB). Sin peticiones a internet, también en el HTML de un solo archivo. OFL en `src/styles/fonts/` |
+| Once estilos de hoja | `.ink-page[data-paper=…]` en `global.css`; `PaperStyle` en `types.ts` | Solo CSS sobre `--line` (44 px lógicos × zoom), así que escalan solos y no entran en `renderInkPage` ni en las exportaciones. `plate` dibuja el marco con `box-shadow` interior en `calc(var(--line) * 0.7)` (el *spread* no admite %) |
+| Hojas continuas | `InkCanvas.tsx` (`reserved` / `pages`), `settings.inkAuto` | `pages = reserved + 1` cuando hay tinta en la última hoja. La hoja de más es virtual: no se persiste, se retira al borrar los trazos, el organizador recibe `reserved` y las operaciones de hoja (insertar, quitar) también trabajan sobre `reserved` |
+
+- La identidad se apoya en tres niveles de papel y en la regla de que `--paper` es siempre la superficie más clara: `f4.py` lo comprueba midiendo la luminancia de `--paper`, `--surface` y `--bg` en día y noche.
+- No quedan `backdrop-filter`, gradientes de color de fondo ni `--glow-*` activos; los tokens siguen definidos como inertes porque otras reglas los referencian.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos (blank|lined|margin|grid|dots|graph|ecg|half|plate|cornell|columns), kind, inkText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
