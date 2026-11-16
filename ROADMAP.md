@@ -10,7 +10,7 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 |---|---|---|
 | UI | React 19 + TypeScript (SPA) | Sin servidor: funciona como archivo único (`Quiron Codex.html`) y offline |
 | Build | Vite (desarrollo) + compilación a un solo archivo | Doble clic en la Surface, sin instalar nada |
-| Estilos | Sistema propio «Pistache» (CSS con tokens) | Ya existe y es coherente. Tailwind no aporta aquí y añadiría otra convención |
+| Estilos | Sistema propio «Códice» (CSS con tokens en tres capas) | Identidad propia de la app desde la 0.11: papel, filetes de tinta y serif incrustada. Tailwind no aporta aquí y añadiría otra convención |
 | PDF | pdf.js | Estándar de facto; maneja PDFs pesados en segundo plano |
 | Lápiz | Canvas 2D propio (Pointer Events + presión + coalesced events) | Ya optimizado para Surface Pen; no depende de bibliotecas |
 | Datos | IndexedDB + localStorage (local-first) | Privado, rápido y offline. El respaldo en carpeta de OneDrive sincroniza la PC y la Surface |
@@ -47,7 +47,7 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 ### Fase 3a · Herramientas del internado ✅ (entregada, noviembre 2026)
 - **Nota médica en 1 clic** (barra lateral → Nota SOAP): evolución (SOAP), ingreso, postquirúrgica y egreso con los apartados de la NOM-004 (fecha/hora, signos vitales, evolución, resultados, diagnóstico, pronóstico, plan, firma). Criterios, manejo y datos de alarma salen de *tu* ficha de guardia; los datos del paciente no se guardan en disco. Plantillas editables.
 - **Perlas HY**: repositorio de mnemotecnias, tríadas, signos y fármacos de elección por tema; 20 epónimos clásicos de semiología de base; repaso relámpago, favoritas, convertir en flashcard, enviar a la nota, exportar/importar para compartir con compañeros; acción «Perla HY» en el menú de perlas del PDF.
-- **Estilo «Cristal líquido» con paleta «Dark Academia / Parnaso»** (por defecto, oscuro: espresso #1C1917, ámbar #F59E0B/#FB923C, pizarra #6366F1/#818CF8, texto pergamino; versión clara en pergamino). «Mate» conserva el estilo Pistache original.
+- **Estilo «Cristal líquido» con paleta «Dark Academia / Parnaso»** y «Mate» (Pistache). *Ambos retirados en la v0.11, sustituidos por el pack único «Códice».*
 - **Mini reproductor** de música local (carpeta completa, .mp3/.wav/.flac/.ogg).
 - **App de escritorio para Windows (Tauri 2)**: instalador .msi/.exe con el logo del centauro, enlaces externos al navegador predeterminado, compilación en GitHub Actions o local (`construir-escritorio.bat`). Ajustes táctiles para la Surface (objetivos de 44–56 px con dedo/lápiz, deslizadores que no arrastran la página).
 - **Nuevo nombre: Quirón Codex** (antes Alquimia). Los datos se conservan; el respaldo lee también los archivos con el nombre anterior.
@@ -127,6 +127,12 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - Ventanitas siempre encima (cápsula de estudio, pendientes del turno, repaso, captura rápida), inspiradas en los *glance widgets* de DeskBox pero escritas desde cero para este proyecto.
 - Atajos globales `Ctrl+Alt+Q/K/G` con `tauri-plugin-global-shortcut`.
 - Sincronía entre ventanas por `BroadcastChannel`: una escritura avisa su clave y las demás ventanas releen solo esa.
+
+### v0.11 · Códice ✅ (noviembre 2026)
+- **Pack visual único «Códice»**, hecho a medida: tres niveles de papel (mesa → lámina → página, y la página siempre es la superficie más clara), filetes de tinta en lugar de sombras, desenfoques y resplandores, esquinas casi rectas (2 px), guía activa con filete en vez de bloque relleno, versales pequeñas en los rótulos. Paleta: tinta roja `#9a2a22` / `#d4674f` y cardenillo `#2f5d50` / `#8fb3a4`. Se retiran «Cristal líquido» y «Pistache», y con ellos el selector de estilo.
+- **Tipografía propia**: serif **Lora** (variable, subconjunto latino, WOFF en base64 dentro de `src/styles/fonts.css`, ~120 KB) para títulos y para todo lo que se lee; `Segoe UI Variable` para la interfaz. No se pide nada a internet. Licencia OFL vendida en `src/styles/fonts/`.
+- **Once estilos de hoja** (`PaperStyle`): rayada, con margen, mitad dibujo y mitad renglón, lisa, punteada, cuadrícula, milimetrada, papel de electro, lámina con pie, Cornell y dos columnas; agrupados en el selector por para qué sirven. Todos en CSS puro sobre `--line`, así que escalan con el zoom y no entran en el recorte ni en la exportación.
+- **Hojas continuas** (`settings.inkAuto`, activadas por omisión): al escribir en la última hoja aparece otra debajo. La hoja de más es virtual (`pages = reserved + 1` cuando hay tinta en la última), no se persiste, se retira sola al borrar lo escrito y el organizador de hojas no la cuenta.
 
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.

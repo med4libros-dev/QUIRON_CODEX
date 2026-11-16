@@ -147,7 +147,7 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 | Nota médica (SOAP/ingreso/postqx/egreso) | `src/soap/templates.ts`, `SoapModal.tsx` | Plantillas: localStorage `alq:soap`. Datos del paciente: solo memoria |
 | Perlas HY | `src/hy/store.ts`, `HyView.tsx` | IndexedDB `kv:hy` |
 | Mini reproductor | `src/features/music/store.ts`, `MiniPlayer.tsx` | Preferencias en `alq:music`; carpeta recordada en `kv:music:dir` (handle, no se respalda) |
-| Estilo cristal + paleta Parnaso | tokens bajo `[data-look='glass'][data-theme=…]` en `global.css`; `settings.look`; `--accent-2` = pizarra | localStorage `alq:settings` |
+| Pack visual «Códice» (único) | tokens bajo `[data-look='codice'][data-theme=…]` en `global.css`; `settings.look` fija en `'codice'`; `--accent` = tinta roja, `--accent-2` = cardenillo; serif Lora incrustada en `styles/fonts.css` | localStorage `alq:settings` (el tema; el pack ya no se elige) |
 
 - **Identidad**: el producto se llama Quirón Codex. Por compatibilidad se mantienen los identificadores internos de almacenamiento (`indexedDB 'alquimia'`, claves `alq:*`): cambiarlos borraría el progreso existente.
 - **Escritorio (Tauri 2)**: `src-tauri/` (Rust mínimo: solo el plugin *opener*). La ventana carga el mismo `dist/` de Vite; `withGlobalTauri` expone `window.__TAURI__.opener`, que `lib/platform.ts` usa para abrir enlaces externos en el navegador. `dragDropEnabled: false` para que arrastrar PDFs siga funcionando con HTML5. WebView2 conserva IndexedDB/localStorage en el perfil de la app (origen distinto del navegador → migración por Respaldo). Compilación: `.github/workflows/instalador-windows.yml` (windows-latest + tauri-action) o `construir-escritorio.bat`.
@@ -208,7 +208,7 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 ## v0.6.5
 
 - **Carga diferida**: `React.lazy` para Calendario, Cuadernos, Progreso, Simulacros, Turno, Perlas HY y Bitácora (`App.tsx`); `import('pdf-lib')` dentro de `buildPdf` y `buildAnnotatedPdf`. Vite separa esos trozos; la compilación de archivo único los incrusta.
-- **Ahorro de batería**: `settings.saver` → `[data-saver='on']` (sin `glass-drift`, desenfoque 8 px, sin animaciones de vista).
+- **Ahorro de batería**: `settings.saver` → `[data-saver='on']` (sin animaciones de vista). Desde la 0.11 el pack no tiene desenfoques ni fondo animado que apagar.
 - **Retrato**: `SplitPane` usa `(orientation: portrait) and (max-width: 1100px)` → `.split.vertical`.
 - **Seguridad**: `flushPersistence` y `setPersistErrorHandler` en `createStore.ts`; `applyData` guarda `kv:safety:prerestore` (objeto, fuera de respaldos) y `undoLastRestore` reemplaza todo con `replace: true`; `saveToFolder` relee y valida lo escrito; fallas en `qc:backupError` + evento `qc:backup`.
 
@@ -282,7 +282,7 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 
 ## Modelo de datos (resumen)
 
-`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind, inkText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
+`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos (blank|lined|margin|grid|dots|graph|ecg|half|plate|cornell|columns), kind, inkText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
 
 ## Próximos pasos sugeridos
 
