@@ -24,6 +24,7 @@ import {
   syncFromFolder,
 } from '../../lib/backup';
 import { ShareDialog } from './ShareDialog';
+import { StorageReview } from './StorageReview';
 
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) : 'nunca';
@@ -45,6 +46,7 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
   const [err, setErr] = useState(backupError());
   const [undoAt, setUndoAt] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [storageOpen, setStorageOpen] = useState(false);
 
   const refresh = async () => {
     try {
@@ -294,11 +296,15 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
             <button className="btn ghost sm" onClick={() => setShareOpen(true)} title="Paquete para el celular y plan en .ics">
               <Icon name="external" size={15} /> Llevarlo a otro lado
             </button>
+            <button className="btn ghost sm" onClick={() => setStorageOpen(true)} title="Cuánto espacio usas, qué pesa y si la carpeta escribe">
+              <Icon name="database" size={15} /> Espacio y revisión
+            </button>
           </div>
         </section>
         {msg && <p className={`small ${msg.ok ? 'ok-text' : 'error'}`}>{msg.text}</p>}
       </div>
       {shareOpen && <ShareDialog onClose={() => setShareOpen(false)} />}
+      {storageOpen && <StorageReview onClose={() => setStorageOpen(false)} />}
     </Modal>
   );
 }

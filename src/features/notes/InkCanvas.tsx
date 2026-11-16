@@ -14,6 +14,8 @@ import { Icon } from '../../components/Icon';
 import { capturePointer } from '../../lib/pointer';
 import { idb } from '../../lib/idb';
 import { uid } from '../../lib/id';
+import { useUI } from '../../store/ui';
+import { SheetsDialog } from './SheetsDialog';
 import { PAGE_H, PAGE_W, ctx2d, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, inkColor, liveOpacity, stabilize, type LiveStyle } from '../../lib/ink';
 import { PenControls } from '../../components/PenControls';
 import { usePinchZoom } from '../../lib/usePinchZoom';
@@ -31,7 +33,7 @@ import type { InkTool, Note, PaperStyle, Stroke } from '../../types';
 const EMPTY: Stroke[] = [];
 const EMPTY_IMG: InkImage[] = [];
 type Mode = 'draw' | 'eraser' | 'lasso';
-type SelAction = { type: 'delete' } | { type: 'duplicate' } | { type: 'color'; color: string };
+type SelAction = { type: 'delete' } | { type: 'duplicate' } | { type: 'color'; color: string } | { type: 'move'; to: number };
 const SEL_COLORS = ['auto', '#dc2626', '#2563eb', '#16a34a', '#d97706'];
 const INK_ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
 
@@ -68,6 +70,7 @@ export function InkCanvas({ note }: { note: Note }) {
   const [sel, setSel] = useState<{ page: number; ids: Set<string> } | null>(null);
   /** Tapar y repasar: cubre la columna izquierda (Cornell o dos columnas). */
   const [mask, setMask] = useState(false);
+  const [sheetsOpen, setSheetsOpen] = useState(false);
   const inkRev = useBridge((s) => (s.inkRev?.noteId === note.id ? s.inkRev.n : 0));
 
   // Recortes pegados desde el PDF: se guardan aparte de los trazos y se recargan si llega uno nuevo.
@@ -223,6 +226,10 @@ export function InkCanvas({ note }: { note: Note }) {
         setSel(null);
       } else if (a.type === 'color') {
         persist(latest.current.map((s) => (cur.ids.has(s.id) ? { ...s, color: a.color } : s)));
+      } else if (a.type === 'move') {
+        // La selección se va a otra hoja con las mismas coordenadas.
+        persist(latest.current.map((s) => (cur.ids.has(s.id) ? { ...s, page: a.to } : s)));
+        setSel(null);
       } else {
         const copies = latest.current.filter((s) => cur.ids.has(s.id)).map((s) => ({ ...applyXf(s, { dx: 24, dy: 24, s: 1, ox: 0, oy: 0 }), id: uid() }));
         persist([...latest.current, ...copies]);
@@ -311,6 +318,56 @@ export function InkCanvas({ note }: { note: Note }) {
     if (j < 0 || j >= pages) return;
     remap((p) => (p === i ? j : p === j ? i : p));
   };
+  /** Nuevo orden de hojas: `order[i]` es la hoja que pasa a la posición i. */
+  const reorderSheets = (order: number[]) => {
+    const to = new Map(order.map((old, i) => [old, i]));
+    remap((p) => to.get(p) ?? p);
+  };
+
+  /**
+   * Fusiona la hoja i con la anterior: su contenido baja debajo de lo que ya había,
+   * y si no cabe queda encima (se avisa). La hoja i desaparece.
+   */
+  const mergeSheet = (i: number) => {
+    if (i < 1) return;
+    const src = latest.current.filter((s) => s.page === i);
+    const srcImgs = imagesRef.current.filter((im) => im.page === i);
+    if (!src.length && !srcImgs.length) {
+      deletePage(i);
+      return;
+    }
+    const span = (page: number) => {
+      let top = Infinity;
+      let bottom = -Infinity;
+      for (const st of latest.current) if (st.page === page) for (const pt of st.points) (top = Math.min(top, pt[1])), (bottom = Math.max(bottom, pt[1]));
+      for (const im of imagesRef.current)
+        if (im.page === page) (top = Math.min(top, im.y)), (bottom = Math.max(bottom, im.y + im.h));
+      return { top, bottom };
+    };
+    const dst = span(i - 1);
+    const mine = span(i);
+    const used = dst.bottom > -Infinity ? dst.bottom + 24 : 0;
+    const height = mine.bottom - mine.top;
+    const fits = used + height <= PAGE_H;
+    const dy = fits ? used - mine.top : 0;
+    if (!fits) useUI.getState().showToast('No cabía debajo: el contenido quedó encima del de la hoja anterior.');
+    pushUndo();
+    setSel(null);
+    const moved = new Set(src.map((x) => x.id));
+    persist(
+      latest.current.flatMap((st) => {
+        if (moved.has(st.id)) return [{ ...applyXf(st, { dx: 0, dy, s: 1, ox: 0, oy: 0 }), page: i - 1 }];
+        return st.page > i ? [{ ...st, page: st.page - 1 }] : [st];
+      }),
+    );
+    saveImages(
+      imagesRef.current.map((im) =>
+        im.page === i ? { ...im, page: i - 1, y: im.y + dy } : im.page > i ? { ...im, page: im.page - 1 } : im,
+      ),
+    );
+    update(note.id, { inkPages: Math.max(1, pages - 1) });
+  };
+
   const deletePage = (i: number) => {
     const mine = latest.current.filter((s) => s.page === i);
     const pics = imagesRef.current.filter((im) => im.page === i);
@@ -400,6 +457,9 @@ export function InkCanvas({ note }: { note: Note }) {
             <Icon name="eye" size={16} /> Tapar y repasar
           </button>
         )}
+        <button className="btn ghost sm" onClick={() => setSheetsOpen(true)} title="Organizar hojas: reordenar arrastrando y fusionar" disabled={pages < 2}>
+          <Icon name="layers" size={16} /> Hojas
+        </button>
         <select className="select xs" value={note.paper} onChange={(e) => update(note.id, { paper: e.target.value as PaperStyle })} aria-label="Tipo de hoja">
           <option value="lined">Rayada</option>
           <option value="grid">Cuadrícula</option>
@@ -445,6 +505,7 @@ export function InkCanvas({ note }: { note: Note }) {
                   penOnly={penOnly}
                   paper={note.paper}
                   mask={mask}
+                  totalPages={pages}
                   dark={dark}
                   scrollRef={scrollRef}
                   sel={sel?.page === i ? sel.ids : null}
@@ -462,6 +523,16 @@ export function InkCanvas({ note }: { note: Note }) {
           </>
         )}
       </div>
+      {sheetsOpen && (
+        <SheetsDialog
+          pages={pages}
+          strokes={strokes ?? EMPTY}
+          images={images}
+          onReorder={reorderSheets}
+          onMerge={mergeSheet}
+          onClose={() => setSheetsOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -478,6 +549,8 @@ interface PageProps {
   paper: PaperStyle;
   /** Tapar la columna izquierda para repasar. */
   mask: boolean;
+  /** Cuántas hojas tiene la nota (para mover la selección entre hojas). */
+  totalPages: number;
   dark: boolean;
   scrollRef: RefObject<HTMLDivElement | null>;
   sel: Set<string> | null;
@@ -496,7 +569,7 @@ type Gesture =
 
 const IDENT = (ox = 0, oy = 0): Xf => ({ dx: 0, dy: 0, s: 1, ox, oy });
 
-const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, tool, color, size, penOnly, paper, mask, dark, scrollRef, sel, onStroke, onErase, onSelect, onTransform, onSelAction }: PageProps) {
+const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, tool, color, size, penOnly, paper, mask, totalPages, dark, scrollRef, sel, onStroke, onErase, onSelect, onTransform, onSelAction }: PageProps) {
   /** Esta hoja ya se destapó (se vuelve a tapar al apagar el modo). */
   const [shownMask, setShownMask] = useState(false);
   useEffect(() => {
@@ -869,6 +942,24 @@ const InkPage = memo(function InkPage({ index, strokes, images, onRemoveImage, t
               ))}
               <button className="icon-btn xs" onClick={() => onSelAction({ type: 'duplicate' })} title="Duplicar" aria-label="Duplicar selección">
                 <Icon name="copy" size={14} />
+              </button>
+              <button
+                className="icon-btn xs"
+                onClick={() => onSelAction({ type: 'move', to: index - 1 })}
+                disabled={index === 0}
+                title="Mover la selección a la hoja anterior"
+                aria-label="Mover la selección a la hoja anterior"
+              >
+                <Icon name="arrowUp" size={14} />
+              </button>
+              <button
+                className="icon-btn xs"
+                onClick={() => onSelAction({ type: 'move', to: index + 1 })}
+                disabled={index >= totalPages - 1}
+                title="Mover la selección a la hoja siguiente"
+                aria-label="Mover la selección a la hoja siguiente"
+              >
+                <Icon name="arrowDown" size={14} />
               </button>
               <button className="icon-btn xs danger" onClick={() => onSelAction({ type: 'delete' })} title="Borrar (Supr)" aria-label="Borrar selección">
                 <Icon name="trash" size={14} />

@@ -1,11 +1,15 @@
 import { createStore } from '../lib/createStore';
 import { addDays, fromKey, toKey, todayKey } from '../lib/date';
 import { uid } from '../lib/id';
+import { fromSm2, intervalFor, next, type FsrsGrade } from './fsrs';
+import { useSettings } from '../store/settings';
 import type { NRect } from '../types';
 
 /**
- * Flashcards con repaso espaciado (algoritmo tipo SM-2 / Anki).
- * Fase 4 lo cambiará por FSRS; el formato de las tarjetas ya guarda lo necesario.
+ * Flashcards con repaso espaciado **FSRS**: en vez de un «factor de facilidad» arrastrado,
+ * cada tarjeta guarda su estabilidad (días que aguanta la memoria) y su dificultad, y de ahí
+ * sale el día exacto del siguiente repaso para la retención que pidas en Preferencias.
+ * Las tarjetas creadas con SM-2 se convierten solas la primera vez que las repasas.
  */
 export type Grade = 0 | 1 | 2 | 3; // Otra vez · Difícil · Bien · Fácil
 export const GRADE_LABEL: Record<Grade, string> = { 0: 'Otra vez', 1: 'Difícil', 2: 'Bien', 3: 'Fácil' };
@@ -26,33 +30,40 @@ export interface Card {
   ease: number;
   reps: number;
   lapses: number;
+  /** FSRS: estabilidad en días y dificultad 1–10 (ausentes en tarjetas viejas de SM-2). */
+  s?: number;
+  d?: number;
   lastReview?: string;
   /** «Me lo preguntaron». */
   asked?: boolean;
 }
 
-/** Calcula el siguiente repaso. Devuelve los campos a actualizar. */
-export function schedule(c: Pick<Card, 'interval' | 'ease' | 'reps' | 'lapses'>, g: Grade, today = todayKey()) {
-  let { interval, ease, reps, lapses } = c;
-  if (g === 0) {
-    reps = 0;
-    lapses += 1;
-    interval = 1;
-    ease = Math.max(1.3, ease - 0.2);
-  } else if (g === 1) {
-    interval = Math.max(1, Math.round(interval * 1.2));
-    ease = Math.max(1.3, ease - 0.15);
-    reps += 1;
-  } else if (g === 2) {
-    interval = reps === 0 ? 1 : reps === 1 ? 3 : Math.round(interval * ease);
-    reps += 1;
-  } else {
-    interval = reps === 0 ? 3 : Math.round(Math.max(interval, 1) * ease * 1.3);
-    ease = Math.min(3, ease + 0.15);
-    reps += 1;
-  }
-  interval = Math.min(interval, 365);
-  return { interval, ease, reps, lapses, due: toKey(addDays(fromKey(today), interval)), lastReview: today };
+/**
+ * Calcula el siguiente repaso con FSRS. Devuelve los campos a actualizar.
+ * `retention` es la probabilidad de acierto que quieres mantener (0.9 por defecto).
+ */
+export function schedule(
+  c: Pick<Card, 'interval' | 'ease' | 'reps' | 'lapses' | 's' | 'd' | 'lastReview'>,
+  g: Grade,
+  today = todayKey(),
+  retention = 0.9,
+) {
+  const grade = (g + 1) as FsrsGrade;
+  // Tarjeta vieja de SM-2: su intervalo y facilidad se traducen a estabilidad y dificultad.
+  const mem = c.s != null && c.d != null ? { s: c.s, d: c.d } : c.reps > 0 ? fromSm2(c.interval, c.ease) : null;
+  const elapsed = c.lastReview ? Math.max(0, Math.round((fromKey(today).getTime() - fromKey(c.lastReview).getTime()) / 86_400_000)) : 0;
+  const m = next(mem, grade, elapsed);
+  const interval = intervalFor(m.s, retention);
+  return {
+    interval,
+    ease: c.ease,
+    reps: g === 0 ? 0 : c.reps + 1,
+    lapses: c.lapses + (g === 0 ? 1 : 0),
+    s: m.s,
+    d: m.d,
+    due: toKey(addDays(fromKey(today), interval)),
+    lastReview: today,
+  };
 }
 
 export interface CardsState {
@@ -74,7 +85,10 @@ export const useCards = createStore<CardsState>(
     },
     updateCard: (id, patch) => set((s) => ({ cards: s.cards.map((c) => (c.id === id ? { ...c, ...patch } : c)) })),
     removeCard: (id) => set((s) => ({ cards: s.cards.filter((c) => c.id !== id) })),
-    grade: (id, g) => set((s) => ({ cards: s.cards.map((c) => (c.id === id ? { ...c, ...schedule(c, g) } : c)) })),
+    grade: (id, g) => {
+      const retention = useSettings.getState().retention;
+      set((s) => ({ cards: s.cards.map((c) => (c.id === id ? { ...c, ...schedule(c, g, todayKey(), retention) } : c)) }));
+    },
   }),
   { key: 'cards', storage: 'idb', pick: ({ cards }) => ({ cards }) },
 );

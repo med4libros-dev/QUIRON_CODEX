@@ -3,6 +3,7 @@ import { idb } from './idb';
 import { renderInkPage } from './ink';
 import { loadInkImages } from './inkImages';
 import { useNotes } from '../store/notes';
+import { useSettings } from '../store/settings';
 import type { Stroke } from '../types';
 
 /**
@@ -18,6 +19,21 @@ const SYSTEM =
   'Devuelve ÚNICAMENTE la transcripción en texto plano, respetando los saltos de línea, las listas y las flechas (->). ' +
   'No resumas, no corrijas, no agregues nada que no esté escrito. Conserva abreviaturas y siglas tal como aparecen. ' +
   'Si una palabra es ilegible escribe [?]. Si la hoja está vacía responde exactamente: (vacía)';
+
+/**
+ * El glosario del usuario (sus abreviaturas) se añade al final del prompt: así deja de
+ * equivocarse siempre en las mismas, sin cambiar lo que escribió.
+ */
+function systemWithGlossary(): string {
+  const g = useSettings
+    .getState()
+    .inkGlossary.split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 120);
+  if (!g.length) return SYSTEM;
+  return `${SYSTEM}\n\nAbreviaturas que usa esta persona (respétalas tal cual si aparecen, no las expandas):\n${g.join('\n')}`;
+}
 
 const WIDTH = 1200;
 
@@ -52,7 +68,7 @@ export async function recognizeSheet(noteId: string, page: number): Promise<stri
   const img = await renderNoteSheet(noteId, page);
   if (!img) return '';
   const raw = await callAi({
-    system: SYSTEM,
+    system: systemWithGlossary(),
     user: 'Transcribe esta hoja de apuntes.',
     images: [img],
     maxTokens: 2000,
@@ -81,6 +97,34 @@ export async function recognizeNote(noteId: string, onProgress?: OcrProgress): P
   const full = parts.join('\n\n');
   useNotes.getState().updateNote(noteId, { inkText: full, inkTextAt: Date.now() });
   return full;
+}
+
+/**
+ * Reconoce varias notas seguidas (un cuaderno completo). Avisa del avance por nota y
+ * devuelve cuántas quedaron transcritas y cuántas fallaron.
+ */
+export async function recognizeNotes(
+  noteIds: string[],
+  onProgress?: (done: number, total: number, title: string) => void,
+): Promise<{ done: number; failed: { title: string; error: string }[] }> {
+  const notes = useNotes.getState().notes;
+  let done = 0;
+  const failed: { title: string; error: string }[] = [];
+  for (let i = 0; i < noteIds.length; i++) {
+    const note = notes.find((n) => n.id === noteIds[i]);
+    if (!note) continue;
+    onProgress?.(i, noteIds.length, note.title || 'Nota sin título');
+    try {
+      await recognizeNote(note.id);
+      done++;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // Una nota sin nada escrito no es un fallo: simplemente no hay letra que leer.
+      if (!/no tiene nada escrito/i.test(msg)) failed.push({ title: note.title || 'Nota sin título', error: msg });
+    }
+  }
+  onProgress?.(noteIds.length, noteIds.length, '');
+  return { done, failed };
 }
 
 /** ¿La transcripción quedó vieja respecto a lo último que escribiste? */

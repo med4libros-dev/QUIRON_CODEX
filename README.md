@@ -115,6 +115,18 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.9
+- **Doble plana** en el lector (dos páginas a la vez) y **controles flotantes** en pantalla completa: acerca el lápiz al borde de arriba y aparecen página, zoom, búsqueda y doble plana.
+- **Organizar hojas** del lienzo: miniaturas que arrastras para reordenar, fusionar con la anterior (el contenido baja debajo de lo que ya había) y mandar la selección del lazo a la hoja de arriba o de abajo.
+- **Repaso con FSRS** en lugar de SM-2: cada tarjeta guarda su estabilidad y dificultad, y de ahí sale el día exacto. La exigencia (relajado / normal / estricto) se ajusta en Preferencias.
+- **Repaso de guardia**: 10 minutos, botones grandes, con una mano (Herramientas).
+- **Historial de simulacros**: tendencia intento a intento, desglose por especialidad y repetir solo las falladas.
+- **Glosario de abreviaturas** para el reconocimiento de letra y **transcribir un cuaderno completo** de una pasada.
+- **Temario editable**: cambia títulos y prioridades, parte un tema en dos, quita los que no vas a estudiar y agrega los tuyos; el plan se recalcula y lo estudiado se conserva.
+- **Informe semanal**: minutos reales contra los planeados, temas cerrados y pendientes que se movieron.
+- **Turno por hora**: todos los pendientes con hora juntos y en orden, con atajos «+30m / +1h / +2h».
+- **Espacio y revisión** (Respaldo): cuánto llevas usado, qué guías pesan más y si la carpeta compartida de verdad escribe.
+
 ### v0.8.1
 - **Arreglo**: en pantalla completa la guía se quedaba sin ancho (al ocultar la barra lateral el contenido caía en una columna de 0 px). Ahora la rejilla queda de una sola columna y el PDF ocupa todo.
 

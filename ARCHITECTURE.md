@@ -251,6 +251,22 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - El editor se refresca cuando la nota cambia desde fuera (historial, papelera, sincronización) salvo si estás escribiendo en ese momento.
 - Borrar una nota, una guía o una hoja pasa primero por la papelera; purga al abrir la app.
 
+## v0.9
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Repaso FSRS | `src/flashcards/fsrs.ts` | Estabilidad y dificultad con los pesos por defecto; `intervalFor(s, retención)`; las tarjetas de SM-2 se convierten al primer repaso (`fromSm2`) |
+| Doble plana | `src/features/pdf/PdfViewer.tsx` | `cols = 2` reduce la escala a la mitad y `.pdf-scroll[data-spread]` acomoda en filas; las anotaciones siguen en coordenadas de página |
+| Barra flotante | `src/features/pdf/PdfWorkspace.tsx` | Solo en pantalla completa; se enciende con el puntero a menos de 90 px del borde |
+| Hojas del lienzo | `src/features/notes/SheetsDialog.tsx` | Miniaturas con `renderInkPage`; `reorderSheets` y `mergeSheet` reusan `remap`/`applyXf`; la fusión baja el contenido si cabe |
+| Temario editable | `src/internship/curriculumStore.ts` + `applyCurriculumEdits` | Los cambios se guardan aparte y se aplican **en memoria** sobre `TOPICS`/`TOPIC` (misma referencia); `rev` dispara el recálculo del plan |
+| Historial de simulacros | `src/exam/History.tsx` | Tendencia en SVG, aciertos por especialidad y repetición de las falladas |
+| Glosario de abreviaturas | `src/lib/inkOcr.ts` | `systemWithGlossary()` añade tus abreviaturas al prompt; `recognizeNotes` transcribe un cuaderno |
+| Espacio y revisión | `src/features/backup/StorageReview.tsx` | `storage.estimate()`, tamaño real de cada PDF desde IndexedDB y prueba de escritura en la carpeta |
+| Agenda del turno | `src/ward/WardView.tsx` | Pendientes con hora de todos los pacientes, ordenados; atajos de hora al capturar |
+
+- `createStore` admite `onHydrate`: lo usa el temario para aplicar tus cambios en cuanto vuelven del disco.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind, inkText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

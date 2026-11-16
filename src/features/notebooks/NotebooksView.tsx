@@ -3,7 +3,10 @@ import { Icon } from '../../components/Icon';
 import { fmt } from '../../lib/date';
 import { htmlToText } from '../../lib/html';
 import { useLibrary } from '../../store/library';
+import { aiMissingMsg, aiReady } from '../../lib/ai';
+import { recognizeNotes } from '../../lib/inkOcr';
 import { useNotes } from '../../store/notes';
+import { useUI } from '../../store/ui';
 import { usePlanner } from '../../store/planner';
 import { useSettings } from '../../store/settings';
 import type { Note, Notebook } from '../../types';
@@ -30,6 +33,8 @@ export function NotebooksView() {
   const [q, setQ] = useState('');
   /** Filtro por etiqueta (null = todas). */
   const [tag, setTag] = useState<string | null>(null);
+  /** Texto del botón mientras se transcribe el cuaderno (null = en reposo). */
+  const [ocr, setOcr] = useState<string | null>(null);
 
   const docName = useMemo(() => new Map(docs.map((d) => [d.id, d.name])), [docs]);
   const subjectName = useMemo(() => new Map(subjects.map((s) => [s.id, s.name])), [subjects]);
@@ -48,6 +53,25 @@ export function NotebooksView() {
   const missingSubjects = subjects.filter((s) => !notebooks.some((b) => b.subjectId === s.id));
   const current = selected ?? notebooks[0]?.id ?? (byBook.get(LOOSE)?.length ? LOOSE : null);
   const currentBook = notebooks.find((b) => b.id === current);
+  /** Transcribe la letra de todas las notas visibles que tengan hojas escritas. */
+  const recognizeBook = async () => {
+    if (!aiReady()) return useUI.getState().showToast(aiMissingMsg());
+    const ids = list.filter((n) => n.inkPages > 0).map((n) => n.id);
+    if (!ids.length) return;
+    if (!confirm(`Se van a transcribir ${ids.length} nota(s) con tu motor de IA. Puede tardar un par de minutos. ¿Seguir?`)) return;
+    setOcr('Leyendo…');
+    try {
+      const r = await recognizeNotes(ids, (done, total) => setOcr(`${done}/${total}…`));
+      useUI.getState().showToast(
+        `${r.done} nota(s) transcritas: ya puedes buscarlas con Ctrl+K.${r.failed.length ? ` ${r.failed.length} fallaron.` : ''}`,
+      );
+    } catch (e) {
+      useUI.getState().showToast(e instanceof Error ? e.message : String(e));
+    } finally {
+      setOcr(null);
+    }
+  };
+
   const needle = q.trim().toLowerCase();
   const inBook = current ? byBook.get(current) ?? [] : [];
   // Etiquetas que existen en este cuaderno, con cuántas notas tiene cada una.
@@ -170,6 +194,16 @@ export function NotebooksView() {
                 <Icon name="search" size={15} />
                 <input className="input sm" placeholder="Buscar en notas y en tu letra…" value={q} onChange={(e) => setQ(e.target.value)} />
               </label>
+              {list.some((n) => n.inkPages > 0) && (
+                <button
+                  className="btn ghost sm"
+                  disabled={!!ocr}
+                  onClick={() => void recognizeBook()}
+                  title="Transcribir la letra de todas las notas de este cuaderno (usa tu motor de IA)"
+                >
+                  <Icon name="pencil" size={15} /> {ocr ?? 'Reconocer letra'}
+                </button>
+              )}
               {currentBook && (
                 <button className="btn primary sm" onClick={newNoteHere}>
                   <Icon name="plus" size={15} /> Nota

@@ -31,6 +31,8 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
   const model = useSettings((s) => s.model);
   const saver = useSettings((s) => s.saver);
   const inkPredict = useSettings((s) => s.inkPredict);
+  const retention = useSettings((s) => s.retention);
+  const setRetention = useSettings((s) => s.setRetention);
   const barrel = useTools((s) => s.barrel);
   const snapShapes = useTools((s) => s.snapShapes);
   const [keyDraft, setKeyDraft] = useState('');
@@ -125,6 +127,29 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
             </div>
           )}
           {msg && <p className="small warn-text">{msg}</p>}
+        </section>
+
+        <section>
+          <h4>
+            <Icon name="cards" size={15} /> Repaso
+          </h4>
+          <p className="muted small">
+            Qué tan seguido quieres volver a ver cada tarjeta. Más exigente = intervalos más cortos y más repasos al día; más
+            relajado = menos repasos, con algo más de olvido.
+          </p>
+          <div className="seg" role="radiogroup" aria-label="Exigencia del repaso">
+            {(
+              [
+                [0.85, 'Relajado'],
+                [0.9, 'Normal'],
+                [0.95, 'Estricto'],
+              ] as const
+            ).map(([v, label]) => (
+              <button key={v} role="radio" aria-checked={retention === v} className={retention === v ? 'active' : ''} onClick={() => setRetention(v)}>
+                {label} <span className="muted small">{Math.round(v * 100)} %</span>
+              </button>
+            ))}
+          </div>
         </section>
 
         <section>

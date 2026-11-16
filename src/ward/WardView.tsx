@@ -72,6 +72,7 @@ export function WardView() {
           {patients.length} paciente{patients.length === 1 ? '' : 's'} · {pending} pendiente{pending === 1 ? '' : 's'}
         </span>
       </div>
+      <ShiftAgenda patients={patients} />
       {patients.length ? (
         <div className={`ward-grid n${Math.min(patients.length, 3)}`}>
           {patients.map((p) => (
@@ -159,6 +160,17 @@ function PatientCard({ p }: { p: WardPatient }) {
         </select>
         <input className="input sm grow" value={task} onChange={(e) => setTask(e.target.value)} placeholder="Pendiente (p. ej. «BH y QS de control»)" aria-label="Nuevo pendiente" />
         <input className="input sm task-time" type="time" value={at} onChange={(e) => setAt(e.target.value)} aria-label="Hora del recordatorio (opcional)" title="Hora para el recordatorio (opcional)" />
+        {[30, 60, 120].map((m) => (
+          <button
+            key={m}
+            type="button"
+            className={`chip-btn${at === inMinutes(m) ? ' on' : ''}`}
+            onClick={() => setAt(at === inMinutes(m) ? '' : inMinutes(m))}
+            title={`Avisarme en ${m < 60 ? `${m} minutos` : `${m / 60} hora${m === 60 ? '' : 's'}`} (${inMinutes(m)})`}
+          >
+            +{m < 60 ? `${m}m` : `${m / 60}h`}
+          </button>
+        ))}
         <button className="btn sm" type="submit" disabled={!task.trim()}>
           +
         </button>
@@ -286,5 +298,53 @@ function EndShift({ onClose }: { onClose: () => void }) {
         ))}
       </ul>
     </Modal>
+  );
+}
+
+/** Hora «HH:MM» dentro de N minutos, redondeada a 5. */
+function inMinutes(min: number): string {
+  const d = new Date(Date.now() + min * 60_000);
+  d.setMinutes(Math.round(d.getMinutes() / 5) * 5, 0, 0);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/**
+ * Agenda del turno: todos los pendientes con hora, de todos los pacientes, en orden.
+ * Es la lista que de verdad se mira a media guardia: qué toca y a quién.
+ */
+function ShiftAgenda({ patients }: { patients: WardPatient[] }) {
+  const toggleTask = useWard((s) => s.toggleTask);
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const rows = patients
+    .flatMap((p) => p.tasks.filter((t) => t.at && !t.done).map((t) => ({ p, t })))
+    .sort((a, b) => (a.t.at ?? '').localeCompare(b.t.at ?? ''));
+  if (!rows.length) return null;
+
+  return (
+    <section className="card shift-agenda">
+      <div className="card-head">
+        <h4>Por hora</h4>
+        <span className="spacer" />
+        <span className="muted small tabular">{hm}</span>
+      </div>
+      <ul>
+        {rows.map(({ p, t }) => (
+          <li key={t.id} className={t.at && t.at <= hm ? 'due' : undefined}>
+            <b className="tabular">{t.at}</b>
+            <span className="bed small">{p.bed || 'sin cama'}</span>
+            <span className="ellipsis">{t.text}</span>
+            <button className="btn ghost sm" onClick={() => toggleTask(p.id, t.id)} title="Marcar como hecho">
+              <Icon name="check" size={14} />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

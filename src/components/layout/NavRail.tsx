@@ -4,6 +4,8 @@ import { Icon, type IconName } from '../Icon';
 import emblem from '../../assets/quiron-emblem.png';
 import { BackupDialog } from '../../features/backup/BackupDialog';
 import { TrashDialog } from '../../features/trash/TrashDialog';
+import { guardDeck } from '../../flashcards/FlashcardUI';
+import { useCards } from '../../flashcards/store';
 import { useTrash } from '../../store/trash';
 import { PrefsDialog } from '../../features/prefs/PrefsDialog';
 import { backupError, folderStatus } from '../../lib/backup';
@@ -140,6 +142,20 @@ export function NavRail() {
                   <Icon name="shield" size={17} />
                   <span>
                     Guardia <small>Fichas, fármacos, signos vitales</small>
+                  </span>
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={run(() => {
+                    const deck = guardDeck(useCards.getState().cards, 10);
+                    if (!deck.length) return useUI.getState().showToast('Todavía no tienes flashcards que repasar.');
+                    useUI.getState().startReview({ cardIds: deck, title: 'Repaso de guardia', minutes: 10, oneHand: true });
+                  })}
+                  title="Repaso corto de pie: 10 minutos, botones grandes, con una mano"
+                >
+                  <Icon name="cards" size={17} />
+                  <span>
+                    Repaso de guardia <small>10 min, con una mano</small>
                   </span>
                 </button>
                 <button role="menuitem" onClick={run(() => useUI.getState().setSoapOpen(true))} title="Generador de notas médicas: evolución (SOAP), ingreso, postquirúrgica, egreso">

@@ -5,6 +5,7 @@ import { Modal } from '../components/Modal';
 import { SPECIALTIES, TOPIC, TOPICS } from '../internship/curriculum';
 import { todayKey } from '../lib/date';
 import { openPdfPage } from '../store/navigate';
+import { useSettings } from '../store/settings';
 import { useUI } from '../store/ui';
 import { Occluded } from './Occluded';
 import { GRADE_LABEL, dueCards, schedule, useCards, type Card, type Grade } from './store';
@@ -108,10 +109,20 @@ export function FlashcardReview() {
   const review = useUI((s) => s.review);
   const startReview = useUI((s) => s.startReview);
   if (!review) return null;
-  return <ReviewSession key={review.cardIds.join(',')} ids={review.cardIds} title={review.title} minutes={review.minutes} onClose={() => startReview(null)} />;
+  return (
+    <ReviewSession
+      key={review.cardIds.join(',')}
+      ids={review.cardIds}
+      title={review.title}
+      minutes={review.minutes}
+      oneHand={review.oneHand}
+      onClose={() => startReview(null)}
+    />
+  );
 }
 
-function ReviewSession({ ids, title, minutes, onClose }: { ids: string[]; title: string; minutes?: number; onClose: () => void }) {
+function ReviewSession({ ids, title, minutes, oneHand, onClose }: { ids: string[]; title: string; minutes?: number; oneHand?: boolean; onClose: () => void }) {
+  const retention = useSettings((s) => s.retention);
   const cards = useCards((s) => s.cards);
   const grade = useCards((s) => s.grade);
   const [queue, setQueue] = useState<string[]>(ids);
@@ -158,7 +169,7 @@ function ReviewSession({ ids, title, minutes, onClose }: { ids: string[]; title:
 
   return (
     <Modal title={title} onClose={onClose} width={600}>
-      <div className="review">
+      <div className="review" data-onehand={oneHand ? '1' : undefined}>
         <div className="review-meta">
           <span className="chip">{reviewed} repasadas</span>
           <span className="chip">{queue.length} por ver</span>
@@ -211,7 +222,7 @@ function ReviewSession({ ids, title, minutes, onClose }: { ids: string[]; title:
                 {([0, 1, 2, 3] as Grade[]).map((g) => (
                   <button key={g} className={`btn grade g${g}`} onClick={() => answer(g)}>
                     <b>{GRADE_LABEL[g]}</b>
-                    <span className="small muted">{fmtInterval(schedule(card, g).interval)}</span>
+                    <span className="small muted">{fmtInterval(schedule(card, g, todayKey(), retention).interval)}</span>
                   </button>
                 ))}
               </div>
@@ -223,12 +234,21 @@ function ReviewSession({ ids, title, minutes, onClose }: { ids: string[]; title:
   );
 }
 
+/**
+ * Cola de guardia: lo justo para 5–10 minutos de pie, con una mano.
+ * Prioriza lo vencido y lo marcado «me lo preguntaron»; calcula unas 5 tarjetas por minuto.
+ */
+export function guardDeck(cards: Card[], minutes = 10): string[] {
+  return expressDeck(cards, Math.max(8, minutes * 5));
+}
+
 /** Tarjetas para una sesión exprés: primero las vencidas; si no hay, las más «débiles». */
 export function expressDeck(cards: Card[], max = 30): string[] {
   const due = dueCards(cards, todayKey());
   if (due.length) return due.slice(0, max).map((c) => c.id);
   return [...cards]
-    .sort((a, b) => a.ease - b.ease || (a.lastReview ?? '').localeCompare(b.lastReview ?? ''))
+    // Las más frágiles primero: menor estabilidad (o, en tarjetas viejas, menor facilidad).
+    .sort((a, b) => (a.s ?? a.interval ?? 0) - (b.s ?? b.interval ?? 0) || a.ease - b.ease || (a.lastReview ?? '').localeCompare(b.lastReview ?? ''))
     .slice(0, max)
     .map((c) => c.id);
 }

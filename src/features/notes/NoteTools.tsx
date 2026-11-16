@@ -9,6 +9,7 @@ import { restoreVersion, versionsOf, type NoteVersion } from '../../lib/noteHist
 import { useAiReady } from '../../lib/useAi';
 import { useBridge } from '../../store/bridge';
 import { useNotes } from '../../store/notes';
+import { useSettings } from '../../store/settings';
 import { useUI } from '../../store/ui';
 import type { Note } from '../../types';
 
@@ -36,6 +37,9 @@ export function OcrDialog({ note, onClose }: { note: Note; onClose: () => void }
   const [progress, setProgress] = useState('');
   const [text, setText] = useState(note.inkText ?? '');
   const [err, setErr] = useState('');
+  const gloss = useSettings((s) => s.inkGlossary);
+  const setInkGlossary = useSettings((s) => s.setInkGlossary);
+  const glossLines = gloss.split('\n').filter((l) => l.trim()).length;
 
   useEffect(() => {
     sheetsWithContent(note.id).then(setSheets).catch(() => setSheets([]));
@@ -88,6 +92,21 @@ export function OcrDialog({ note, onClose }: { note: Note; onClose: () => void }
             </button>
           </div>
           {sheets?.length === 0 && <p className="muted small">Esta nota no tiene nada escrito a mano todavía.</p>}
+          <details className="ocr-gloss">
+            <summary className="small">Mis abreviaturas ({glossLines} en la lista)</summary>
+            <p className="muted small">
+              Una por línea, como las escribes tú: «IAM = infarto agudo de miocardio». Se le pasan al motor para que deje de
+              equivocarse siempre en las mismas. No cambian lo que escribiste.
+            </p>
+            <textarea
+              className="input"
+              rows={5}
+              value={gloss}
+              placeholder={'IAM = infarto agudo de miocardio\nEF = exploración física\nSV = signos vitales'}
+              onChange={(e) => setInkGlossary(e.target.value)}
+              aria-label="Mis abreviaturas"
+            />
+          </details>
           {err && <p className="small error">{err}</p>}
           {text && (
             <>

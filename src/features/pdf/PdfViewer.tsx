@@ -39,6 +39,8 @@ interface Props {
   persistPage?: boolean;
   /** Texto buscado dentro del documento (Ctrl+F): se marca sobre cada página. */
   find?: string;
+  /** Fuerza una sola página (el comparador no usa doble plana). */
+  spread?: boolean;
 }
 
 type Size = { w: number; h: number };
@@ -59,7 +61,7 @@ const LINE_H = 0.016;
  *  - El render ocurre fuera de pantalla y se copia de una vez: no hay parpadeo al hacer zoom.
  *  - Todas las anotaciones se guardan en coordenadas relativas a la página: sobreviven a cualquier zoom.
  */
-export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage = true, find = '' }: Props) {
+export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage = true, find = '', spread: spreadProp }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageEls = useRef<(HTMLDivElement | null)[]>([]);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
@@ -115,7 +117,11 @@ export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage
     measure();
     return () => ro.disconnect();
   }, []);
-  const scale = base && width ? Math.max(0.3, Math.round(((width - 48) / base.w) * zoom * 100) / 100) : 0;
+  const spreadPref = useSettings((s) => s.pdfSpread);
+  /** Columnas de páginas: 2 en doble plana. */
+  const cols = (spreadProp ?? spreadPref) ? 2 : 1;
+  // En doble plana cada página se dibuja a la mitad del ancho disponible, menos la separación.
+  const scale = base && width ? Math.max(0.3, Math.round((((width - 48 - (cols - 1) * 18) / cols / base.w) * zoom * 100)) / 100) : 0;
 
   useEffect(() => {
     if (!pdf || !scale || restored.current) return;
@@ -217,7 +223,7 @@ export function PdfViewer({ docId, tool, zoom, onPageChange, onZoom, persistPage
   }
 
   return (
-    <div className="pdf-scroll" ref={scrollRef} onScroll={onScroll} data-tool={tool} data-dark={pdfDark ? '1' : undefined} data-crop={crop > 0 ? '1' : undefined} style={{ '--crop': `${crop}%` } as CSSProperties} onPointerUp={onSelectEnd} onKeyUp={(e) => e.shiftKey && onSelectEnd()}>
+    <div className="pdf-scroll" ref={scrollRef} onScroll={onScroll} data-tool={tool} data-dark={pdfDark ? '1' : undefined} data-crop={crop > 0 ? '1' : undefined} data-spread={cols === 2 ? '1' : undefined} style={{ '--crop': `${crop}%` } as CSSProperties} onPointerUp={onSelectEnd} onKeyUp={(e) => e.shiftKey && onSelectEnd()}>
       {!pdf || !base || !scale ? (
         <div className="loading">Cargando documento…</div>
       ) : (

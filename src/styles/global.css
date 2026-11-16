@@ -6819,3 +6819,327 @@ button.kpi:hover {
   gap: 6px;
   font-size: 13px;
 }
+
+/* ===================== 0.9 · Doble plana y barra mínima ===================== */
+
+/* Dos páginas por fila: cada una ya viene a la mitad del ancho (scale), así que solo se acomodan. */
+.pdf-scroll[data-spread] {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 18px;
+}
+.pdf-scroll[data-spread] .pdf-page {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+/* Controles flotantes cuando solo se ve la guía (pantalla completa). */
+.focus-bar {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 690;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+  opacity: 0.16;
+  transition: opacity 140ms ease;
+}
+.focus-bar:hover,
+.focus-bar:focus-within,
+.focus-bar[data-near='1'] {
+  opacity: 1;
+}
+.focus-bar .page-input {
+  width: 52px;
+  text-align: center;
+}
+.focus-bar .zoom-label {
+  min-width: 42px;
+  text-align: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .focus-bar {
+    transition: none;
+  }
+}
+
+/* ===================== 0.9 · Organizar hojas ===================== */
+
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+  max-height: 54vh;
+  overflow: auto;
+}
+.sheet-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  overflow: hidden;
+  cursor: grab;
+}
+.sheet-card.dragging {
+  opacity: 0.45;
+}
+.sheet-card.over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.sheet-thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1000 / 1414;
+  background: #fff;
+}
+.sheet-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+[data-theme='dark'] .sheet-thumb {
+  background: #f6f5f1;
+}
+.sheet-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border-top: 1px solid var(--border);
+}
+.sheet-foot .small {
+  flex: 1;
+  min-width: 0;
+}
+.sheet-foot em {
+  font-style: normal;
+  font-size: 11px;
+}
+
+/* ===================== 0.9 · Repaso de guardia (una mano) ===================== */
+
+.review[data-onehand] .fc-front {
+  font-size: 1.22rem;
+  line-height: 1.5;
+}
+.review[data-onehand] .grade-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.review[data-onehand] .btn.grade {
+  min-height: 62px;
+  font-size: 1rem;
+}
+.review[data-onehand] .flashcard {
+  min-height: 46vh;
+}
+
+/* ===================== 0.9 · Historial de simulacros ===================== */
+
+.trend {
+  width: 100%;
+  height: 72px;
+  margin: 6px 0 2px;
+  overflow: visible;
+}
+.trend-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+.trend-dot {
+  fill: var(--accent);
+}
+.trend-goal {
+  stroke: var(--border-strong);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.spec-bars {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.spec-bars li {
+  display: grid;
+  grid-template-columns: minmax(90px, 1.2fr) 3fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.spec-bars .bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.spec-bars .bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.spec-bars .bar i[data-low] {
+  background: var(--danger);
+}
+.attempt-row {
+  display: block;
+}
+.attempt-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.attempt-main .ellipsis {
+  flex: 1;
+}
+.attempt-detail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0 0 8px;
+}
+
+/* ===================== 0.9 · Temario editable ===================== */
+
+.temario-list.edit li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+}
+.temario-list.edit .input.sm {
+  min-width: 0;
+}
+.temario-list.edit .input.xs {
+  width: 62px;
+}
+.temario-add {
+  margin-top: 10px;
+}
+.temario-hidden {
+  margin-top: 10px;
+}
+.temario-hidden ul {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.temario-hidden li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+.temario-hidden .ellipsis {
+  flex: 1;
+}
+.ocr-gloss {
+  margin: 10px 0;
+}
+.ocr-gloss summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+/* ===================== 0.9 · Agenda del turno ===================== */
+
+.shift-agenda ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.shift-agenda li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.shift-agenda li.due b {
+  color: var(--danger);
+}
+.shift-agenda .bed {
+  min-width: 64px;
+  color: var(--text-muted);
+}
+.shift-agenda .ellipsis {
+  flex: 1;
+}
+.chip-btn {
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.chip-btn.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+/* ===================== 0.9 · Espacio y revisión ===================== */
+
+.quota-bar {
+  height: 10px;
+  margin: 6px 0;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.quota-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.quota-bar i[data-high] {
+  background: var(--danger);
+}
+.size-list {
+  margin: 6px 0;
+  padding: 0;
+  list-style: none;
+  max-height: 34vh;
+  overflow: auto;
+}
+.size-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.size-list .ellipsis {
+  flex: 1;
+}
+.size-list em {
+  font-style: normal;
+}

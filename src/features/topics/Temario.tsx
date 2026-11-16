@@ -3,7 +3,9 @@ import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
 import { CALCULATORS, calculatorsForTopic } from '../../clinical/calculators';
 import { useCards } from '../../flashcards/store';
-import { SPECIALTIES, SPECIALTY, TOPICS, gpcSearchUrl } from '../../internship/curriculum';
+import { SPECIALTIES, SPECIALTY, TOPICS, baseTopics, gpcSearchUrl } from '../../internship/curriculum';
+import { useCurriculum } from '../../internship/curriculumStore';
+import type { Topic } from '../../internship/types';
 import { GUARD_FIELDS, useTopicStore } from '../../internship/topicStore';
 import type { SpecialtyId } from '../../internship/types';
 import { useUI } from '../../store/ui';
@@ -83,7 +85,9 @@ export function TemarioModal() {
   const cards = useCards((s) => s.cards);
   const [q, setQ] = useState('');
   const [sp, setSp] = useState<SpecialtyId | ''>('');
-  const [mode, setMode] = useState<'list' | 'map'>('list');
+  const [mode, setMode] = useState<'list' | 'map' | 'edit'>('list');
+  // Si cambias el temario, la lista debe redibujarse (TOPICS se modifica en memoria).
+  useCurriculum((s) => s.rev);
   const cardCount = useMemo(() => {
     const m = new Map<string, number>();
     for (const c of cards) if (c.topicId) m.set(c.topicId, (m.get(c.topicId) ?? 0) + 1);
@@ -115,9 +119,14 @@ export function TemarioModal() {
             <button className={mode === 'map' ? 'active' : ''} onClick={() => setMode('map')} aria-pressed={mode === 'map'}>
               <Icon name="map" size={14} /> Mapa GPC
             </button>
+            <button className={mode === 'edit' ? 'active' : ''} onClick={() => setMode('edit')} aria-pressed={mode === 'edit'} title="Agregar, quitar o repriorizar temas">
+              <Icon name="pencil" size={14} /> Editar
+            </button>
           </div>
         </div>
-        {mode === 'map' ? (
+        {mode === 'edit' ? (
+          <TemarioEditor list={list} sp={sp} />
+        ) : mode === 'map' ? (
           <GpcMap topics={list} onOpen={(id) => openTopic(id, 'docs')} />
         ) : (
         <ul className="temario-list">
@@ -270,5 +279,147 @@ export function GuardQuick() {
         )}
       </div>
     </Modal>
+  );
+}
+
+/* ---------- Editar el temario ---------- */
+
+const YIELD_LABEL: Record<1 | 2 | 3, string> = { 3: 'Alta', 2: 'Media', 1: 'Baja' };
+
+/**
+ * Editor del temario: cambiar título, prioridad y minutos, partir un tema en partes, quitar
+ * los que no vas a estudiar y agregar los tuyos. Los ids no cambian, así que lo que ya marcaste
+ * como estudiado se conserva. El plan del año se recalcula solo.
+ */
+function TemarioEditor({ list, sp }: { list: Topic[]; sp: SpecialtyId | '' }) {
+  const { patch, added, hidden, editTopic, addTopic, removeTopic, restoreTopic, resetAll } = useCurriculum();
+  const [newTitle, setNewTitle] = useState('');
+  const [newSp, setNewSp] = useState<SpecialtyId>(sp || 'mi');
+  const changed = Object.keys(patch).length + added.length + hidden.length;
+  const base = baseTopics();
+
+  return (
+    <div className="temario-edit">
+      <p className="muted small">
+        Tus cambios se guardan aparte del temario base, así que una actualización de la app no te los borra. Lo que ya marcaste
+        como estudiado se conserva.
+      </p>
+      <ul className="temario-list edit">
+        {list.map((t) => (
+          <li key={t.id} style={{ '--sp': SPECIALTY[t.specialty].color } as CSSProperties}>
+            <span className="sp-tag">{SPECIALTY[t.specialty].short}</span>
+            <input
+              className="input sm grow"
+              value={t.title}
+              onChange={(e) => editTopic(t.id, { title: e.target.value })}
+              aria-label={`Título de ${t.title}`}
+            />
+            <select
+              className="select xs"
+              value={t.yield}
+              onChange={(e) => editTopic(t.id, { yield: Number(e.target.value) as 1 | 2 | 3 })}
+              aria-label={`Prioridad de ${t.title}`}
+              title="Prioridad: cuánto tiempo le toca en el plan"
+            >
+              {([3, 2, 1] as const).map((y) => (
+                <option key={y} value={y}>
+                  {YIELD_LABEL[y]}
+                </option>
+              ))}
+            </select>
+            <input
+              className="input xs tabular"
+              type="number"
+              min={10}
+              max={300}
+              step={5}
+              value={t.minutes}
+              onChange={(e) => editTopic(t.id, { minutes: Math.min(300, Math.max(10, Number(e.target.value) || 10)) })}
+              aria-label={`Minutos de ${t.title}`}
+              title="Minutos estimados de estudio"
+            />
+            <button
+              className="icon-btn xs"
+              title="Partir en dos partes (la segunda queda como tema tuyo)"
+              aria-label={`Partir ${t.title}`}
+              onClick={() => {
+                const half = Math.max(10, Math.round(t.minutes / 2 / 5) * 5);
+                editTopic(t.id, { title: `${t.title} (1/2)`, minutes: half });
+                addTopic({ specialty: t.specialty, title: `${t.title} (2/2)`, minutes: t.minutes - half, yield: t.yield, gpc: t.gpc });
+              }}
+            >
+              <Icon name="columns" size={14} />
+            </button>
+            <button
+              className="icon-btn xs danger"
+              title={t.id.startsWith('u-') ? 'Borrar este tema tuyo' : 'Quitarlo del plan (se puede restaurar)'}
+              aria-label={`Quitar ${t.title}`}
+              onClick={() => removeTopic(t.id)}
+            >
+              <Icon name="trash" size={14} />
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="field-row tight temario-add">
+        <input
+          className="input grow"
+          value={newTitle}
+          placeholder="Tema nuevo…"
+          aria-label="Tema nuevo"
+          onChange={(e) => setNewTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && newTitle.trim()) {
+              addTopic({ specialty: newSp, title: newTitle.trim(), minutes: 55, yield: 2 });
+              setNewTitle('');
+            }
+          }}
+        />
+        <select className="select" value={newSp} onChange={(e) => setNewSp(e.target.value as SpecialtyId)} aria-label="Especialidad del tema nuevo">
+          {SPECIALTIES.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
+        </select>
+        <button
+          className="btn primary"
+          disabled={!newTitle.trim()}
+          onClick={() => {
+            addTopic({ specialty: newSp, title: newTitle.trim(), minutes: 55, yield: 2 });
+            setNewTitle('');
+          }}
+        >
+          <Icon name="plus" size={15} /> Agregar
+        </button>
+      </div>
+
+      {hidden.length > 0 && (
+        <details className="temario-hidden">
+          <summary className="small">Quitados del plan ({hidden.length})</summary>
+          <ul>
+            {hidden.map((id) => (
+              <li key={id}>
+                <span className="ellipsis">{base.find((t) => t.id === id)?.title ?? id}</span>
+                <button className="btn ghost sm" onClick={() => restoreTopic(id)}>
+                  <Icon name="undo" size={14} /> Restaurar
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      {changed > 0 && (
+        <div className="row gap">
+          <span className="muted small">{changed} cambio(s) sobre el temario base.</span>
+          <div className="spacer" />
+          <button className="btn ghost sm" onClick={() => confirm('¿Dejar el temario como venía? Se pierden tus cambios, no lo estudiado.') && resetAll()}>
+            Restaurar el temario base
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

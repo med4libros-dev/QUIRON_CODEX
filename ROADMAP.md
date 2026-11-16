@@ -116,6 +116,13 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - **Etiquetas** (`Note.tags`), **dictado** (`lib/dictation.ts`), **paquete de repaso** (`lib/studyPack.ts`), **.ics** (`lib/ics.ts`) y **cuaderno a PDF** (`exportNotebookToPdf`).
 - **Sincronización asistida** Surface ↔ PC (`syncCheck`/`startSyncWatch` + `features/backup/SyncBar.tsx`): avisa y trae, nunca sobreescribe sin preguntar.
 
+### v0.9 · Lector, repaso y temario propios ✅ (noviembre 2026)
+- **FSRS** (`flashcards/fsrs.ts`) sustituye a SM-2, con exigencia configurable y cola de guardia a una mano.
+- **Doble plana**, **barra flotante en pantalla completa**, **organizar hojas** (reordenar, fusionar, mover la selección).
+- **Temario editable** sin perder lo estudiado (`internship/curriculumStore.ts`, `applyCurriculumEdits`).
+- **Historial de simulacros** con tendencia y repetición de falladas; **informe semanal** con planeado vs. real.
+- **Glosario de abreviaturas** y transcripción de un cuaderno completo; **espacio y revisión** del respaldo.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.
@@ -123,7 +130,7 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - ~~Búsqueda en todas las notas (texto) y etiquetas~~ ✅ v0.8 (incluye lo escrito a mano).
 
 ### Fase 4 · Active recall avanzado (parcialmente cubierto por la Fase 3b)
-- **Flashcards con FSRS**: se crean desde resaltados, perlas ENARM y huecos (cloze) del texto; tienen una cola diaria integrada a la lección del día.
+- ~~**Flashcards con FSRS**~~ ✅ v0.9. Se crean desde resaltados, perlas ENARM y huecos (cloze) del texto; tienen una cola diaria integrada a la lección del día.
 - **Mini-examen del día** tipo ENARM: caso clínico corto, 4–5 opciones, retroalimentación inmediata y la **cita de la GPC con su página**. Se generan con Claude a partir del texto de la guía vinculada (opcional, con API key) y se guardan en un banco local editable. Sin internet usa solo el banco.
 - Estadísticas de desempeño por especialidad y tema; los temas débiles reciben más repaso.
 - **Replanificación adaptativa**: si te atrasas o fallas, el algoritmo redistribuye desde hoy.

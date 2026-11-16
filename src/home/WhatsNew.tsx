@@ -8,15 +8,15 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'pencil', title: 'Buscar en lo que escribiste a mano', text: 'En la nota, menú «⋯» → Reconocer mi letra: transcribe tus hojas con la IA que elegiste. Después Ctrl+K encuentra lo que anotaste con el lápiz, y puedes pasar la hoja a texto editable.' },
-  { icon: 'search', title: 'Ctrl+F dentro de la guía', text: 'Busca una palabra en el PDF abierto, salta de coincidencia en coincidencia y las marca sobre la página.' },
-  { icon: 'columns', title: 'Pestañas y márgenes', text: 'Varias guías abiertas a la vez en pestañas; el botón de márgenes recorta el borde blanco para aprovechar la pantalla. En Marcadores ahora también está el índice que trae el propio PDF.' },
-  { icon: 'eye', title: 'Tapar para repasar', text: 'Recorta un esquema y tapa sus etiquetas: sale una tarjeta por cada una. Y en hojas Cornell o de dos columnas, «Tapar y repasar» cubre la columna izquierda.' },
-  { icon: 'highlighter', title: 'Todos los resaltados de un tema', text: 'En la ficha del tema, pestaña «Resaltados»: todo lo que marcaste en sus guías, en una hoja, con su página y filtrable por color.' },
-  { icon: 'trash', title: 'Papelera de 30 días e historial', text: 'Lo que borres (notas, guías, hojas) se puede recuperar 30 días desde Ajustes → Papelera. Cada nota guarda además versiones anteriores de su texto.' },
-  { icon: 'tag', title: 'Etiquetas y dictado', text: 'Pon etiquetas a tus notas y fíltralas en Cuadernos. Y si traes las manos ocupadas, dicta a la nota por voz.' },
-  { icon: 'swap', title: 'Surface y PC al día', text: 'Si la otra computadora dejó avance más nuevo en la carpeta compartida, la app te ofrece traerlo al abrir. Y en Respaldo → «Llevarlo a otro lado» sacas un paquete para repasar en el celular y el plan en .ics para tu calendario.' },
-  { icon: 'notebook', title: 'Cuaderno completo a PDF', text: 'Desde el menú «⋯» de la nota: todas las notas del cuaderno en un PDF con índice.' },
+  { icon: 'columns', title: 'Doble plana y controles flotantes', text: 'El botón de columnas pone dos páginas a la vez (para tablas a doble hoja). En pantalla completa ya no te quedas sin controles: acerca el lápiz al borde de arriba y aparecen página, zoom y búsqueda.' },
+  { icon: 'layers', title: 'Organizar hojas del lienzo', text: 'Botón «Hojas»: miniaturas que arrastras para reordenar y fusionar con la anterior. Y con el lazo puedes mandar lo seleccionado a la hoja de arriba o de abajo.' },
+  { icon: 'cards', title: 'Repaso FSRS y cola de guardia', text: 'El repaso espaciado ahora usa FSRS: calcula el día exacto según lo que de verdad recuerdas. En Herramientas → «Repaso de guardia»: 10 minutos, botones grandes, con una mano. La exigencia se ajusta en Preferencias.' },
+  { icon: 'chart', title: 'Historial de simulacros', text: 'Pestaña «Historial» en Simulacros: cómo vienes intento a intento, en qué especialidad fallas y un botón para repetir solo las que fallaste.' },
+  { icon: 'pencil', title: 'Tu letra, mejor leída', text: 'Guarda tus abreviaturas («IAM = infarto agudo de miocardio») y el reconocimiento deja de equivocarse en las mismas. En Cuadernos puedes transcribir todas las notas del cuaderno de una pasada.' },
+  { icon: 'list', title: 'Temario editable', text: 'En Temario → «Editar»: cambia títulos y prioridades, parte un tema en dos, quita los que no vas a estudiar y agrega los tuyos. El plan del año se recalcula y lo ya estudiado se conserva.' },
+  { icon: 'calendar', title: 'Informe semanal más honesto', text: 'Ahora compara los minutos que hiciste con los que el plan pedía, lista los temas que cerraste y cuenta los pendientes que se te movieron.' },
+  { icon: 'clock', title: 'Turno por hora', text: 'Los pendientes con hora de todos tus pacientes, juntos y en orden, con atajos «+30m / +1h / +2h» al capturarlos.' },
+  { icon: 'database', title: 'Espacio y revisión', text: 'En Respaldo → «Espacio y revisión»: cuánto llevas usado, qué guías pesan más (con borrado definitivo) y un botón que comprueba que la carpeta compartida de verdad está escribiendo.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

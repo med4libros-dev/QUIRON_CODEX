@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+// Se carga pronto: aplica tus cambios del temario antes de dibujar el plan.
+import { useCurriculum } from './internship/curriculumStore';
 import { startAutoBackup } from './lib/backup';
 import { installExternalLinkHandler } from './lib/platform';
 import { idb } from './lib/idb';
@@ -14,6 +16,8 @@ startAutoBackup();
 installExternalLinkHandler();
 // Se quitó el hub de NotebookLM: borra sus datos guardados de versiones anteriores.
 void idb.del('kv', 'sources');
+
+void useCurriculum.getState();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

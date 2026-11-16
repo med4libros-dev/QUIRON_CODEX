@@ -34,6 +34,15 @@ export interface SettingsState {
   /** Punta predictiva del lápiz (experimental): adelanta el trazo unos milisegundos. */
   inkPredict: boolean;
   setInkPredict: (v: boolean) => void;
+  /** Tus abreviaturas, una por línea («IAM = infarto agudo de miocardio»): ayudan a leer tu letra. */
+  inkGlossary: string;
+  setInkGlossary: (v: string) => void;
+  /** Exigencia del repaso (FSRS): probabilidad de acierto que quieres mantener. */
+  retention: number;
+  setRetention: (v: number) => void;
+  /** Doble plana: dos páginas del PDF una al lado de la otra. */
+  pdfSpread: boolean;
+  setPdfSpread: (v: boolean) => void;
   /** Recorte de márgenes del PDF en % de cada lado (0 = página completa). */
   pdfCrop: number;
   setPdfCrop: (v: number) => void;
@@ -98,6 +107,12 @@ export const useSettings = createStore<SettingsState>(
     setInkPredict: (inkPredict) => set({ inkPredict }),
     pdfDark: false,
     setPdfDark: (pdfDark) => set({ pdfDark }),
+    inkGlossary: '',
+    setInkGlossary: (inkGlossary) => set({ inkGlossary: inkGlossary.slice(0, 4000) }),
+    retention: 0.9,
+    setRetention: (retention) => set({ retention: Math.min(0.97, Math.max(0.8, retention)) }),
+    pdfSpread: false,
+    setPdfSpread: (pdfSpread) => set({ pdfSpread }),
     pdfCrop: 0,
     setPdfCrop: (v) => set({ pdfCrop: Math.min(12, Math.max(0, Math.round(v))) }),
     openDocs: [],
@@ -145,8 +160,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, pdfCrop, openDocs, aiProvider, geminiKey, geminiModel }) => ({
-      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, pdfCrop, openDocs, aiProvider, geminiKey, geminiModel,
+    pick: ({ theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel }) => ({
+      theme, look, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel,
     }),
   },
 );

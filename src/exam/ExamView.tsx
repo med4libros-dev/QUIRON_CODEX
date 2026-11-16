@@ -15,6 +15,7 @@ import { useUI } from '../store/ui';
 import { topicMastery, weakTopics } from '../analytics/mastery';
 import { generateQuestions } from './generate';
 import { questionStats, useExam, type Question } from './store';
+import { History } from './History';
 
 const LETTERS = 'ABCDEF';
 type Source = 'week' | 'weak' | 'pick' | 'asked' | 'all';
@@ -39,7 +40,7 @@ export function ExamView() {
   const [count, setCount] = useState(20);
   const [mode, setMode] = useState<'exam' | 'study'>('exam');
   const [run, setRun] = useState<{ ids: string[]; title: string; minutes: number; mode: 'exam' | 'study' } | null>(null);
-  const [tab, setTab] = useState<'block' | 'bank' | 'gen'>('block');
+  const [tab, setTab] = useState<'block' | 'bank' | 'gen' | 'hist'>('block');
 
   const week = useMemo(() => topicsThisWeek(done), [done]);
   const weak = useMemo(() => weakTopics(topicMastery(cards, questions, attempts), 8), [cards, questions, attempts]);
@@ -112,6 +113,7 @@ export function ExamView() {
           [
             ['block', 'Nuevo simulacro'],
             ['gen', 'Generar casos'],
+            ['hist', 'Historial'],
             ['bank', 'Banco de preguntas'],
           ] as const
         ).map(([id, label]) => (
@@ -208,6 +210,8 @@ export function ExamView() {
 
       {tab === 'gen' && <Generator week={week} weak={weak} />}
       {tab === 'bank' && <Bank />}
+
+      {tab === 'hist' && <History onRetry={(ids, title) => setRun({ ids, title, minutes: Math.max(5, ids.length), mode: 'study' })} />}
 
       {attempts.length > 0 && tab === 'block' && (
         <section className="card">

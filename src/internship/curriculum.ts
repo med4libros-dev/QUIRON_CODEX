@@ -187,6 +187,35 @@ export const TOPICS: Topic[] = (Object.keys(RAW) as SpecialtyId[]).flatMap((sp) 
 );
 export const TOPIC: Record<string, Topic> = Object.fromEntries(TOPICS.map((t) => [t.id, t]));
 
+/** Copia intacta del temario base: los cambios del usuario siempre se aplican sobre esto. */
+const BASE: readonly Topic[] = TOPICS.map((t) => ({ ...t }));
+
+export interface CurriculumEditsInput {
+  patch: Record<string, Partial<Topic>>;
+  added: Topic[];
+  hidden: string[];
+}
+
+/**
+ * Aplica los cambios del usuario al temario **en memoria**, conservando la misma referencia de
+ * `TOPICS` y `TOPIC` (todo el programa las importa directo). Se llama al arrancar y en cada edición.
+ */
+export function applyCurriculumEdits({ patch, added, hidden }: CurriculumEditsInput): void {
+  const hide = new Set(hidden);
+  const next = BASE.filter((t) => !hide.has(t.id)).map((t) => (patch[t.id] ? { ...t, ...patch[t.id] } : { ...t }));
+  // Los temas propios van al final de su especialidad, para no romper el orden del temario base.
+  for (const t of added) {
+    const last = next.map((x) => x.specialty).lastIndexOf(t.specialty);
+    next.splice(last >= 0 ? last + 1 : next.length, 0, { ...t });
+  }
+  TOPICS.splice(0, TOPICS.length, ...next);
+  for (const k of Object.keys(TOPIC)) delete TOPIC[k];
+  for (const t of next) TOPIC[t.id] = t;
+}
+
+/** El temario base, sin tus cambios (para poder restaurar un tema oculto). */
+export const baseTopics = () => BASE;
+
 /**
  * Búsqueda de la GPC del tema restringida a dominios oficiales.
  * (El Catálogo Maestro de CENETEC dejó de estar disponible en 2025; los PDFs del IMSS siguen publicados.)

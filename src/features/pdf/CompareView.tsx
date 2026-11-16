@@ -70,7 +70,7 @@ export function CompareView() {
             </option>
           ))}
         </select>
-        <div className="cmp-viewer">{docs.some((d) => d.id === id) ? <PdfViewer key={id} docId={id} tool="select" zoom={zoom} onPageChange={() => undefined} onZoom={setZoom} persistPage={false} /> : <p className="muted">Documento no disponible.</p>}</div>
+        <div className="cmp-viewer">{docs.some((d) => d.id === id) ? <PdfViewer key={id} docId={id} tool="select" zoom={zoom} onPageChange={() => undefined} onZoom={setZoom} persistPage={false} spread={false} /> : <p className="muted">Documento no disponible.</p>}</div>
       </div>
     );
   };

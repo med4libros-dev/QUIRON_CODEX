@@ -15,6 +15,8 @@ export interface PersistConfig<T> {
   key: string;
   storage: 'local' | 'idb';
   pick: (state: T) => Partial<T>;
+  /** Se llama una vez con lo que venía del disco (para aplicar efectos, no para cambiar el estado). */
+  onHydrate?: (state: T) => void;
 }
 
 export interface BoundStore<T> {
@@ -121,12 +123,22 @@ export function createStore<T extends object>(
         /* almacenamiento no disponible */
       }
       hydrated = true;
+      try {
+        persist.onHydrate?.(state);
+      } catch (e) {
+        console.warn('onHydrate falló en', persist.key, e);
+      }
     } else {
       idb
         .get<string>('kv', persist.key)
         .then(merge, (e) => console.warn(e))
         .finally(() => {
           hydrated = true;
+          try {
+            persist.onHydrate?.(state);
+          } catch (e) {
+            console.warn('onHydrate falló en', persist.key, e);
+          }
           notify();
         });
     }

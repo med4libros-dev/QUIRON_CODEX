@@ -2,6 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { Icon } from '../components/Icon';
 import { WEEKDAYS, addDays, addMonths, fmt, formatMinutes, fromKey, startOfMonth, startOfWeek, toKey, todayKey } from '../lib/date';
 import { SPECIALTIES, SPECIALTY, TOPIC, TOPICS, gpcSearchUrl } from './curriculum';
+import { useCurriculum } from './curriculumStore';
 import { openTopicNote } from './openLesson';
 import { applyAdjustments, applyReinforcement, diffDays, generatePlan, survivalMoves, type PlanResult } from './planner';
 import { SetupWizard } from './SetupWizard';
@@ -36,7 +37,9 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
   const toggleDone = useInternship((s) => s.toggleDone);
   const shifts = useInternship((s) => s.shifts);
   const survival = useInternship((s) => s.survival);
-  const basePlan = useMemo(() => generatePlan(config, TOPICS), [config]);
+  // `rev` sube cuando editas el temario: el plan se vuelve a calcular con los temas nuevos.
+  const rev = useCurriculum((s) => s.rev);
+  const basePlan = useMemo(() => generatePlan(config, TOPICS), [config, rev]);
   // El plan anual no se regenera: los ajustes (Modo supervivencia) se superponen.
   const cards = useCards((s) => s.cards);
   const questions = useExam((s) => s.questions);

@@ -24,7 +24,7 @@ export interface UIState {
   /** Borrador de flashcard (desde el PDF o manual). */
   cardDraft: (Partial<Pick<Card, 'front' | 'back' | 'image' | 'source'>> & { topicId: string | null }) | null;
   /** Sesión de repaso de flashcards. `minutes` = límite de tiempo (modo supervivencia). */
-  review: { cardIds: string[]; title: string; minutes?: number } | null;
+  review: { cardIds: string[]; title: string; minutes?: number; oneHand?: boolean } | null;
   temarioOpen: boolean;
   guardQuickOpen: boolean;
   /** Pestaña de la Vista de Guardia y peso precargado para el cálculo de dosis. */

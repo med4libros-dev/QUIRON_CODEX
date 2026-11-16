@@ -65,6 +65,11 @@ export function PdfWorkspace() {
   const closeDoc = useSettings((s) => s.closeDoc);
   const crop = useSettings((s) => s.pdfCrop);
   const setPdfCrop = useSettings((s) => s.setPdfCrop);
+  const spread = useSettings((s) => s.pdfSpread);
+  const setPdfSpread = useSettings((s) => s.setPdfSpread);
+  const focusOn = useUI((s) => s.focus);
+  /** El puntero está cerca del borde de arriba: se muestran los controles flotantes. */
+  const [nearTop, setNearTop] = useState(false);
   /** Pestañas de guías abiertas (se omiten las que ya se borraron). */
   const tabs = openDocs.map((id) => docs.find((d) => d.id === id)).filter((d): d is DocMeta => !!d);
   const pageMarked = useLibrary((s) => (activeDocId ? (s.bookmarks[activeDocId] ?? []).some((b) => b.page === page) : false));
@@ -137,6 +142,14 @@ export function PdfWorkspace() {
       setBusy(false);
     }
   };
+
+  // En pantalla completa la barra flotante se aclara al acercar el lápiz o el ratón al borde.
+  useEffect(() => {
+    if (!focusOn) return setNearTop(false);
+    const on = (e: PointerEvent) => setNearTop(e.clientY < 90);
+    window.addEventListener('pointermove', on);
+    return () => window.removeEventListener('pointermove', on);
+  }, [focusOn]);
 
   const zoomStep = (dir: 1 | -1) =>
     setZoom((z) => {
@@ -254,6 +267,15 @@ export function PdfWorkspace() {
               >
                 <Icon name="minimize" />
               </button>
+              <button
+                className={`icon-btn${spread ? ' active' : ''}`}
+                onClick={() => setPdfSpread(!spread)}
+                title={spread ? 'Una página a la vez' : 'Doble plana: dos páginas a la vez (para tablas a doble hoja)'}
+                aria-pressed={spread}
+                aria-label="Doble plana"
+              >
+                <Icon name="columns" />
+              </button>
             </div>
             <div className="group">
               <button className="icon-btn" onClick={() => zoomStep(-1)} title="Alejar">
@@ -294,6 +316,38 @@ export function PdfWorkspace() {
           </>
         )}
       </div>
+
+      {doc && focusOn && (
+        <div className="focus-bar" data-near={nearTop ? '1' : undefined} role="toolbar" aria-label="Controles de la guía">
+          <button className="icon-btn" onClick={() => zoomStep(-1)} title="Alejar" aria-label="Alejar">
+            <Icon name="zoomOut" size={16} />
+          </button>
+          <button className="btn ghost tabular zoom-label sm" onClick={() => setZoom(1)} title="Ajustar al ancho">
+            {Math.round(zoom * 100)}%
+          </button>
+          <button className="icon-btn" onClick={() => zoomStep(1)} title="Acercar" aria-label="Acercar">
+            <Icon name="zoomIn" size={16} />
+          </button>
+          <input
+            className="input page-input tabular sm"
+            value={pageDraft ?? String(page)}
+            onChange={(e) => setPageDraft(e.target.value.replace(/\D/g, ''))}
+            onFocus={(e) => e.currentTarget.select()}
+            onBlur={commitPage}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
+            aria-label="Ir a página"
+          />
+          <span className="muted small tabular">/ {doc.pageCount || '…'}</span>
+          <button className={`icon-btn${findOpen ? ' active' : ''}`} onClick={() => setFindOpen((v) => !v)} title="Buscar en esta guía (Ctrl+F)" aria-label="Buscar en esta guía">
+            <Icon name="search" size={16} />
+          </button>
+          <button className={`icon-btn${spread ? ' active' : ''}`} onClick={() => setPdfSpread(!spread)} title="Doble plana" aria-pressed={spread} aria-label="Doble plana">
+            <Icon name="columns" size={16} />
+          </button>
+        </div>
+      )}
 
       {doc && findOpen && <FindBar docId={doc.id} onFind={setFind} onGo={(p) => goTo(doc.id, p)} onClose={() => setFindOpen(false)} />}
 

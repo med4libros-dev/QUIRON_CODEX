@@ -5,7 +5,8 @@ import { topicMastery, weakTopics } from '../analytics/mastery';
 import { useDrugs } from '../drugs/store';
 import { useExam } from '../exam/store';
 import { useCards } from '../flashcards/store';
-import { TOPIC } from '../internship/curriculum';
+import { generatePlan } from '../internship/planner';
+import { TOPIC, TOPICS } from '../internship/curriculum';
 import { useInternship } from '../internship/store';
 import { useTopicStore } from '../internship/topicStore';
 import { fmt, fromKey, todayKey, weekBounds } from '../lib/date';
@@ -102,6 +103,12 @@ interface WeekStats {
   cases: number;
   journal: number;
   weak: string[];
+  /** Minutos que el plan pedía esta semana (para comparar con lo que de verdad hiciste). */
+  planned: number;
+  /** Temas que quedaron terminados esta semana. */
+  closed: string[];
+  /** Lecciones que el modo supervivencia movió y cayeron en esta semana. */
+  moved: number;
 }
 
 export function useWeekStats(): WeekStats {
@@ -113,6 +120,8 @@ export function useWeekStats(): WeekStats {
   const entries = useLogbook((s) => s.entries);
   const journal = useLogbook((s) => s.journal);
   const info = useTopicStore((s) => s.info);
+  const config = useInternship((s) => s.config);
+  const shifts = useInternship((s) => s.shifts);
   return useMemo(() => {
     const range = weekBounds(new Date());
     const inR = (k?: string) => !!k && k >= range[0] && k <= range[1];
@@ -120,6 +129,27 @@ export function useWeekStats(): WeekStats {
     let seen = 0;
     let right = 0;
     const weekAtt = attempts.filter((a) => inR(a.date));
+
+    // Lo que el plan pedía esta semana y qué temas quedaron cerrados.
+    let planned = 0;
+    const closed: string[] = [];
+    if (config) {
+      const plan = generatePlan(config, TOPICS);
+      const byTopic = new Map<string, { ids: string[]; last: string }>();
+      for (const [k, day] of plan.days) {
+        for (const l of day.lessons) {
+          if (inR(k)) planned += l.minutes;
+          const e = byTopic.get(l.topicId) ?? { ids: [], last: '' };
+          e.ids.push(l.id);
+          byTopic.set(l.topicId, e);
+        }
+      }
+      for (const [topicId, e] of byTopic) {
+        const dates = e.ids.map((id) => done[id]);
+        // Cerrado = todas sus lecciones hechas, y la última cayó dentro de esta semana.
+        if (dates.every(Boolean) && inR(dates.sort().at(-1))) closed.push(topicId);
+      }
+    }
     for (const a of weekAtt)
       a.questionIds.forEach((id, i) => {
         const q = byId.get(id);
@@ -139,8 +169,11 @@ export function useWeekStats(): WeekStats {
       cases: Object.values(info).reduce((n, i) => n + i.cases.filter((c) => inR(c.date)).length, 0),
       journal: journal.filter((j) => inR(j.date)).length,
       weak: weakTopics(topicMastery(cards, questions, attempts), 3),
+      planned,
+      closed,
+      moved: Object.values(shifts).filter(inR).length,
     };
-  }, [done, logs, cards, questions, attempts, entries, journal, info]);
+  }, [done, logs, cards, questions, attempts, entries, journal, info, config, shifts]);
 }
 
 export function weekSummaryHtml(w: WeekStats): string {
@@ -149,7 +182,9 @@ export function weekSummaryHtml(w: WeekStats): string {
   return (
     `<h3>Lo que hiciste</h3><ul>` +
     row('Lecciones completadas', String(w.lessons)) +
-    row('Minutos de estudio enfocado', String(w.minutes)) +
+    row('Minutos de estudio enfocado', w.planned ? `${w.minutes} de ${w.planned} planeados (${Math.round((w.minutes / w.planned) * 100)} %)` : String(w.minutes)) +
+    row('Temas cerrados', w.closed.length ? w.closed.map((id) => TOPIC[id]?.title ?? id).join(', ') : 'Ninguno') +
+    (w.moved ? row('Pendientes que se movieron a esta semana', String(w.moved)) : '') +
     row('Flashcards repasadas', String(w.cards)) +
     row('Simulacros', `${w.exams}${pct !== null ? ` · ${w.right}/${w.seen} aciertos (${pct}%)` : ''}`) +
     row('Procedimientos registrados', String(w.procs)) +
@@ -185,8 +220,11 @@ export function WeeklySummary() {
             <span>
               <b className="tabular">{w.lessons}</b> lecciones
             </span>
+            <span title={w.planned ? `El plan pedía ${w.planned} min esta semana` : undefined}>
+              <b className="tabular">{w.minutes}</b> min enfocado{w.planned ? ` de ${w.planned}` : ''}
+            </span>
             <span>
-              <b className="tabular">{w.minutes}</b> min enfocado
+              <b className="tabular">{w.closed.length}</b> tema{w.closed.length === 1 ? '' : 's'} cerrado{w.closed.length === 1 ? '' : 's'}
             </span>
             <span>
               <b className="tabular">{w.cards}</b> flashcards
@@ -201,6 +239,12 @@ export function WeeklySummary() {
               <b className="tabular">{w.cases}</b> casos
             </span>
           </div>
+          {w.closed.length > 0 && <p className="small muted">Cerraste: {w.closed.map((id) => TOPIC[id]?.title ?? id).join(' · ')}</p>}
+          {w.moved > 0 && (
+            <p className="small muted">
+              {w.moved} pendiente{w.moved === 1 ? '' : 's'} que habías movido cayó{w.moved === 1 ? '' : 'eron'} en esta semana.
+            </p>
+          )}
           {w.weak.length > 0 && <p className="small muted">Refuerza: {w.weak.map((id) => TOPIC[id]?.title).join(' · ')}</p>}
           <button
             className="btn sm"
