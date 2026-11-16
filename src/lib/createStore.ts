@@ -1,5 +1,6 @@
 import { inkBusy } from './inkBusy';
 import { bumpChanges } from './idb';
+import { announceWrite, registerSynced } from './windowSync';
 import { useSyncExternalStore } from 'react';
 import { idb } from './idb';
 
@@ -71,15 +72,19 @@ export function createStore<T extends object>(
       try {
         localStorage.setItem(persist.key, data);
         bumpChanges();
+        announceWrite(persist.key);
       } catch (e) {
         console.warn('No se pudo guardar', persist.key, e);
         onPersistError?.(persist.key, e);
       }
     } else {
-      idb.set('kv', persist.key, data).catch((e) => {
-        console.warn('No se pudo guardar', persist.key, e);
-        onPersistError?.(persist.key, e);
-      });
+      idb
+        .set('kv', persist.key, data)
+        .then(() => announceWrite(persist.key))
+        .catch((e) => {
+          console.warn('No se pudo guardar', persist.key, e);
+          onPersistError?.(persist.key, e);
+        });
     }
   };
 
@@ -142,6 +147,31 @@ export function createStore<T extends object>(
           notify();
         });
     }
+  }
+
+  // Otra ventana (un widget) cambió esta clave: se vuelve a leer sin disparar otra escritura.
+  if (persist) {
+    const reload = () => {
+      const apply = (raw: string | null | undefined) => {
+        if (!raw) return;
+        try {
+          state = { ...state, ...(JSON.parse(raw) as Partial<T>) };
+          notify();
+        } catch {
+          /* se ignora lo ilegible */
+        }
+      };
+      if (persist.storage === 'local') {
+        try {
+          apply(localStorage.getItem(persist.key));
+        } catch {
+          /* almacenamiento no disponible */
+        }
+      } else {
+        void idb.get<string>('kv', persist.key).then(apply, () => undefined);
+      }
+    };
+    registerSynced(persist.key, reload);
   }
 
   const subscribe = (listener: () => void) => {
