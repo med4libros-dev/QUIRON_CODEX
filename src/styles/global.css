@@ -57,8 +57,8 @@
   --accent-2: #8fb3a4;
   --accent-2-soft: rgba(143, 179, 164, 0.14);
   --danger: #e0725a;
-  --canvas-bg: #110e0b;
-  --paper: #241e18;
+  --canvas-bg: #100d0a;
+  --paper: #30271f;
   --rule: rgba(236, 227, 210, 0.12);
   --ink: #ece3d2;
   --shadow-page: 0 2px 0 rgba(0, 0, 0, 0.6), 0 14px 30px rgba(0, 0, 0, 0.5);
@@ -3619,8 +3619,8 @@ textarea.soap-text {
   --accent-2: #8fb3a4;
   --accent-2-soft: rgba(143, 179, 164, 0.14);
   --danger: #e07a62;
-  --canvas-bg: #110e0b;
-  --paper: #241e18;
+  --canvas-bg: #100d0a;
+  --paper: #30271f;
   --ink: #ece3d2;
   --rule: rgba(143, 179, 164, 0.16);
   --heat-0: #2a231c;
