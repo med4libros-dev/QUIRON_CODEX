@@ -20,6 +20,10 @@ import { HlQuizModal } from './ai/HlQuizModal';
 import { ClozeModal } from './flashcards/ClozeModal';
 import { OcclusionModal } from './flashcards/OcclusionModal';
 import { SyncBar } from './features/backup/SyncBar';
+import { guardDeck } from './flashcards/FlashcardUI';
+import { useCards } from './flashcards/store';
+import { onDesktopEvent } from './lib/widgets';
+import { onWindowMessage } from './lib/windowSync';
 import { useTrash } from './store/trash';
 import { ShortcutsModal, WhatsNew } from './home/WhatsNew';
 import { startReminders } from './lib/reminders';
@@ -186,6 +190,22 @@ export default function App() {
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
   }, [theme, setDark]);
+
+  /**
+   * Atajos del sistema (app de escritorio) y avisos de los widgets: abrir la búsqueda
+   * desde cualquier programa o empezar el repaso desde la ventanita.
+   */
+  useEffect(() => {
+    const offs: (() => void)[] = [];
+    void onDesktopEvent('qc://search', () => useUI.getState().setSearchOpen(true)).then((off) => offs.push(off));
+    offs.push(
+      onWindowMessage('open-review', () => {
+        const deck = guardDeck(useCards.getState().cards, 10);
+        if (deck.length) useUI.getState().startReview({ cardIds: deck, title: 'Repaso', minutes: 10, oneHand: true });
+      }),
+    );
+    return () => offs.forEach((off) => off());
+  }, []);
 
   // Papelera: al abrir, se va lo que ya pasó de 30 días.
   useEffect(() => {

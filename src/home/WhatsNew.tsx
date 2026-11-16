@@ -8,15 +8,9 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'columns', title: 'Doble plana y controles flotantes', text: 'El botón de columnas pone dos páginas a la vez (para tablas a doble hoja). En pantalla completa ya no te quedas sin controles: acerca el lápiz al borde de arriba y aparecen página, zoom y búsqueda.' },
-  { icon: 'layers', title: 'Organizar hojas del lienzo', text: 'Botón «Hojas»: miniaturas que arrastras para reordenar y fusionar con la anterior. Y con el lazo puedes mandar lo seleccionado a la hoja de arriba o de abajo.' },
-  { icon: 'cards', title: 'Repaso FSRS y cola de guardia', text: 'El repaso espaciado ahora usa FSRS: calcula el día exacto según lo que de verdad recuerdas. En Herramientas → «Repaso de guardia»: 10 minutos, botones grandes, con una mano. La exigencia se ajusta en Preferencias.' },
-  { icon: 'chart', title: 'Historial de simulacros', text: 'Pestaña «Historial» en Simulacros: cómo vienes intento a intento, en qué especialidad fallas y un botón para repetir solo las que fallaste.' },
-  { icon: 'pencil', title: 'Tu letra, mejor leída', text: 'Guarda tus abreviaturas («IAM = infarto agudo de miocardio») y el reconocimiento deja de equivocarse en las mismas. En Cuadernos puedes transcribir todas las notas del cuaderno de una pasada.' },
-  { icon: 'list', title: 'Temario editable', text: 'En Temario → «Editar»: cambia títulos y prioridades, parte un tema en dos, quita los que no vas a estudiar y agrega los tuyos. El plan del año se recalcula y lo ya estudiado se conserva.' },
-  { icon: 'calendar', title: 'Informe semanal más honesto', text: 'Ahora compara los minutos que hiciste con los que el plan pedía, lista los temas que cerraste y cuenta los pendientes que se te movieron.' },
-  { icon: 'clock', title: 'Turno por hora', text: 'Los pendientes con hora de todos tus pacientes, juntos y en orden, con atajos «+30m / +1h / +2h» al capturarlos.' },
-  { icon: 'database', title: 'Espacio y revisión', text: 'En Respaldo → «Espacio y revisión»: cuánto llevas usado, qué guías pesan más (con borrado definitivo) y un botón que comprueba que la carpeta compartida de verdad está escribiendo.' },
+  { icon: 'layers', title: 'Widgets flotantes', text: 'Herramientas → Widgets: ventanitas que se quedan encima de cualquier programa. Cápsula de estudio (hora, minutos de hoy y el tema que toca), pendientes del turno por hora, repaso pendiente y captura rápida. Solo en la app de escritorio.' },
+  { icon: 'pencil', title: 'Captura rápida sin abrir la app', text: 'Ctrl+Alt+Q en cualquier lado abre una cajita para soltar una perla, una nota o una flashcard. Ctrl+Alt+K abre la búsqueda y Ctrl+Alt+G la cápsula de estudio.' },
+  { icon: 'swap', title: 'Todo al día entre ventanas', text: 'Lo que captures o marques en un widget aparece en la app al instante, y al revés, sin recargar nada.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

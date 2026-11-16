@@ -115,6 +115,11 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.10
+- **Widgets flotantes** (solo app de escritorio): ventanitas siempre encima con la **cápsula de estudio** (hora, minutos de hoy, tema que toca), los **pendientes del turno** por hora, el **repaso pendiente** y la **captura rápida**. Se arrastran de su barra y se cierran con su ✕.
+- **Atajos del sistema**: `Ctrl+Alt+Q` captura una perla, nota o flashcard desde cualquier programa; `Ctrl+Alt+K` abre la búsqueda; `Ctrl+Alt+G` muestra u oculta la cápsula.
+- **Ventanas sincronizadas**: lo que captures o marques en un widget aparece en la app al instante, y al revés, sin recargar.
+
 ### v0.9
 - **Doble plana** en el lector (dos páginas a la vez) y **controles flotantes** en pantalla completa: acerca el lápiz al borde de arriba y aparecen página, zoom, búsqueda y doble plana.
 - **Organizar hojas** del lienzo: miniaturas que arrastras para reordenar, fusionar con la anterior (el contenido baja debajo de lo que ya había) y mandar la selección del lazo a la hoja de arriba o de abajo.

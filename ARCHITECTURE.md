@@ -267,6 +267,19 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 
 - `createStore` admite `onHydrate`: lo usa el temario para aplicar tus cambios en cuanto vuelven del disco.
 
+## v0.10 · Widgets
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Rutado de la ventana | `src/main.tsx`, `src/lib/widgets.ts` | La misma página sirve de app o de widget según `?widget=<tipo>`; un widget no respalda ni recalcula el plan |
+| Widgets | `src/widget/WidgetApp.tsx` | Cápsula, pendientes del turno, repaso y captura rápida; compactos y de una mirada |
+| Sincronía entre ventanas | `src/lib/windowSync.ts` + `createStore` | Cada escritura anuncia su clave por `BroadcastChannel`; las demás ventanas releen **solo esa** clave, sin volver a escribir (no viajan datos por el canal) |
+| Lado escritorio | `src-tauri/src/lib.rs` | Comandos `open_widget` / `close_widget` / `list_widgets` / `close_self`; ventanas sin decoración, `always_on_top`, fuera de la barra de tareas |
+| Atajos del sistema | `tauri-plugin-global-shortcut` | `Ctrl+Alt+Q/K/G`; la búsqueda llega al front como evento `qc://search` |
+
+- Los widgets son ventanas del mismo origen: comparten IndexedDB y localStorage con la app, por eso basta con avisar qué cambió.
+- En el navegador no hay widgets (no se puede poner una ventana sobre otra app) y la interfaz lo dice en lugar de fallar.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper, kind, inkText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión]}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

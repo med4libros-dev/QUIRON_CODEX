@@ -4,6 +4,7 @@ import { Icon, type IconName } from '../Icon';
 import emblem from '../../assets/quiron-emblem.png';
 import { BackupDialog } from '../../features/backup/BackupDialog';
 import { TrashDialog } from '../../features/trash/TrashDialog';
+import { WidgetsDialog } from '../../features/widgets/WidgetsDialog';
 import { guardDeck } from '../../flashcards/FlashcardUI';
 import { useCards } from '../../flashcards/store';
 import { useTrash } from '../../store/trash';
@@ -40,6 +41,7 @@ export function NavRail() {
   const setLook = useSettings((s) => s.setLook);
   const [backupOpen, setBackupOpen] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [widgetsOpen, setWidgetsOpen] = useState(false);
   const trashCount = useTrash((s) => s.items.length);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [needsReconnect, setNeedsReconnect] = useState(false);
@@ -158,6 +160,12 @@ export function NavRail() {
                     Repaso de guardia <small>10 min, con una mano</small>
                   </span>
                 </button>
+                <button role="menuitem" onClick={run(() => setWidgetsOpen(true))} title="Ventanitas siempre encima: cápsula de estudio, pendientes, repaso y captura rápida">
+                  <Icon name="layers" size={17} />
+                  <span>
+                    Widgets <small>Ventanitas siempre encima</small>
+                  </span>
+                </button>
                 <button role="menuitem" onClick={run(() => useUI.getState().setSoapOpen(true))} title="Generador de notas médicas: evolución (SOAP), ingreso, postquirúrgica, egreso">
                   <Icon name="clipboard" size={17} />
                   <span>
@@ -204,6 +212,7 @@ export function NavRail() {
         )}
       {backupOpen && <BackupDialog onClose={() => setBackupOpen(false)} />}
       {trashOpen && <TrashDialog onClose={() => setTrashOpen(false)} />}
+      {widgetsOpen && <WidgetsDialog onClose={() => setWidgetsOpen(false)} />}
       {prefsOpen && <PrefsDialog onClose={() => setPrefsOpen(false)} />}
     </nav>
   );

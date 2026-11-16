@@ -123,6 +123,11 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - **Historial de simulacros** con tendencia y repetición de falladas; **informe semanal** con planeado vs. real.
 - **Glosario de abreviaturas** y transcripción de un cuaderno completo; **espacio y revisión** del respaldo.
 
+### v0.10 · Widgets de escritorio ✅ (noviembre 2026)
+- Ventanitas siempre encima (cápsula de estudio, pendientes del turno, repaso, captura rápida), inspiradas en los *glance widgets* de DeskBox pero escritas desde cero para este proyecto.
+- Atajos globales `Ctrl+Alt+Q/K/G` con `tauri-plugin-global-shortcut`.
+- Sincronía entre ventanas por `BroadcastChannel`: una escritura avisa su clave y las demás ventanas releen solo esa.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.
