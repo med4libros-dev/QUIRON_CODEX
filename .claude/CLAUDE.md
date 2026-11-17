@@ -42,3 +42,12 @@ cardenillo `#2f5d50` / `#8fb3a4`.
   accesibilidad, CI, page objects y diseño de casos). La suite de este proyecto vive fuera del repo
   (`/tmp/tc/*.py`, Playwright de Python); esta skill sirve para escribirla mejor y para traerla al repo
   si algún día se decide versionarla. Licencia en `.claude/skills/PLAYWRIGHT-SKILL-LICENSE.md`.
+
+# boss (MIT · echoVic)
+Equipo de ingeniería por turnos: PM → arquitecto → UI → tech lead → scrum master →
+front/back → QA → DevOps, cada rol con su contrato de calidad y su archivo en `.boss/<función>/`.
+`/boss` corre todo; `/boss:pm`, `/boss:architect`, `/boss:ui`, `/boss:review`, `/boss:tasks`,
+`/boss:dev`, `/boss:qa`, `/boss:ship` entran a media cadena y siguen hasta el final.
+Skill en `.claude/skills/boss/`, comandos en `.claude/commands/boss/`, licencia en
+`.claude/skills/BOSS-SKILL-LICENSE.md`. Los *hooks* del repo no se instalaron.
+Está escrito en chino: los documentos que genere hay que pedírselos en español.
