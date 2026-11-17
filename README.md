@@ -115,6 +115,10 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.22
+- **Respaldo en iPad y teléfono**: ahí **no existe** el respaldo automático — iOS no permite apuntar a una carpeta, y ningún navegador de iPad puede, porque todos usan Safari por dentro. La app ahora lo dice con claridad y, lo importante, **te avisa**: si llevas 5 días sin respaldar en ese dispositivo (o nunca lo has hecho y ya tienes un plan), aparece una barra para descargarlo de un toque. Se puede posponer un día, no para siempre.
+- El mensaje de «tu navegador no permite elegir carpetas» ya no te manda a instalar Chrome, que en iPad no sirve de nada.
+
 ### v0.21
 - **Botón «Buscar actualización»** en Preferencias → Versión. El aviso automático pregunta una vez al día; este no espera. Distingue tres cosas que suelen confundirse: estás al día, hay una versión nueva, o no se pudo preguntar (sin red o GitHub caído) — nunca dice «al día» cuando en realidad no pudo comprobarlo.
 - En la versión web ofrece **recargar** en vez de descargar un instalador, que es como se actualiza ahí.

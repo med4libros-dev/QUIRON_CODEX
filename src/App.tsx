@@ -21,6 +21,7 @@ import { ClozeModal } from './flashcards/ClozeModal';
 import { OcclusionModal } from './flashcards/OcclusionModal';
 import { SyncBar } from './features/backup/SyncBar';
 import { UpdateBar } from './features/backup/UpdateBar';
+import { FileBackupBar } from './features/backup/FileBackupBar';
 import { guardDeck } from './flashcards/FlashcardUI';
 import { useCards } from './flashcards/store';
 import { onDesktopEvent } from './lib/widgets';
@@ -339,6 +340,7 @@ export default function App() {
       <OcclusionModal />
       <SyncBar />
       <UpdateBar />
+      <FileBackupBar />
       <ShortcutsModal />
       <WhatsNew />
       <TtsBar />

@@ -233,6 +233,23 @@ function setBackupError(msg: string | null) {
 }
 
 const markBackup = () => localStorage.setItem(LAST_KEY, new Date().toISOString());
+
+/** Cuándo se descargó por última vez un respaldo EN ESTE dispositivo (iPad incluido). */
+const FILE_KEY = 'qc:fileBackupAt';
+export const lastFileBackup = (): number => Number(localStorage.getItem(FILE_KEY) || 0);
+export const markFileBackup = () => localStorage.setItem(FILE_KEY, String(Date.now()));
+
+/**
+ * Días desde el último respaldo descargado aquí, o null si este dispositivo sí tiene
+ * carpeta automática (ahí no hace falta recordar nada) o si todavía no hay nada que perder.
+ */
+export function fileBackupOverdue(hayDatos: boolean, dias = 5): number | null {
+  if (folderSupported() || !hayDatos) return null;
+  const at = lastFileBackup();
+  if (!at) return Infinity;
+  const d = Math.floor((Date.now() - at) / 86400000);
+  return d >= dias ? d : null;
+}
 export const lastBackup = () => localStorage.getItem(LAST_KEY);
 
 /* ---------- 1) Archivo único ---------- */
@@ -252,6 +269,7 @@ export async function downloadBackup(includePdfs: boolean) {
   if (out === null) throw new PasswordNeeded('El cifrado está activo: desbloquéalo con tu contraseña antes de descargar.');
   downloadBlob(new Blob([out], { type: 'application/json' }), `quiron-codex-respaldo-${stamp}${encryptionOn() ? '-cifrado' : ''}.json`);
   markBackup();
+  markFileBackup();
 }
 
 export async function restoreFromFile(file: File, pw?: string) {

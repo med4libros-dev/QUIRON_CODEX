@@ -6,6 +6,7 @@ import { GUARD_FIELDS, useTopicStore } from '../internship/topicStore';
 import { SPECIALTY, TOPIC, TOPICS } from '../internship/curriculum';
 import { dueCards, useCards } from '../flashcards/store';
 import { useSettings } from '../store/settings';
+import { FileBackupBar } from '../features/backup/FileBackupBar';
 
 const DrugPanel = lazy(() => import('../drugs/DrugPanel').then((m) => ({ default: m.DrugPanel })));
 const FlashcardReview = lazy(() => import('../flashcards/FlashcardUI').then((m) => ({ default: m.FlashcardReview })));
@@ -33,6 +34,7 @@ export function PocketApp() {
           Ver todo
         </button>
       </header>
+      <FileBackupBar />
       <main className="pk-body">
         {tab === 'guardia' && <Guardia />}
         {tab === 'dosis' && (

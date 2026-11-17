@@ -8373,3 +8373,15 @@ button.kpi:hover {
   line-height: 1.5;
   color: var(--muted);
 }
+
+/* El aviso de respaldo manual pesa más que el de sincronización: es lo único que te salva aquí. */
+.file-backup-bar {
+  border-color: var(--accent);
+}
+.pocket .file-backup-bar,
+.pocket .sync-bar {
+  position: static;
+  transform: none;
+  margin: 8px 10px 0;
+  width: auto;
+}

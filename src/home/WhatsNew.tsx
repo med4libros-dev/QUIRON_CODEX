@@ -8,7 +8,7 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'download', title: 'Buscar actualización cuando quieras', text: 'En Preferencias → Versión. El aviso automático pregunta una vez al día; este botón no espera. Y distingue «estás al día» de «no se pudo preguntar», que es donde estas cosas suelen mentir.' },
+  { icon: 'shield', title: 'Respaldo en el iPad y el teléfono', text: 'Ahí iOS no deja apuntar a una carpeta, así que no hay respaldo automático posible. Ahora la app te avisa cuando llevas días sin respaldar y lo descargas de un toque, para guardarlo en Archivos o mandártelo por correo.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

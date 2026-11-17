@@ -116,7 +116,11 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
             elige la misma carpeta y usa «Traer progreso».
           </p>
           {!folderSupported() ? (
-            <p className="small muted">Tu navegador no permite elegir carpetas. Usa Microsoft Edge o Chrome, o el respaldo en archivo.</p>
+            <p className="small">
+              Aquí no se puede: este navegador no permite apuntar a una carpeta. En iPad y iPhone <b>ningún</b> navegador puede, porque
+              todos usan Safari por dentro. Tu respaldo en este dispositivo es el archivo de abajo: descárgalo cada pocos días y guárdalo en
+              Archivos o mándatelo por correo. En tu Surface, con Edge, sí hay respaldo automático.
+            </p>
           ) : folder ? (
             <>
               <p className="small">

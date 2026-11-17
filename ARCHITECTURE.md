@@ -404,6 +404,14 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 
 - No se pudo reproducir Safari localmente (no hay WebKit instalable en el entorno de construcción), así que el arreglo de `dvh` se razonó desde el código y se verificó la geometría en tamaño de iPad; la confirmación final es en el dispositivo.
 
+## v0.22 · Respaldo donde no hay carpetas
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Cuándo avisar | `lib/backup.ts` `fileBackupOverdue()` | Devuelve `null` si el dispositivo sí tiene carpetas (ahí no hay que recordar nada) o si no hay nada que perder; `Infinity` si nunca se ha respaldado aquí. `qc:fileBackupAt` lo marca cada descarga |
+| La barra | `features/backup/FileBackupBar.tsx` | Se monta en la app y en Bolsillo. «Mañana» (`qc:fileBackupSnooze`) la calla 24 h, no para siempre: un respaldo que depende de que te acuerdes no es un respaldo |
+| Qué cuenta como «hay algo que perder» | mismo archivo | El plan del internado ya es trabajo del usuario, así que basta con que exista; no se espera a que haya notas |
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
