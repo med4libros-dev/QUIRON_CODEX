@@ -349,6 +349,17 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - El `docId` de un resumen es `sum:<ruta relativa>`: estable mientras no muevas el archivo, y nunca choca con los PDFs propios.
 - Una segunda revisión no vuelve a abrir lo que ya conoce (compara ruta + tamaño) y deja en `missing` lo que ya no está en la carpeta.
 
+## v0.16 · Que no se pierda nada
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Copias por día | `lib/backup.ts`: `keepPrevious`, `prune`, `history`, `historyFile` | Antes de sobrescribir `quiron-codex-datos.json` se guarda el anterior en `historial/quiron-codex-datos-<día>.json`. Se conservan 7 diarias y, más atrás, las de los lunes (4 semanas) |
+| De qué día es un respaldo | `dayOfBackup(file)` | Lee el `exportedAt` de los primeros 400 bytes del propio archivo; la fecha del sistema de archivos solo se usa si está cifrado o ilegible, porque OneDrive la reescribe al sincronizar |
+| Carpeta sin permiso recordado | `chooseFolder` | El handle se cachea en memoria antes de intentar guardarlo en `kv`; si el navegador se niega, la carpeta sirve igual en esa sesión |
+| Borrados que cuentan | `lib/idb.ts` `del` | Incrementa el contador de cambios, así el respaldo automático no se salta una sesión que terminó borrando |
+
+- La prueba `v16.py` cubre el ciclo completo: respaldar → borrar `kv`, `ink` y `alq:*` → traer de la carpeta → comprobar que la perla y el plan volvieron, y restaurar la copia de un día anterior. La carpeta se simula en la propia página (handles con la forma del selector del sistema) porque OPFS con un handle guardado en IndexedDB tumba al Chromium headless al recargar.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

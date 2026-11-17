@@ -48,6 +48,6 @@ export const bumpChanges = () => {
 export const idb = {
   get: <T>(store: StoreName, key: string) => run<T | undefined>(store, 'readonly', (s) => s.get(key)),
   set: (store: StoreName, key: string, value: unknown) => (changes++, run<void>(store, 'readwrite', (s) => s.put(value, key))),
-  del: (store: StoreName, key: string) => run<void>(store, 'readwrite', (s) => s.delete(key)),
+  del: (store: StoreName, key: string) => (changes++, run<void>(store, 'readwrite', (s) => s.delete(key))),
   keys: (store: StoreName) => run<IDBValidKey[]>(store, 'readonly', (s) => s.getAllKeys()).then((k) => k.map(String)),
 };

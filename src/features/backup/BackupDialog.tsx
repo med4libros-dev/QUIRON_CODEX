@@ -15,6 +15,8 @@ import {
   folderSupported,
   forgetFolder,
   getFolder,
+  history,
+  historyFile,
   lastBackup,
   loadFromFolder,
   reconnectFolder,
@@ -47,6 +49,7 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
   const [undoAt, setUndoAt] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [storageOpen, setStorageOpen] = useState(false);
+  const [hist, setHist] = useState<{ day: string; size: number; name: string }[]>([]);
 
   const refresh = async () => {
     try {
@@ -61,6 +64,7 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
     setLast(lastBackup());
     setErr(backupError());
     setUndoAt(await preRestoreInfo());
+    setHist(await history().catch(() => []));
   };
   useEffect(() => {
     void refresh();
@@ -246,6 +250,40 @@ export function BackupDialog({ onClose }: { onClose: () => void }) {
             />
           </div>
         </section>
+        {hist.length > 0 && (
+          <section>
+            <h4>
+              <Icon name="clock" size={15} /> Días anteriores
+            </h4>
+            <p className="muted small">
+              En la carpeta queda una copia por día (los últimos 7 días, y más atrás la del lunes de cada semana). Sirven si algo se
+              corrompe o borras por error algo que ya se había respaldado: el respaldo normal se sobrescribe, estas no.
+            </p>
+            <ul className="hist-list">
+              {hist.map((h) => (
+                <li key={h.name}>
+                  <span className="tabular">{h.day}</span>
+                  <span className="muted small">{(h.size / 1048576).toFixed(1)} MB</span>
+                  <span className="spacer" />
+                  <button
+                    className="btn ghost xs"
+                    disabled={busy}
+                    onClick={() =>
+                      confirm(`¿Volver a como estaba todo el ${h.day}? Lo de hoy se reemplaza, pero antes se guarda una copia para deshacer.`) &&
+                      run(async () => {
+                        await restoreFromFile(await historyFile(h.name), pwArg());
+                        setTimeout(() => location.reload(), 900);
+                        return 'Recargando…';
+                      }, `Restaurado el respaldo del ${h.day}.`)
+                    }
+                  >
+                    Restaurar este día
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {undoAt && (
           <section>
             <h4>Deshacer la última restauración</h4>

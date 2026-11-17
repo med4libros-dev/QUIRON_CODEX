@@ -8,9 +8,9 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'layers', title: 'Tus ultrarresúmenes, dentro de la app', text: 'Le apuntas una vez a la carpeta donde los guardas y quedan a mano en «Resúmenes». No se copian a ningún lado: siguen siendo tus archivos, se leen de ahí cuando abres uno.' },
-  { icon: 'search', title: 'Se reconocen solos', text: 'De cada PDF lee solo la primera página, saca el título de verdad —no el nombre del archivo, que suele ser «Med Interna 7»— y lo empareja con tu temario. Lo que atina queda fijo; lo dudoso te lo marca para que lo confirmes de un toque.' },
-  { icon: 'book', title: 'Aparecen en la ficha del tema', text: 'Cuando abres un tema del temario, sus resúmenes están ahí, junto a tus PDFs. Se abren en el mismo lector, con resaltado, lápiz y notas de siempre.' },
+  { icon: 'clock', title: 'El respaldo ya no se sobrescribe a sí mismo', text: 'En la carpeta queda una copia por día (los últimos 7 días, y más atrás la del lunes de cada semana). Si algo se corrompe o borras por error, puedes volver a cualquiera de esos días desde Ajustes → Respaldo.' },
+  { icon: 'shield', title: 'Probado borrando todo', text: 'Ahora hay una prueba que respalda, borra hasta el último dato y restaura, para comprobar que tu progreso vuelve completo. Antes nadie lo había verificado de punta a punta.' },
+  { icon: 'folder', title: 'La fecha la pone el respaldo, no el disco', text: 'OneDrive reescribe las fechas de los archivos al sincronizar, así que la copia del día se decide por lo que el propio respaldo declara.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

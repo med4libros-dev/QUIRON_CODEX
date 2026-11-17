@@ -115,6 +115,13 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.16
+- **El respaldo deja de sobrescribirse a sí mismo**: en la carpeta queda **una copia por día** (los últimos 7 días, y más atrás la del lunes de cada semana). Antes, si un dato se corrompía o borrabas algo por error, el respaldo bueno desaparecía en los dos minutos siguientes. Ahora puedes volver a cualquiera de esos días desde Ajustes → Respaldo → «Días anteriores».
+- **La fecha la pone el propio respaldo**, no el disco: OneDrive reescribe las fechas al sincronizar, así que la copia del día se decide por el `exportedAt` que el archivo declara.
+- **Probado borrando todo**: una prueba nueva respalda, borra hasta el último dato y restaura, para comprobar que el progreso vuelve completo. Nunca se había verificado de punta a punta.
+- **La carpeta sirve aunque el navegador no recuerde el permiso**: antes, si no podía guardarlo, elegir la carpeta fallaba por completo; ahora funciona en esa sesión y te lo vuelve a pedir después.
+- Borrar algo (una nota, una guía) ya cuenta como cambio para el respaldo automático.
+
 ### v0.15
 - **Tus ultrarresúmenes, dentro de la app**: nueva vista **Resúmenes**. Le apuntas una vez a la carpeta donde los guardas y quedan a mano. **No se copian a ningún lado**: siguen siendo tus archivos, se leen de la carpeta cuando abres uno, así que una colección de varios gigas no engorda la app ni el navegador (el índice pesa kilobytes).
 - **Se reconocen solos**: de cada PDF lee **solo la primera página**, saca el título de verdad —no el nombre del archivo, que suele ser «Med Interna 7»— y lo empareja con tu temario resolviendo siglas (RCP, EVC, IAM, EPOC…) y palabras con otra terminación. Lo que atina queda fijo; lo dudoso te lo marca **para que lo confirmes** de un toque, y puedes cambiar el tema a mano.

@@ -7874,3 +7874,17 @@ button.kpi:hover {
 .ts-sums li {
   padding: 2px 0;
 }
+
+/* ---------- Copias por día del respaldo ---------- */
+.hist-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.hist-list li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}

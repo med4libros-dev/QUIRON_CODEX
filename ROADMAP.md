@@ -167,6 +167,18 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - Los resúmenes de un tema aparecen en su ficha, junto a los PDFs, y abren en el lector de siempre (`loadPdfData` lee de la carpeta cuando el `docId` empieza por `sum:`).
 - Todo local: sin internet y sin IA. En Windows conviene tener **Google Drive para escritorio** para que la carpeta compartida exista como carpeta del sistema.
 
+### Camino a la 1.0 (noviembre 2026)
+
+La 1.0 es «la app en la que confías un año entero», no una con más funciones. Cinco frentes:
+
+1. **Que no se pierda nada** ✅ v0.16 — copias por día, restauración probada de cero, borrados que cuentan.
+2. **Aguantar la colección real** — medir con ~2 GB de resúmenes y GPC, no con cinco PDFs de prueba.
+3. **Quirón de bolsillo** — ficha de guardia, dosis, escalas y repaso en el teléfono, que es lo que llevas a una guardia.
+4. **Actualizarse sola** (updater de Tauri) y un arranque que pida carpetas y respaldo de golpe.
+5. **Congelar**: regresión completa, instalador y nada nuevo durante la primera semana de guardias.
+
+Fuera de la 1.0 por ahora: fuente Unicode al exportar y mover la suite de pruebas al repo.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

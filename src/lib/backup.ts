@@ -22,6 +22,10 @@ const DATA_FILE = 'quiron-codex-datos.json';
 /** Nombre anterior (cuando la app se llamaba Alquimia): se sigue leyendo. */
 const LEGACY_FILE = 'alquimia-datos.json';
 const PDF_DIR = 'pdfs';
+const HIST_DIR = 'historial';
+/** Copias diarias que se guardan; más allá, solo la del lunes de cada semana (4 semanas). */
+const KEEP_DAILY = 7;
+const KEEP_WEEKLY = 4;
 /** Las grabaciones de clase comparten el almacén binario pero quedan fuera del respaldo: pesan mucho y se pueden rehacer. */
 const AUDIO_PREFIX = 'audio:';
 const HANDLE_KEY = 'backup:dir';
@@ -282,8 +286,13 @@ export async function folderStatus(): Promise<PermissionState | 'none'> {
 export async function chooseFolder(): Promise<string> {
   const picker = (window as unknown as { showDirectoryPicker: (o: object) => Promise<DirHandle> }).showDirectoryPicker;
   const dir = await picker({ id: 'alquimia-respaldo', mode: 'readwrite' });
-  await idb.set('kv', HANDLE_KEY, dir);
   cachedDir = dir;
+  try {
+    await idb.set('kv', HANDLE_KEY, dir);
+  } catch (e) {
+    // El navegador no guardó el permiso: la carpeta sirve en esta sesión y habrá que elegirla de nuevo.
+    console.warn('No se pudo recordar la carpeta de respaldo', e);
+  }
   return dir.name;
 }
 
@@ -306,6 +315,90 @@ async function writeFile(dir: FileSystemDirectoryHandle, name: string, data: Blo
   await w.close();
 }
 
+/** Nombre de la copia con fecha: «quiron-codex-datos-2026-11-17.json». */
+const histName = (day: string) => `quiron-codex-datos-${day}.json`;
+const dayOf = (iso: string) => iso.slice(0, 10);
+const isMonday = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay() === 1;
+
+/** Las copias con fecha que hay en la carpeta, de la más nueva a la más vieja. */
+export async function history(): Promise<{ day: string; size: number; name: string }[]> {
+  const dir = await getFolder();
+  if (!dir || (await folderStatus()) !== 'granted') return [];
+  let hist: FileSystemDirectoryHandle;
+  try {
+    hist = await dir.getDirectoryHandle(HIST_DIR);
+  } catch {
+    return [];
+  }
+  const out: { day: string; size: number; name: string }[] = [];
+  for await (const [name, h] of (hist as unknown as { entries: () => AsyncIterable<[string, FileSystemHandle]> }).entries()) {
+    const m = /^quiron-codex-datos-(\d{4}-\d{2}-\d{2})\.json$/.exec(name);
+    if (!m || h.kind !== 'file') continue;
+    out.push({ day: m[1], size: (await (h as FileSystemFileHandle).getFile()).size, name });
+  }
+  return out.sort((a, b) => b.day.localeCompare(a.day));
+}
+
+/** Una copia con fecha, para restaurarla. */
+export async function historyFile(name: string): Promise<File> {
+  const dir = await getFolder();
+  if (!dir) throw new Error('Primero elige la carpeta de respaldo.');
+  const hist = await dir.getDirectoryHandle(HIST_DIR);
+  return (await hist.getFileHandle(name)).getFile();
+}
+
+/** El día que dice el propio archivo («exportedAt»); si está cifrado o ilegible, su fecha de archivo. */
+async function dayOfBackup(file: File): Promise<string> {
+  try {
+    const head = await file.slice(0, 400).text();
+    const m = /"exportedAt"\s*:\s*"(\d{4}-\d{2}-\d{2})/.exec(head);
+    if (m) return m[1];
+  } catch {
+    /* ilegible: se usa la fecha del archivo */
+  }
+  return dayOf(new Date(file.lastModified).toISOString());
+}
+
+/**
+ * Antes de sobrescribir el respaldo del día, guarda el anterior con su fecha.
+ * Sin esto, un dato que se corrompe se lleva también el respaldo en los dos minutos siguientes.
+ */
+async function keepPrevious(dir: FileSystemDirectoryHandle, exportedAt: string) {
+  let prev: File;
+  try {
+    prev = await (await dir.getFileHandle(DATA_FILE)).getFile();
+  } catch {
+    return; // primera vez: no hay nada que conservar
+  }
+  // La fecha sale del propio respaldo, no del reloj del archivo: OneDrive reescribe las fechas al sincronizar.
+  const prevDay = await dayOfBackup(prev);
+  if (prevDay === dayOf(exportedAt)) return; // ya hay copia de ese día; la del día corriente es el archivo vivo
+  const hist = await dir.getDirectoryHandle(HIST_DIR, { create: true });
+  try {
+    await hist.getFileHandle(histName(prevDay));
+    return; // ya estaba guardada
+  } catch {
+    /* no estaba: se guarda */
+  }
+  await writeFile(hist, histName(prevDay), prev);
+  await prune(hist);
+}
+
+/** Deja las últimas 7 copias diarias y, más atrás, solo las de los lunes (4 semanas). */
+async function prune(hist: FileSystemDirectoryHandle) {
+  const days: string[] = [];
+  for await (const [name, h] of (hist as unknown as { entries: () => AsyncIterable<[string, FileSystemHandle]> }).entries()) {
+    const m = /^quiron-codex-datos-(\d{4}-\d{2}-\d{2})\.json$/.exec(name);
+    if (m && h.kind === 'file') days.push(m[1]);
+  }
+  days.sort((a, b) => b.localeCompare(a));
+  const weekly = days.slice(KEEP_DAILY).filter(isMonday).slice(0, KEEP_WEEKLY);
+  const keep = new Set([...days.slice(0, KEEP_DAILY), ...weekly]);
+  for (const day of days) {
+    if (!keep.has(day)) await hist.removeEntry(histName(day)).catch(() => {});
+  }
+}
+
 /** Guarda los datos (siempre) y los PDFs que aún no estén en la carpeta. */
 export async function saveToFolder(): Promise<boolean> {
   const dir = await getFolder();
@@ -314,6 +407,11 @@ export async function saveToFolder(): Promise<boolean> {
   const out = await serialize(data);
   // Cifrado activo y bloqueado: no se escribe nada (ni en claro) hasta que lo desbloquees.
   if (out === null) return false;
+  try {
+    await keepPrevious(dir, data.exportedAt);
+  } catch (e) {
+    console.warn('No se pudo guardar la copia con fecha', e);
+  }
   await writeFile(dir, DATA_FILE, out);
   // Verificación: se vuelve a leer lo escrito; si no coincide, se avisa (no se marca como respaldado).
   const back = await (await dir.getFileHandle(DATA_FILE)).getFile();
