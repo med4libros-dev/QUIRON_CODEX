@@ -371,6 +371,17 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 
 - Bolsillo es solo lectura en las fichas de guardia: capturar con una mano en una guardia no es un caso real, y evita escribir en el almacén desde el teléfono.
 
+## v0.18 · Actualizaciones y primera vez
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Aviso de versión | `lib/update.ts`, `features/backup/UpdateBar.tsx` | Consulta `releases/latest` de GitHub como mucho una vez al día (`qc:updateChecked`), a los 8 s de arrancar y nunca antes. Sin internet o con GitHub caído devuelve `null` sin ruido. `qc:updateSeen` recuerda la versión que rechazaste |
+| Comparar versiones | `isNewer(a, b)` | Número por número, no como texto: «0.9.0» no es más nueva que «0.10.0» |
+| Dónde aplica | `updatesMatter()` | Solo en la app de escritorio (Tauri). En el navegador y el teléfono la PWA ya se actualiza al recargar |
+| Qué falta por hacer | `home/FirstRun.tsx` | Tarjeta en Inicio con los pendientes reales (respaldo, resúmenes, fichas de guardia), cada uno con su porqué y su acción. Se calcula del estado, así que un punto desaparece en cuanto se resuelve; `qc:firstRunHidden` la oculta para siempre |
+
+- **La actualización silenciosa queda pendiente**: `tauri-plugin-updater` exige una llave de firma minisign, y ni `npm` ni el binario del CLI de Tauri son alcanzables desde el entorno donde se construye este proyecto. El aviso cubre el 80 % sin tocar el pipeline de releases.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

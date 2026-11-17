@@ -18,6 +18,7 @@ import { useUI } from '../store/ui';
 import { useSettings } from '../store/settings';
 import { useExam } from '../exam/store';
 import { masteryColor, topicMastery, weakTopics } from '../analytics/mastery';
+import { FirstRun } from '../home/FirstRun';
 import { DrugOfDay, WeeklySummary } from '../home/HomeCards';
 import { FoldBtn, useFold } from '../components/Fold';
 import { useWard } from '../ward/store';
@@ -135,6 +136,8 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
           <Icon name="settings" size={16} /> Ajustar plan
         </button>
       </header>
+
+      <FirstRun />
 
       <KpiStrip due={due.length} weak={weakTopics(mastery, 5).length} wardPending={wardPending} enarmDate={enarmDate} today={today} />
 

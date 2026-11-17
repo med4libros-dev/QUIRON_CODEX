@@ -115,6 +115,11 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.18
+- **Aviso de versión nueva**: la app de escritorio consulta una vez al día si hay una publicada y te lo dice, con un botón para descargarla. Si no hay internet no aparece, y una versión que rechazas no vuelve a avisar. En el navegador y el teléfono no sale: la PWA se actualiza sola al recargar.
+- **«Antes de empezar el internado»**: en Inicio aparece lo que falta para que la app aguante el año — carpeta de respaldo, carpeta de resúmenes y tus primeras fichas de guardia — con el porqué de cada uno. Se resuelven desde ahí y la tarjeta desaparece sola cuando ya no queda nada.
+- Pendiente: la **actualización silenciosa** (bajar e instalar sin que hagas nada) necesita una llave de firma de Tauri que no se puede generar en el entorno donde se construye esto. Queda anotada para la 1.0.
+
 ### v0.17
 - **Bolsillo**: en una pantalla de teléfono la app abre en un modo de cuatro cosas — **ficha de guardia, dosis por peso, las 17 escalas y la cola de repaso** — con la barra abajo y todo a una mano. Es lo que sirve a las 3 a.m., sin la tableta. «Ver todo» abre la app completa y se recuerda.
 - **Pensado para el Galaxy Z Fold**: cerrado (~344 px) abre en Bolsillo; al desplegar (~690 px) pasa a la app completa **en el momento**, sin recargar ni perder lo que estabas viendo; al cerrar, vuelve.

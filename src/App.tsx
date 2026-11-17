@@ -20,6 +20,7 @@ import { HlQuizModal } from './ai/HlQuizModal';
 import { ClozeModal } from './flashcards/ClozeModal';
 import { OcclusionModal } from './flashcards/OcclusionModal';
 import { SyncBar } from './features/backup/SyncBar';
+import { UpdateBar } from './features/backup/UpdateBar';
 import { guardDeck } from './flashcards/FlashcardUI';
 import { useCards } from './flashcards/store';
 import { onDesktopEvent } from './lib/widgets';
@@ -335,6 +336,7 @@ export default function App() {
       <ClozeModal />
       <OcclusionModal />
       <SyncBar />
+      <UpdateBar />
       <ShortcutsModal />
       <WhatsNew />
       <TtsBar />

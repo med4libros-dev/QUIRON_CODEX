@@ -8,9 +8,8 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'shield', title: 'Bolsillo: la app en el teléfono', text: 'En una pantalla de teléfono, Quirón abre en un modo de cuatro cosas: ficha de guardia, dosis por peso, las 17 escalas y la cola de repaso. Barra abajo, a una mano. «Ver todo» abre la app completa si la necesitas.' },
-  { icon: 'monitor', title: 'Pensado para el Fold', text: 'Cerrado (~344 px) abre en Bolsillo; al desplegar (~690 px) pasa a la app completa en el momento, sin recargar ni perder lo que estabas viendo. Al cerrar, vuelve.' },
-  { icon: 'target', title: 'Todo se puede tocar', text: 'Ningún control baja ya de 44 px con el dedo, ni en el teléfono ni en la tableta. Antes 75 de ellos sí: la barra lateral eran botones de 55 × 31.' },
+  { icon: 'download', title: 'Te avisa cuando hay versión nueva', text: 'La app de escritorio consulta una vez al día si publiqué algo nuevo y te lo dice con un botón para descargarlo. Si no hay internet, no aparece y no estorba.' },
+  { icon: 'check', title: 'Antes de empezar el internado', text: 'En Inicio aparece lo que falta para que la app aguante el año: carpeta de respaldo, carpeta de resúmenes y tus primeras fichas de guardia. Cada punto se resuelve desde ahí y desaparece solo.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

@@ -174,7 +174,7 @@ La 1.0 es «la app en la que confías un año entero», no una con más funcione
 1. **Que no se pierda nada** ✅ v0.16 — copias por día, restauración probada de cero, borrados que cuentan.
 2. **Aguantar la colección real** — medir con ~2 GB de resúmenes y GPC, no con cinco PDFs de prueba.
 3. **Quirón de bolsillo** ✅ v0.17 — ficha de guardia, dosis, escalas y repaso en el teléfono, con el Fold (cerrado y desplegado) como blanco.
-4. **Actualizarse sola** (updater de Tauri) y un arranque que pida carpetas y respaldo de golpe.
+4. **Actualizarse sola** y una primera vez clara — ✅ v0.18 el aviso de versión nueva y la tarjeta «Antes de empezar el internado»; la instalación silenciosa (llave de firma de Tauri) queda pendiente.
 5. **Congelar**: regresión completa, instalador y nada nuevo durante la primera semana de guardias.
 
 Fuera de la 1.0 por ahora: fuente Unicode al exportar y mover la suite de pruebas al repo.
