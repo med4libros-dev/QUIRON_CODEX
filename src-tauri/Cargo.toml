@@ -1,6 +1,6 @@
 [package]
 name = "quiron-codex"
-version = "0.20.0"
+version = "0.21.0"
 description = "Quirón Codex: estación de estudio para el internado médico y el ENARM"
 authors = ["Alexander Carrillo de la Cruz"]
 edition = "2021"

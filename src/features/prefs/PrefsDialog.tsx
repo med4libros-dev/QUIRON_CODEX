@@ -11,6 +11,7 @@ import { useSettings } from '../../store/settings';
 import { useUI } from '../../store/ui';
 import { useTools } from '../../store/tools';
 import { APP_VERSION } from '../../version';
+import { UpdateCheck } from './UpdateCheck';
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 const hh = (h: number) => `${String(h).padStart(2, '0')}:00`;
@@ -269,6 +270,13 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
               ? 'La clave de Gemini se obtiene en Google AI Studio (aistudio.google.com). Modelos útiles: gemini-2.5-flash (rápido y barato) o gemini-2.5-pro (más cuidadoso).'
               : 'La clave de Claude se obtiene en console.anthropic.com.'}
           </p>
+        </section>
+
+        <section>
+          <h4>
+            <Icon name="download" size={15} /> Versión
+          </h4>
+          <UpdateCheck />
         </section>
 
         <p className="small muted">

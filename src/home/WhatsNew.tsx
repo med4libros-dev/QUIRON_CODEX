@@ -8,9 +8,7 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'monitor', title: 'Arreglado en Safari y iPad', text: 'La app medía la ventana sin contar la barra de direcciones, así que en iOS quedaba más alta que la pantalla y el panel de abajo —el lienzo— se salía de vista. Ahora mide lo que de verdad se ve.' },
-  { icon: 'chevronLeft', title: 'Colapsar un panel', text: 'Dos asas en el separador: una deja el lienzo a pantalla completa, la otra el PDF. Una pestaña en el borde te regresa a los dos. Con el dedo también, porque arrastrar un separador de 7 px es imposible.' },
-  { icon: 'folder', title: 'Versión web para compartir', text: 'La app vive también en med4libros-dev.github.io/QUIRON_CODEX, sin instalar nada ni cuenta de por medio. En iPad o Android: Compartir → Agregar a inicio.' },
+  { icon: 'download', title: 'Buscar actualización cuando quieras', text: 'En Preferencias → Versión. El aviso automático pregunta una vez al día; este botón no espera. Y distingue «estás al día» de «no se pudo preguntar», que es donde estas cosas suelen mentir.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

@@ -8355,3 +8355,21 @@ button.kpi:hover {
     height: 32px;
   }
 }
+
+/* ---------- Buscar actualización ---------- */
+.upd-hay {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+}
+.upd-notas {
+  max-height: 180px;
+  margin: 8px 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}

@@ -38,24 +38,32 @@ interface GhRelease {
  * o si GitHub no contesta: la app funciona sin conexión y esto nunca debe estorbar.
  * Se consulta una vez al día como mucho.
  */
+/**
+ * Pregunta a GitHub. **Lanza** si no hay red o GitHub no contesta, para que quien busca a mano
+ * pueda distinguir «estás al día» de «no se pudo preguntar»; `checkUpdate` lo silencia.
+ */
+export async function fetchLatest(): Promise<Release | null> {
+  const res = await fetch(LATEST, { headers: { Accept: 'application/vnd.github+json' } });
+  if (!res.ok) throw new Error(`GitHub respondió ${res.status}`);
+  const data = (await res.json()) as GhRelease;
+  localStorage.setItem(CHECKED, String(Date.now()));
+  const version = (data.tag_name || '').replace(/^v/, '');
+  if (!version || !isNewer(version, APP_VERSION)) return null;
+  const setup = data.assets?.find((a) => /setup\.exe$/i.test(a.name || ''))?.browser_download_url;
+  return {
+    version,
+    notes: (data.body || '').trim(),
+    url: data.html_url || `https://github.com/${REPO}/releases/latest`,
+    setup: setup || null,
+  };
+}
+
 export async function checkUpdate(force = false): Promise<Release | null> {
   if (!navigator.onLine) return null;
   const last = Number(localStorage.getItem(CHECKED) || 0);
   if (!force && Date.now() - last < DAY) return null;
   try {
-    const res = await fetch(LATEST, { headers: { Accept: 'application/vnd.github+json' } });
-    if (!res.ok) return null;
-    const data = (await res.json()) as GhRelease;
-    localStorage.setItem(CHECKED, String(Date.now()));
-    const version = (data.tag_name || '').replace(/^v/, '');
-    if (!version || !isNewer(version, APP_VERSION)) return null;
-    const setup = data.assets?.find((a) => /setup\.exe$/i.test(a.name || ''))?.browser_download_url;
-    return {
-      version,
-      notes: (data.body || '').trim(),
-      url: data.html_url || `https://github.com/${REPO}/releases/latest`,
-      setup: setup || null,
-    };
+    return await fetchLatest();
   } catch {
     return null; // sin internet, o GitHub no contesta: no es un error que valga la pena contar
   }

@@ -115,6 +115,10 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.21
+- **Botón «Buscar actualización»** en Preferencias → Versión. El aviso automático pregunta una vez al día; este no espera. Distingue tres cosas que suelen confundirse: estás al día, hay una versión nueva, o no se pudo preguntar (sin red o GitHub caído) — nunca dice «al día» cuando en realidad no pudo comprobarlo.
+- En la versión web ofrece **recargar** en vez de descargar un instalador, que es como se actualiza ahí.
+
 ### v0.20
 - **Arreglado el lienzo en Safari y iPad**: la app usaba `100vh`, que en iOS mide la ventana **sin** la barra de direcciones; quedaba más alta que la pantalla y, con `body` en `overflow: hidden`, el panel de abajo se volvía inalcanzable. Ahora usa `100dvh`, que mide lo que de verdad se ve y se reajusta cuando la barra aparece o se esconde.
 - **Colapsar un panel**: dos asas en el separador de Estudio. Una deja el lienzo a pantalla completa, la otra el PDF, y una pestaña en el borde regresa a los dos. Con el dedo son objetivos de 44 px, porque arrastrar un separador de 7 px en una tableta no es realista.
