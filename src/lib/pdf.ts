@@ -21,6 +21,11 @@ export function openPdf(data: ArrayBuffer) {
 }
 
 export async function loadPdfData(docId: string): Promise<ArrayBuffer> {
+  // Los resúmenes no se copian aquí: viven en tu carpeta y se leen de ahí cuando los abres.
+  if (docId.startsWith('sum:')) {
+    const { fileOf, summaryPath } = await import('../summaries/folder');
+    return (await fileOf(summaryPath(docId))).arrayBuffer();
+  }
   const blob = await idb.get<Blob>('pdfs', docId);
   if (!blob) throw new Error('No se encontró el archivo en este navegador.');
   return blob.arrayBuffer();

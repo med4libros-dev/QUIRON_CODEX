@@ -334,9 +334,24 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - El botón del centro se ancla a 108 px (el centro del SVG), no al 50 % del contenedor: debajo del disco van las plumas favoritas, y con 50 % el botón bajaba y se comía el sector inferior del primer anillo.
 - `PenControls` y su CSS (`.pen-controls`, `.fav-pens`, `.fav-pen`) se retiran: el disco cubre instrumento, color, grosor y favoritas.
 
+## v0.15 · Resúmenes de la carpeta
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Índice | `src/summaries/store.ts` | Solo metadatos: `{path, name, size, title, topicId, level, score, pages, indexedAt}`. Persiste en `kv` (clave `summaries`); los PDFs **nunca** entran a `pdfs` |
+| Carpeta | `src/summaries/folder.ts` | `showDirectoryPicker` y el handle guardado en `kv` (`summaries:dir`), igual que música y respaldo. `open_` lo cachea en la sesión: evita una ida a IndexedDB por página y sirve de respaldo si el navegador se niega a guardar el permiso |
+| Lectura | `readHead(file)` | Abre el PDF, pide **solo la página 1**, junta los `items` respetando `hasEOL` y lo pasa a `titleFromPage`. Después lo destruye: nada queda en memoria |
+| Título | `src/lib/summaryTitle.ts` | `stripHeader` quita el encabezado de serie al principio del renglón («C.O. RESUMEN PED 10»), un filtro de basura descarta renglones de plantilla, `undouble` colapsa el texto duplicado que deja pdf.js con los títulos sombreados y `stripTail` quita la firma del autor al final |
+| Emparejado | `similarity` / `matchTopic` | Cobertura de palabras en **ambos sentidos** (el temario es más largo que el título), con raíz aproximada (`stem`), diccionario de siglas (RCP, EVC, IAM, EPOC, ERC, LRA, TEP…) y pista de especialidad por la ruta. Dos umbrales: ≥ 0.8 `seguro`, ≥ 0.45 `probable`, por debajo `ninguno` |
+| Lector | `src/lib/pdf.ts` | `loadPdfData` es la costura: si el `docId` empieza por `sum:`, el archivo se lee de la carpeta en vez de IndexedDB. Resaltados, tinta, post-its y búsqueda funcionan sin cambios |
+| Biblioteca | `addExternalDoc` (`store/library.ts`) | Registra el `DocMeta` de un resumen sin guardar bytes |
+
+- El `docId` de un resumen es `sum:<ruta relativa>`: estable mientras no muevas el archivo, y nunca choca con los PDFs propios.
+- Una segunda revisión no vuelve a abrir lo que ya conoce (compara ruta + tamaño) y deja en `missing` lo que ya no está en la carpeta.
+
 ## Modelo de datos (resumen)
 
-`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
+`DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`
 
 ## Próximos pasos sugeridos
 

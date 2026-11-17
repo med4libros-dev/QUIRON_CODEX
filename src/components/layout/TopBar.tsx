@@ -25,7 +25,7 @@ function StudyClock() {
   );
 }
 
-const TITLES: Record<View, string> = { internado: 'Inicio', study: 'Estudio', notebooks: 'Cuadernos', calendar: 'Calendario', progress: 'Progreso', hy: 'Perlas HY', exam: 'Simulacros', ward: 'Turno', logbook: 'Bitácora' };
+const TITLES: Record<View, string> = { internado: 'Inicio', study: 'Estudio', notebooks: 'Cuadernos', calendar: 'Calendario', progress: 'Progreso', hy: 'Perlas HY', exam: 'Simulacros', ward: 'Turno', logbook: 'Bitácora', summaries: 'Resúmenes' };
 
 export function TopBar() {
   const view = useSettings((s) => s.view);

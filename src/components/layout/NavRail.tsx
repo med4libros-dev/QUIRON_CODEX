@@ -17,6 +17,7 @@ import type { Theme, View } from '../../types';
 const ITEMS: { view: View; icon: IconName; label: string }[] = [
   { view: 'internado', icon: 'home', label: 'Inicio' },
   { view: 'study', icon: 'book', label: 'Estudio' },
+  { view: 'summaries', icon: 'layers', label: 'Resúmenes' },
   { view: 'notebooks', icon: 'notebook', label: 'Cuadernos' },
   { view: 'calendar', icon: 'calendar', label: 'Calendario' },
   { view: 'progress', icon: 'chart', label: 'Progreso' },

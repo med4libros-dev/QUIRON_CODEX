@@ -26,6 +26,8 @@ export interface LibraryState {
   addFiles: (files: File[]) => Promise<string | null>;
   /** Igual que addFiles pero devuelve todos los PDFs agregados (id + nombre de archivo). */
   addFilesAll: (files: File[]) => Promise<{ id: string; fileName: string }[]>;
+  /** Registra un documento que no vive en IndexedDB (un resumen de tu carpeta). */
+  addExternalDoc: (meta: DocMeta) => void;
   removeDoc: (id: string) => Promise<void>;
   renameDoc: (id: string, name: string) => void;
   setDocSubject: (id: string, subjectId: string | null) => void;
@@ -118,6 +120,8 @@ export const useLibrary = createStore<LibraryState>(
         return added;
       },
 
+      addExternalDoc: (meta) =>
+        set((s) => (s.docs.some((d) => d.id === meta.id) ? s : { docs: [meta, ...s.docs] })),
       removeDoc: async (id) => {
         // El archivo se queda guardado mientras el PDF esté en la papelera (30 días).
         const st = get();

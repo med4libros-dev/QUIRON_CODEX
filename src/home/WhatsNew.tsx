@@ -8,9 +8,9 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'pen', title: 'La barra de plumas ahora es un disco que se gira', text: 'Tres anillos alrededor de la herramienta activa: dentro el instrumento, luego el color y fuera el grosor. Se usa arrastrando —apoyas el lápiz en un anillo y lo giras—, no tocando botones.' },
-  { icon: 'target', title: 'Siempre en la misma esquina', text: 'El del lector arriba a la derecha, el del lienzo arriba a la izquierda. Cerrado ocupa 48 px y dice con qué estás escribiendo; un toque lo abre y otro en el centro lo cierra.' },
-  { icon: 'marker', title: 'El grosor ya no va a saltos', text: 'El anillo de fuera es continuo: el arco se va engrosando y deja un hueco abajo para tener principio y fin. Las plumas favoritas siguen ahí, debajo del disco.' },
+  { icon: 'layers', title: 'Tus ultrarresúmenes, dentro de la app', text: 'Le apuntas una vez a la carpeta donde los guardas y quedan a mano en «Resúmenes». No se copian a ningún lado: siguen siendo tus archivos, se leen de ahí cuando abres uno.' },
+  { icon: 'search', title: 'Se reconocen solos', text: 'De cada PDF lee solo la primera página, saca el título de verdad —no el nombre del archivo, que suele ser «Med Interna 7»— y lo empareja con tu temario. Lo que atina queda fijo; lo dudoso te lo marca para que lo confirmes de un toque.' },
+  { icon: 'book', title: 'Aparecen en la ficha del tema', text: 'Cuando abres un tema del temario, sus resúmenes están ahí, junto a tus PDFs. Se abren en el mismo lector, con resaltado, lápiz y notas de siempre.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

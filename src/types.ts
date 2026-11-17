@@ -1,5 +1,5 @@
 export type Theme = 'light' | 'dark' | 'system';
-export type View = 'internado' | 'study' | 'notebooks' | 'calendar' | 'progress' | 'hy' | 'exam' | 'ward' | 'logbook';
+export type View = 'internado' | 'study' | 'notebooks' | 'calendar' | 'progress' | 'hy' | 'exam' | 'ward' | 'logbook' | 'summaries';
 
 /* ---------- Biblioteca / PDF ---------- */
 export type HighlightColor = 'yellow' | 'green' | 'pink' | 'blue' | 'orange' | 'purple' | 'red';

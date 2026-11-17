@@ -43,6 +43,7 @@ const NotebooksView = lazy(() => import('./features/notebooks/NotebooksView').th
 const ProgressView = lazy(() => import('./features/progress/ProgressView').then((m) => ({ default: m.ProgressView })));
 const ExamView = lazy(() => import('./exam/ExamView').then((m) => ({ default: m.ExamView })));
 const WardView = lazy(() => import('./ward/WardView').then((m) => ({ default: m.WardView })));
+const SummariesView = lazy(() => import('./summaries/SummariesView').then((m) => ({ default: m.SummariesView })));
 const HyView = lazy(() => import('./hy/HyView').then((m) => ({ default: m.HyView })));
 const LogbookView = lazy(() => import('./logbook/LogbookView').then((m) => ({ default: m.LogbookView })));
 
@@ -70,7 +71,7 @@ export default function App() {
 
   // Vista guardada que ya no existe (p. ej. la antigua «Fuentes»): vuelve a Inicio.
   useEffect(() => {
-    const known = ['internado', 'study', 'notebooks', 'calendar', 'progress', 'hy', 'exam', 'ward', 'logbook'];
+    const known = ['internado', 'study', 'notebooks', 'calendar', 'progress', 'hy', 'exam', 'ward', 'logbook', 'summaries'];
     if (!known.includes(view)) useSettings.getState().setView('internado');
   }, [view]);
 
@@ -301,6 +302,13 @@ export default function App() {
           <div className="view scroll">
             <Suspense fallback={<ViewLoading />}>
               <LogbookView />
+            </Suspense>
+          </div>
+        )}
+        {view === 'summaries' && (
+          <div className="view scroll">
+            <Suspense fallback={<ViewLoading />}>
+              <SummariesView />
             </Suspense>
           </div>
         )}

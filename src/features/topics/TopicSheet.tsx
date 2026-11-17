@@ -19,6 +19,8 @@ import { fmt, fromKey, todayKey } from '../../lib/date';
 import { escapeHtml } from '../../lib/html';
 import { pdfRefHtml, useBridge } from '../../store/bridge';
 import { useLibrary } from '../../store/library';
+import { summariesOf, useSummaries } from '../../summaries/store';
+import { openSummary } from '../../summaries/folder';
 import { openPdfPage } from '../../store/navigate';
 import { useSettings } from '../../store/settings';
 import { speak, ttsSupported } from '../../lib/tts';
@@ -176,6 +178,7 @@ function DocsTab({ topicId }: { topicId: string }) {
 
   return (
     <div className="ts-pane">
+      <SummariesOf topicId={topicId} />
       <p className="muted small">
         Adjunta varias versiones de la guía: la <b>GRR</b> para repasos rápidos y la <b>GER</b> para estudiar a fondo. «Estudiar» abre la GER en temas nuevos; los repasos abren la GRR.
       </p>
@@ -540,6 +543,35 @@ function HighlightsTab({ topicId }: { topicId: string }) {
           </section>
         ))
       )}
+    </div>
+  );
+}
+
+
+/**
+ * Los resúmenes de tu carpeta que quedaron con este tema. No son archivos adjuntos: viven en tu
+ * disco y se abren desde ahí, así que aparecen solos en cuanto indexas la carpeta.
+ */
+function SummariesOf({ topicId }: { topicId: string }) {
+  const list = useSummaries((s) => s.summaries);
+  const mine = useMemo(() => summariesOf(list, topicId), [list, topicId]);
+  if (!mine.length) return null;
+  return (
+    <div className="ts-sums">
+      <h5 className="sec-label">Tus resúmenes</h5>
+      <ul>
+        {mine.map((s) => (
+          <li key={s.path}>
+            <button className="link" onClick={() => void openSummary(s)}>
+              {s.title || s.name}
+            </button>
+            <span className="muted small">
+              {s.pages ? ` · ${s.pages} p.` : ''}
+              {s.level === 'probable' ? ' · por confirmar' : ''}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -161,6 +161,12 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - Posición fija por esquina (`corner="tr"` en el lector, `corner="tl"` en el lienzo) para que el gesto se aprenda sin mirar. Cerrado ocupa 48 px.
 - Las plumas favoritas y el color libre quedan bajo el disco; se retira `PenControls` y su CSS.
 
+### v0.15 · Resúmenes de la carpeta ✅ (noviembre 2026)
+- Vista **Resúmenes**: se le apunta a la carpeta de ultrarresúmenes y se indexa **en su sitio**, sin copiar nada. Una colección de ~2 GB deja un índice de kilobytes, y la app y el instalador siguen pesando lo mismo.
+- El nombre del archivo no sirve («Med Interna 7»), así que el título sale de la **primera página** de cada PDF (`lib/summaryTitle.ts`) y se empareja con el temario con cobertura en ambos sentidos, raíces y siglas. `seguro` queda fijo; `probable` y `ninguno` se confirman a mano desde la lista.
+- Los resúmenes de un tema aparecen en su ficha, junto a los PDFs, y abren en el lector de siempre (`loadPdfData` lee de la carpeta cuando el `docId` empieza por `sum:`).
+- Todo local: sin internet y sin IA. En Windows conviene tener **Google Drive para escritorio** para que la carpeta compartida exista como carpeta del sistema.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

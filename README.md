@@ -115,6 +115,12 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.15
+- **Tus ultrarresúmenes, dentro de la app**: nueva vista **Resúmenes**. Le apuntas una vez a la carpeta donde los guardas y quedan a mano. **No se copian a ningún lado**: siguen siendo tus archivos, se leen de la carpeta cuando abres uno, así que una colección de varios gigas no engorda la app ni el navegador (el índice pesa kilobytes).
+- **Se reconocen solos**: de cada PDF lee **solo la primera página**, saca el título de verdad —no el nombre del archivo, que suele ser «Med Interna 7»— y lo empareja con tu temario resolviendo siglas (RCP, EVC, IAM, EPOC…) y palabras con otra terminación. Lo que atina queda fijo; lo dudoso te lo marca **para que lo confirmes** de un toque, y puedes cambiar el tema a mano.
+- **En la ficha del tema**: los resúmenes de ese tema aparecen junto a tus PDFs y se abren en el mismo lector, con resaltado, lápiz y notas de siempre.
+- **Sin internet y sin IA**: todo el emparejamiento es local. Si mueves o borras un archivo, la siguiente revisión te dice cuáles ya no están.
+
 ### v0.14
 - **Disco de instrumentos**: la barra de plumas desaparece y en su lugar hay tres anillos concéntricos alrededor de la herramienta activa — **instrumento**, **color** y **grosor**, de dentro hacia fuera.
 - **Se gira, no se toca**: apoyas el lápiz en un anillo y lo giras; la selección sigue al dedo y se queda donde lo sueltas. El grosor es continuo (el arco se va engrosando) con un hueco abajo que le da principio y fin.
