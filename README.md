@@ -115,6 +115,13 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.14
+- **Disco de instrumentos**: la barra de plumas desaparece y en su lugar hay tres anillos concéntricos alrededor de la herramienta activa — **instrumento**, **color** y **grosor**, de dentro hacia fuera.
+- **Se gira, no se toca**: apoyas el lápiz en un anillo y lo giras; la selección sigue al dedo y se queda donde lo sueltas. El grosor es continuo (el arco se va engrosando) con un hueco abajo que le da principio y fin.
+- **Siempre en la misma esquina**: el del lector arriba a la derecha, el del lienzo arriba a la izquierda, para que la mano aprenda el gesto sin mirar. Cerrado ocupa 48 px y muestra con qué escribes.
+- **Con teclado**: cada anillo es un deslizador (`role="slider"`); se entra con Tab y se gira con las flechas.
+- Las plumas favoritas y el color libre quedan debajo del disco, con el mismo comportamiento de siempre (mantener presionado guarda la pluma actual).
+
 ### v0.13
 - **Corrección**: al exportar una nota a PDF se respeta el tamaño de hoja. En la 0.12 una nota apaisada o en rollo salía deformada porque la exportación seguía fija en A4.
 - **Transcribir la clase grabada**: botón «Transcribir» en la barra de grabación. Pasa el audio a texto con marcas de tiempo, lo guarda en la nota y entra en Ctrl+K. Necesita el motor **Gemini**: la API de Claude no recibe audio.

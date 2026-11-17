@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FilePick } from '../../components/FilePick';
 import { Icon, type IconName } from '../../components/Icon';
-import { PenControls } from '../../components/PenControls';
+import { PenDial } from '../../components/PenDial';
 import { useLibrary } from '../../store/library';
 import { useUI } from '../../store/ui';
 import { exportAnnotatedPdf } from '../../lib/exportAnnotated';
@@ -417,7 +417,6 @@ export function PdfWorkspace() {
               </label>
             </>
           )}
-          {tool === 'draw' && <PenControls tool={pdfTool} onTool={setPdfTool} />}
           {tool === 'sticky' && (
             <>
               <div className="swatches">
@@ -447,6 +446,7 @@ export function PdfWorkspace() {
       )}
 
       <div className="pdf-body">
+        {doc && tool === 'draw' && <PenDial tool={pdfTool} onTool={setPdfTool} corner="tr" />}
         {doc ? (
           <PdfViewer key={doc.id} docId={doc.id} tool={tool} zoom={zoom} onPageChange={setPage} onZoom={setZoom} find={find} />
         ) : hydrated ? (

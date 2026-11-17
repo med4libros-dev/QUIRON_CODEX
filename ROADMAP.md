@@ -155,6 +155,12 @@ Se construye **sobre la base de Quirón Codex** (el nombre anterior de Quirón C
 - **Capas** (`Stroke.layer`, `tools.layer`/`showDraft`): el borrador se dibuja al 38 % y se puede ocultar sin borrarlo.
 - **PWA** (`public/manifest.webmanifest`, `public/sw.js`): instalable en Edge, red primero y caché como respaldo; no se registra en la app de escritorio ni en el HTML de un solo archivo.
 
+### v0.14 · Disco de instrumentos ✅ (noviembre 2026)
+- `components/PenDial.tsx` sustituye a `PenControls`: tres anillos concéntricos (instrumento, color, grosor) que **se giran** en lugar de botones. Cada anillo es una zona de arrastre `role="slider"`: el `pointerdown` engancha, los `pointermove` van siguiendo el ángulo y se suelta donde quieras.
+- El grosor es continuo sobre un arco de 300°, con el hueco abajo para que tenga principio y fin; el arco se va engrosando y un marcador señala dónde estás.
+- Posición fija por esquina (`corner="tr"` en el lector, `corner="tl"` en el lienzo) para que el gesto se aprenda sin mirar. Cerrado ocupa 48 px.
+- Las plumas favoritas y el color libre quedan bajo el disco; se retira `PenControls` y su CSS.
+
 ### Fase 3 · Lienzo clínico avanzado
 - Plantillas de **flujogramas** (diagnóstico y tratamiento) y cajas/flechas que se ajustan solas.
 - Reconocimiento de formas: un trazo a mano alzada se convierte en rectángulo, círculo o flecha.

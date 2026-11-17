@@ -322,6 +322,18 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 | Capas | `Stroke.layer`, `tools.layer`/`showDraft`, `drawStroke` | El borrador se pinta al 38 %; ocultarlo solo lo filtra antes de agrupar por hoja |
 | PWA | `public/manifest.webmanifest`, `public/sw.js`, `main.tsx:registerServiceWorker` | Red primero, caché como respaldo; se salta todo lo que no sea del mismo origen (las APIs de IA nunca se cachean) y no se registra en Tauri ni en `file://` |
 
+## v0.14 · Disco de instrumentos
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Disco | `src/components/PenDial.tsx` | Tres coronas circulares en un SVG de 216×216. Lo que se ve (sectores, iconos, puntos) va con `pointer-events: none`; encima hay tres `path.dial-grab` invisibles, uno por anillo, que son los que se agarran |
+| Giro | `spin(ring, apply)` | `setPointerCapture` + escuchas de `pointermove`/`pointerup` en `window`, así el giro sigue aunque el dedo se salga del anillo. `angleAt` da el ángulo respecto al centro del SVG |
+| Reparto | `indexAt(angle, n)` / `fractionAt(angle)` | Los anillos de instrumento y color son cíclicos (sectores iguales desde arriba); el de grosor usa un arco de 2π − GAP con el hueco abajo, y devuelve una fracción continua |
+| Teclado | `role="slider"` + `onKeyDown` | Tab entra en cada anillo y las flechas lo giran un paso; el grosor se mueve de uno en uno dentro de `min`/`max` |
+
+- El botón del centro se ancla a 108 px (el centro del SVG), no al 50 % del contenedor: debajo del disco van las plumas favoritas, y con 50 % el botón bajaba y se comía el sector inferior del primer anillo.
+- `PenControls` y su CSS (`.pen-controls`, `.fav-pens`, `.fav-pen`) se retiran: el disco cubre instrumento, color, grosor y favoritas.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

@@ -547,12 +547,6 @@ h4 {
   width: 100%;
   height: 100%;
 }
-.pen-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
 .size-control {
   display: inline-flex;
   align-items: center;
@@ -6192,34 +6186,6 @@ button.kpi:hover {
 }
 
 /* Plumas favoritas */
-.fav-pens {
-  display: flex;
-  gap: 3px;
-}
-.fav-pen {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  height: 30px;
-  padding: 0 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
-}
-.fav-pen i {
-  display: inline-block;
-  border-radius: 50%;
-}
-.fav-pen.active {
-  border-color: var(--accent-line);
-  color: var(--text);
-  background: var(--accent-soft);
-}
 
 /* Hojas del lienzo */
 .ink-sheet {
@@ -6307,9 +6273,10 @@ button.kpi:hover {
   opacity: 1;
 }
 @media (pointer: coarse) {
-  .fav-pen {
-    height: 40px;
-    padding: 0 9px;
+  .dial-fav,
+  .dial-any {
+    width: 38px;
+    height: 38px;
   }
   .ink-page-head .icon-btn {
     min-width: 36px;
@@ -7418,6 +7385,7 @@ button.kpi:hover {
 
 /* ---------- Columna de miniaturas junto al lienzo ---------- */
 .ink-body {
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -7585,4 +7553,213 @@ button.kpi:hover {
   padding: 0 8px;
   height: 26px;
   font-size: 11.5px;
+}
+
+/* ---------- Disco de instrumentos ----------
+ * Tres anillos concéntricos que se giran: herramienta, color y grosor. Vive siempre en la misma
+ * esquina (el del PDF arriba a la derecha, el del lienzo arriba a la izquierda), así la mano
+ * aprende el gesto sin mirar. */
+.pen-dial {
+  position: absolute;
+  z-index: 6;
+  line-height: 0;
+}
+.pen-dial.tl {
+  top: 12px;
+  left: 12px;
+}
+.pen-dial.tr {
+  top: 12px;
+  right: 12px;
+}
+.pen-dial.off {
+  opacity: 0.55;
+}
+
+/* Cerrado: con qué estás escribiendo, en 48 px. */
+.dial-knob {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  box-shadow: var(--shadow-page);
+  cursor: pointer;
+}
+.dial-knob:hover {
+  background: var(--surface-2);
+}
+.knob-ink {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  border: 1px solid var(--surface);
+  border-radius: 50%;
+}
+
+/* Abierto */
+.pen-dial.open {
+  filter: drop-shadow(0 10px 24px color-mix(in srgb, var(--text) 24%, transparent));
+}
+.dial-svg {
+  display: block;
+  touch-action: none;
+}
+.dial-ring {
+  pointer-events: none;
+}
+
+/* Cada anillo con su propio tono, para que se lean como tres círculos y no como uno solo. */
+.dial-sec.tool path {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.dial-sec.tool.on path {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.dial-ico {
+  color: var(--text);
+  opacity: 0.75;
+}
+.dial-sec.tool.on .dial-ico {
+  color: var(--accent);
+  opacity: 1;
+}
+.dial-sec.color {
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+.dial-sec.color.on {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+.dial-track {
+  fill: var(--surface);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+.dial-tick {
+  opacity: 0.3;
+}
+.dial-mark {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+/* Lo que se agarra para girar: invisible, encima de todo y del ancho del anillo. */
+.dial-grab {
+  fill: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+.pen-dial.turning .dial-grab {
+  cursor: grabbing;
+}
+.dial-grab:focus-visible {
+  outline: none;
+  fill: color-mix(in srgb, var(--accent) 14%, transparent);
+  stroke: var(--accent-line);
+  stroke-width: 2;
+}
+
+/* El centro va encima del SVG: dice la herramienta y cierra el disco.
+ * Se ancla al centro del SVG (108 px), no al 50 % del contenedor: debajo del disco van las
+ * plumas favoritas, y con 50 % el botón bajaba y se comía el sector de abajo del anillo. */
+.dial-center {
+  position: absolute;
+  top: 108px;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+.dial-center i {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  border: 1px solid var(--surface);
+  border-radius: 50%;
+}
+/* Lectura en el hueco de abajo del anillo de grosor. */
+.dial-read {
+  position: absolute;
+  top: 192px;
+  left: 50%;
+  padding: 1px 7px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-muted);
+  transform: translateX(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Fuera del disco: color libre y las tres plumas favoritas. */
+.dial-extras {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+  line-height: 1;
+}
+.dial-any,
+.dial-fav {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.dial-any input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.dial-fav i {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+}
+.dial-fav.active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+@media (max-width: 760px) {
+  .pen-dial.open .dial-svg {
+    width: 184px;
+    height: 184px;
+  }
+  .dial-center {
+    top: 92px;
+    width: 50px;
+    height: 50px;
+  }
+  .dial-read {
+    top: 164px;
+  }
 }

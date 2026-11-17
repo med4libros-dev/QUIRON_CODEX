@@ -17,7 +17,7 @@ import { uid } from '../../lib/id';
 import { useUI } from '../../store/ui';
 import { SheetsDialog } from './SheetsDialog';
 import { PAGE_H, PAGE_W, SHEETS, ctx2d, sheetH, drawLiveSegments, drawLiveTip, drawStroke, hitsStroke, inkColor, liveOpacity, stabilize, type LiveStyle } from '../../lib/ink';
-import { PenControls } from '../../components/PenControls';
+import { PenDial } from '../../components/PenDial';
 import { usePinchZoom } from '../../lib/usePinchZoom';
 import { inkDown, inkIsDown, inkUp } from '../../lib/inkBusy';
 import { stableGroups } from '../../lib/groups';
@@ -491,14 +491,6 @@ export function InkCanvas({ note }: { note: Note }) {
   return (
     <div className="ink-wrap" tabIndex={-1} onKeyDown={onKeyDown}>
       <div className="ink-toolbar" role="toolbar" aria-label="Herramientas de dibujo">
-        <PenControls
-          tool={drawTool}
-          inactive={mode !== 'draw'}
-          onTool={(t) => {
-            setDrawTool(t);
-            setMode('draw');
-          }}
-        />
         <button className={`icon-btn${mode === 'eraser' ? ' active' : ''}`} onClick={() => setMode((m) => (m === 'eraser' ? 'draw' : 'eraser'))} title="Borrador de trazo (o usa el borrador del lápiz)" aria-pressed={mode === 'eraser'} aria-label="Borrador">
           <Icon name="eraser" />
         </button>
@@ -681,6 +673,15 @@ export function InkCanvas({ note }: { note: Note }) {
       </div>
       {audioOpen && <ClassAudioBar noteId={note.id} seekRef={seekRef} onListening={setListening} />}
       <div className="ink-body">
+      <PenDial
+        tool={drawTool}
+        corner="tl"
+        inactive={mode !== 'draw'}
+        onTool={(t) => {
+          setDrawTool(t);
+          setMode('draw');
+        }}
+      />
       {railOpen && (
         <SheetRail
           pages={pages}

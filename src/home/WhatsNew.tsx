@@ -8,12 +8,9 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'mic', title: 'La clase grabada, ahora transcrita', text: 'Botón «Transcribir» en la barra de grabación: pasa la clase a texto con marcas de tiempo y entra en Ctrl+K. Necesita el motor Gemini, porque la API de Claude no recibe audio.' },
-  { icon: 'swap', title: 'Ponerme al día', text: 'En «Pendientes»: reparte lo que quedó atrás en los próximos días con espacio, saltándose las guardias. Si algo no cabe, te dice cuánto quedó fuera en vez de reventar un día.' },
-  { icon: 'target', title: 'Mini-examen del día', text: 'Cinco casos de los temas que te tocaban hoy, con explicación inmediata y la cita de la GPC. Sale del banco que ya tienes; si no hay preguntas de esos temas, lo dice.' },
-  { icon: 'flow', title: 'Flujogramas y capas', text: 'Plantillas de algoritmo en tinta para escribir dentro, flechas que se enganchan solas a las cajas, y una capa de borrador que va debajo, más tenue, y se puede ocultar sin borrarla.' },
-  { icon: 'layers', title: 'El lienzo ya no se arrastra', text: 'Con cuadernos de cientos de hojas solo se monta lo que se ve. Y al exportar a PDF se respeta el tamaño de hoja: una nota apaisada o en rollo ya no sale deformada.' },
-  { icon: 'monitor', title: 'Instalable en Edge', text: 'La versión web se instala como aplicación y abre sin internet. En la app de escritorio no cambia nada.' },
+  { icon: 'pen', title: 'La barra de plumas ahora es un disco que se gira', text: 'Tres anillos alrededor de la herramienta activa: dentro el instrumento, luego el color y fuera el grosor. Se usa arrastrando —apoyas el lápiz en un anillo y lo giras—, no tocando botones.' },
+  { icon: 'target', title: 'Siempre en la misma esquina', text: 'El del lector arriba a la derecha, el del lienzo arriba a la izquierda. Cerrado ocupa 48 px y dice con qué estás escribiendo; un toque lo abre y otro en el centro lo cierra.' },
+  { icon: 'marker', title: 'El grosor ya no va a saltos', text: 'El anillo de fuera es continuo: el arco se va engrosando y deja un hueco abajo para tener principio y fin. Las plumas favoritas siguen ahí, debajo del disco.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */
