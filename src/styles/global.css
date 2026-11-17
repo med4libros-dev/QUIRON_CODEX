@@ -7765,12 +7765,6 @@ button.kpi:hover {
 }
 
 /* ---------- Carpeta de resúmenes ---------- */
-.sum-head {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: baseline;
-}
 .sum-intro {
   max-width: 62ch;
 }
@@ -7797,6 +7791,11 @@ button.kpi:hover {
   min-width: 180px;
   max-width: 320px;
 }
+.sum-page .sum-list,
+.sum-page .sum-bar,
+.sum-page .sum-intro {
+  max-width: 1100px;
+}
 .sum-list {
   margin: 0;
   padding: 0;
@@ -7809,6 +7808,9 @@ button.kpi:hover {
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
 }
+.sum-row .icon-btn {
+  flex: 0 0 auto;
+}
 .sum-row[data-level='probable'] {
   border-left: 3px solid var(--accent);
   background: var(--accent-soft);
@@ -7818,6 +7820,10 @@ button.kpi:hover {
 }
 .sum-open {
   display: flex;
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  color: inherit;
   flex: 1;
   min-width: 0;
   flex-direction: column;
@@ -7826,13 +7832,18 @@ button.kpi:hover {
   text-align: left;
   cursor: pointer;
 }
+.sum-open:hover .sum-title,
+.sum-open:focus-visible .sum-title {
+  color: var(--accent);
+}
 .sum-title {
   font-family: var(--font-read);
   font-size: 14.5px;
   color: var(--text);
 }
 .sum-row .select {
-  max-width: 260px;
+  flex: 0 1 330px;
+  min-width: 0;
 }
 .ellip {
   overflow: hidden;

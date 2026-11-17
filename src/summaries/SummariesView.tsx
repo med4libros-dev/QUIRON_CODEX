@@ -59,7 +59,7 @@ export function SummariesView() {
 
   if (!folderSupported()) {
     return (
-      <div className="view sum-view">
+      <div className="page sum-page">
         <h2 className="page-title">Resúmenes</h2>
         <p className="muted">
           Este navegador no deja a una página leer una carpeta de tu disco. Usa la app de escritorio o Edge; ahí sí funciona.
@@ -69,15 +69,17 @@ export function SummariesView() {
   }
 
   return (
-    <div className="view sum-view">
-      <header className="sum-head">
-        <h2 className="page-title">Resúmenes</h2>
-        {folderName ? (
-          <span className="muted small">
-            {folderName} · {summaries.length} archivos
-          </span>
-        ) : null}
-        <span className="spacer" />
+    <div className="page sum-page">
+      <header className="page-head">
+        <div>
+          <h2 className="page-title">Resúmenes</h2>
+          <p className="muted small">
+            {folderName
+              ? `${folderName} · ${summaries.length} ${summaries.length === 1 ? 'archivo' : 'archivos'}, leídos de tu carpeta`
+              : 'Tus ultrarresúmenes, enganchados al temario sin salir de su carpeta.'}
+          </p>
+        </div>
+        <div className="spacer" />
         {folderName || remembered ? (
           <button className="btn ghost sm" onClick={() => void run(() => rescan((p) => setBusy(p), stop.current))} disabled={!!busy}>
             <Icon name="reset" size={15} /> Actualizar
