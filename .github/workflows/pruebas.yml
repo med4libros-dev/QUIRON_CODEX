@@ -1,0 +1,44 @@
+# Corre la suite de extremo a extremo en cada push. Si algo se rompe, se sabe aquí
+# y no en una guardia a las tres de la mañana.
+name: Pruebas
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', '.claude/**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Playwright con Chromium
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Revisar tipos
+        run: npx tsc --noEmit
+
+      - name: Correr la suite
+        run: ./pruebas/correr.sh
+
+      - name: Guardar capturas de los casos que fallaron
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: pruebas/trabajo/shots
+          if-no-files-found: ignore

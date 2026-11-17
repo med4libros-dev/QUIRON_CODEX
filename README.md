@@ -115,6 +115,12 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.23
+- **Fichas de guardia desde tu GPC**: en la ficha del tema → Vista de Guardia, «Proponer desde mi GPC» lee la guía que **tú** adjuntaste y propone criterios, primera y segunda línea y criterios de referencia, **citando la página** de cada línea. Es un borrador: no toca tu ficha hasta que pasas cada campo, y la pantalla te recuerda verificar las dosis contra tu guía. El sistema tiene prohibido inventar una dosis que no esté en el texto; si la guía no la da, escribe el fármaco sin dosis.
+- **Bitácora en el teléfono**: pestaña nueva en Bolsillo para registrar un caso (tres líneas anónimas, con el mismo detector de nombres, camas, NSS y CURP) y sumar procedimientos de un toque.
+- **PDF con símbolos**: el exportador propio escribe en WinAnsi, así que los acentos salen bien pero el griego, las flechas, ≥ y µ se transliteran. El botón nuevo guarda el PDF por la impresora del navegador, que sí maneja Unicode.
+- **Las pruebas viven en el repositorio**: `pruebas/` con ~900 verificaciones de extremo a extremo (Playwright sobre Chromium) y un workflow que las corre en cada cambio. Antes vivían fuera del repo.
+
 ### v0.22
 - **Respaldo en iPad y teléfono**: ahí **no existe** el respaldo automático — iOS no permite apuntar a una carpeta, y ningún navegador de iPad puede, porque todos usan Safari por dentro. La app ahora lo dice con claridad y, lo importante, **te avisa**: si llevas 5 días sin respaldar en ese dispositivo (o nunca lo has hecho y ya tienes un plan), aparece una barra para descargarlo de un toque. Se puede posponer un día, no para siempre.
 - El mensaje de «tu navegador no permite elegir carpetas» ya no te manda a instalar Chrome, que en iPad no sirve de nada.

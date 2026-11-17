@@ -1,4 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react';
+import { guardCardFromGpc, type GuardDraft } from '../../ai/features';
 import { FilePick } from '../../components/FilePick';
 import { Icon } from '../../components/Icon';
 import { Modal } from '../../components/Modal';
@@ -271,6 +272,80 @@ function DocsTab({ topicId }: { topicId: string }) {
   );
 }
 
+/**
+ * Propone la ficha leyendo la GPC adjunta. Lo que devuelve es un borrador que se revisa
+ * campo por campo: nada toca tu ficha hasta que tú lo pasas.
+ */
+function GuardFromGpc({ topicId }: { topicId: string }) {
+  const [draft, setDraft] = useState<GuardDraft | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const updateGuard = useTopicStore((s) => s.updateGuard);
+  const guard = useTopicStore((s) => s.info[topicId]?.guard) ?? emptyInfo().guard;
+
+  async function proponer() {
+    setBusy(true);
+    setErr('');
+    try {
+      setDraft(await guardCardFromGpc(topicId));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'No se pudo.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const pasar = (id: (typeof GUARD_FIELDS)[number]['id'], texto: string) => {
+    const previo = guard[id].trim();
+    updateGuard(topicId, { [id]: previo ? `${previo}\n${texto}` : texto });
+    setDraft((d) => (d ? { ...d, [id]: '' } : d));
+  };
+
+  return (
+    <div className="gpc-draft">
+      <div className="field-row">
+        <button className="btn sm" disabled={busy} onClick={proponer}>
+          <Icon name="sparkles" size={14} /> {busy ? 'Leyendo tu GPC…' : 'Proponer desde mi GPC'}
+        </button>
+        {draft && (
+          <button className="btn ghost sm" onClick={() => setDraft(null)}>
+            Descartar borrador
+          </button>
+        )}
+      </div>
+      {err && <p className="small warn-text">{err}</p>}
+      {draft && (
+        <>
+          <p className="small muted">
+            Borrador de <b>{draft.docName}</b>. Cada línea trae la página de donde salió.{' '}
+            <b>Verifica las dosis contra tu guía antes de pasarlas</b>: lo que acabe en tu ficha es lo que vas a usar con un paciente.
+            {draft.sinCita > 0 && ` Ojo: ${draft.sinCita} ${draft.sinCita === 1 ? 'línea no cita' : 'líneas no citan'} página.`}
+          </p>
+          {GUARD_FIELDS.map((f) =>
+            draft[f.id] ? (
+              <div key={f.id} className="gpc-field">
+                <div className="field-row">
+                  <b className="small">{f.label}</b>
+                  <span className="spacer" />
+                  <button className="btn xs" onClick={() => pasar(f.id, draft[f.id])}>
+                    Pasar a mi ficha
+                  </button>
+                </div>
+                <textarea
+                  className="input"
+                  rows={Math.min(6, draft[f.id].split('\n').length + 1)}
+                  value={draft[f.id]}
+                  onChange={(e) => setDraft((d) => (d ? { ...d, [f.id]: e.target.value } : d))}
+                />
+              </div>
+            ) : null,
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function GuardTab({ topicId }: { topicId: string }) {
   const guard = useTopicStore((s) => s.info[topicId]?.guard) ?? emptyInfo().guard;
   const updateGuard = useTopicStore((s) => s.updateGuard);
@@ -283,6 +358,7 @@ function GuardTab({ topicId }: { topicId: string }) {
       <p className="muted small">
         Tu ficha de bolsillo. Copia los datos <b>desde la GPC vigente</b> (o usa «Guardia» en el menú de perlas del PDF). Quirón Codex no precarga dosis: así sabes que cada número viene de tu guía.
       </p>
+      <GuardFromGpc topicId={topicId} />
       <div className="guard-grid">
         {GUARD_FIELDS.map((f) => (
           <label key={f.id} className="field guard-field">

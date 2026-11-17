@@ -7,16 +7,18 @@ import { SPECIALTY, TOPIC, TOPICS } from '../internship/curriculum';
 import { dueCards, useCards } from '../flashcards/store';
 import { useSettings } from '../store/settings';
 import { FileBackupBar } from '../features/backup/FileBackupBar';
+import { PocketLog } from './PocketLog';
 
 const DrugPanel = lazy(() => import('../drugs/DrugPanel').then((m) => ({ default: m.DrugPanel })));
 const FlashcardReview = lazy(() => import('../flashcards/FlashcardUI').then((m) => ({ default: m.FlashcardReview })));
 
-type Tab = 'guardia' | 'dosis' | 'escalas' | 'repaso';
+type Tab = 'guardia' | 'dosis' | 'escalas' | 'repaso' | 'bitacora';
 const TABS: { id: Tab; icon: IconName; label: string }[] = [
   { id: 'guardia', icon: 'shield', label: 'Guardia' },
   { id: 'dosis', icon: 'target', label: 'Dosis' },
   { id: 'escalas', icon: 'chart', label: 'Escalas' },
   { id: 'repaso', icon: 'star', label: 'Repaso' },
+  { id: 'bitacora', icon: 'book', label: 'Bitácora' },
 ];
 
 /**
@@ -43,6 +45,7 @@ export function PocketApp() {
           </Suspense>
         )}
         {tab === 'escalas' && <Escalas />}
+        {tab === 'bitacora' && <PocketLog />}
         {tab === 'repaso' && (
           <Suspense fallback={<p className="muted pk-empty">Abriendo…</p>}>
             <FlashcardReview />

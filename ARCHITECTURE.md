@@ -412,6 +412,19 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 | La barra | `features/backup/FileBackupBar.tsx` | Se monta en la app y en Bolsillo. «Mañana» (`qc:fileBackupSnooze`) la calla 24 h, no para siempre: un respaldo que depende de que te acuerdes no es un respaldo |
 | Qué cuenta como «hay algo que perder» | mismo archivo | El plan del internado ya es trabajo del usuario, así que basta con que exista; no se espera a que haya notas |
 
+## v0.23 · Fichas desde la GPC, bitácora de bolsillo y pruebas versionadas
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Ficha desde la GPC | `ai/features.ts` `guardCardFromGpc()` | Reusa `materialFor(topicId)` (GER adjunta, con marcadores `[p. N]`, o apuntes). El *system prompt* prohíbe toda dosis que no esté en el texto y exige citar página; `limpiar()` recorta viñetas y longitudes, y `sinCita` cuenta las líneas sin página para marcarlas |
+| Revisión campo por campo | `features/topics/TopicSheet.tsx` `GuardFromGpc` | El borrador vive en estado local y **nunca** escribe en `topicStore` hasta que se pulsa «Pasar a mi ficha»; al pasar, concatena en vez de reemplazar lo ya escrito |
+| Bitácora de bolsillo | `pocket/PocketLog.tsx` | Caso (mismos campos y mismo `privacyWarnings` que la tableta) y procedimiento con conteo. Escribe en `topicStore.addCase` y `logbook.addEntry`: un solo almacén, dos interfaces |
+| PDF con símbolos | `lib/printPdf.ts` | El exportador con pdf-lib escribe WinAnsi (sin fontkit no hay fuente Unicode). Esta ruta arma un documento en un `iframe` oculto —no una ventana nueva, que Safari bloquea— con la tinta rasterizada por `renderInkPage`, y llama a `print()` |
+| Pruebas | `pruebas/` | 33 casos de extremo a extremo con Playwright (Python) sobre Chromium, el runner `correr.sh` y las herramientas de compilación. El workflow `pruebas.yml` los corre en cada push y sube las capturas si algo falla |
+
+- Los casos esperan su material en `/tmp/tc` porque así nacieron, fuera del repo; `correr.sh` enlaza esa ruta a `pruebas/trabajo/` en vez de reescribir 33 archivos.
+- Los PDF de prueba se generan (`herramientas/mkpdf.cjs`): su texto está inventado y no son GPC reales.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

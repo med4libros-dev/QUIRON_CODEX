@@ -247,3 +247,67 @@ export function renderDiagram(d: Diagram, scale = 2): string {
   }
   return c.toDataURL('image/png');
 }
+
+/* ---------- Ficha de guardia desde tu GPC ---------- */
+
+const GUARD_SYSTEM = `Eres un médico adscrito ayudando a un interno de pregrado en México a preparar su ficha de bolsillo de un tema.
+Con el texto de la Guía de Práctica Clínica que te doy, llena cuatro apartados:
+- "criteria": criterios diagnósticos clave, uno por línea.
+- "firstLine": tratamiento de primera línea. Una línea por fármaco: nombre · dosis · vía · frecuencia, EXACTAMENTE como aparece en la guía.
+- "secondLine": segunda línea o alternativas (si falla la primera, o si hay contraindicación).
+- "referral": cuándo referir a segundo o tercer nivel.
+
+Reglas que no se rompen:
+- Usa SOLO lo que dice el texto. No completes con lo que sabes de memoria.
+- **Ninguna dosis que no esté escrita en el texto.** Si la guía no da la dosis, escribe el fármaco sin dosis. Una dosis inventada en una ficha de guardia puede dañar a un paciente.
+- Si un apartado no está en el texto, déjalo como cadena vacía. Vacío es mejor que inventado.
+- Cada línea termina con la página de donde salió, así: «... [p. 14]».
+- Español de México, telegráfico, sin relleno. Entre 2 y 6 líneas por apartado.
+
+Responde SOLO con JSON válido: {"criteria":"…","firstLine":"…","secondLine":"…","referral":"…"}`;
+
+export interface GuardDraft {
+  criteria: string;
+  firstLine: string;
+  secondLine: string;
+  referral: string;
+  docName: string;
+  /** Líneas que no citan página: salen marcadas para que las revises con más cuidado. */
+  sinCita: number;
+}
+
+/** Quita lo que el motor pudo inventar alrededor y deja líneas limpias. */
+function limpiar(v: unknown): string {
+  if (typeof v !== 'string') return '';
+  return v
+    .split('\n')
+    .map((l) => l.replace(/^\s*[-*•]\s*/, '').trim())
+    .filter((l) => l.length > 2)
+    .slice(0, 8)
+    .join('\n')
+    .slice(0, 1200);
+}
+
+/**
+ * Propone la ficha de guardia de un tema leyendo la GPC que el usuario adjuntó.
+ * Devuelve un borrador: nada se guarda hasta que la persona lo aprueba.
+ */
+export async function guardCardFromGpc(topicId: string): Promise<GuardDraft> {
+  const t = TOPIC[topicId];
+  const mat = await materialFor(topicId);
+  const raw = await callAi({
+    system: GUARD_SYSTEM,
+    maxTokens: 2000,
+    user: `Tema: ${t.title}\n\n## Guía (${mat.docName})\n${mat.text}`,
+  });
+  const p = parseJson(raw) as Record<string, unknown>;
+  const out = {
+    criteria: limpiar(p.criteria),
+    firstLine: limpiar(p.firstLine),
+    secondLine: limpiar(p.secondLine),
+    referral: limpiar(p.referral),
+  };
+  const lineas = Object.values(out).flatMap((v) => v.split('\n')).filter((l) => l.trim());
+  if (lineas.length === 0) throw new Error('El motor no sacó nada aprovechable de esa guía. Revisa que el PDF tenga texto (no sea solo imágenes).');
+  return { ...out, docName: mat.docName, sinCita: lineas.filter((l) => !/\[p\.\s*\d+\]/.test(l)).length };
+}

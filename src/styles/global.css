@@ -7946,7 +7946,7 @@ button.kpi:hover {
 /* Pestañas: cuatro objetivos de 56 px, siempre a la vista, con el área segura del gesto. */
 .pk-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   border-top: 1px solid var(--border);
   background: var(--surface);
   padding-bottom: env(safe-area-inset-bottom, 0);
@@ -7994,6 +7994,30 @@ button.kpi:hover {
 }
 
 /* Fichas de guardia: todo el renglón es el objetivo. */
+.pk-seg {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.pk-seg .chip.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pk-form .field {
+  display: block;
+  margin-bottom: 12px;
+}
+.pk-form .field > span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pk-form .input,
+.pk-form .select,
+.pk-form .btn {
+  width: 100%;
+}
 .pk-card {
   border: 1px solid var(--border);
   border-radius: 2px;
@@ -8384,4 +8408,23 @@ button.kpi:hover {
   transform: none;
   margin: 8px 10px 0;
   width: auto;
+}
+
+/* ---------- Borrador de ficha de guardia desde la GPC ---------- */
+.gpc-draft {
+  margin-bottom: 14px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 2px;
+}
+.gpc-field {
+  margin-top: 10px;
+}
+.gpc-field textarea {
+  width: 100%;
+  margin-top: 4px;
+  font-family: var(--font-read);
+  font-size: 13.5px;
+  line-height: 1.5;
 }

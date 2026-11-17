@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, type IconName } from '../../components/Icon';
 import { fmt } from '../../lib/date';
 import { exportNotebookToPdf, exportToPdf } from '../../lib/exportPdf';
+import { printNote } from '../../lib/printPdf';
 import { exportToWord } from '../../lib/exportWord';
 import { useBridge } from '../../store/bridge';
 import { idb } from '../../lib/idb';
@@ -101,6 +102,32 @@ export function NotesPanel() {
     setActiveNote(null);
   };
 
+  /** Igual que exportar, pero por la impresora del navegador: conserva griego, flechas, ≥ y µ. */
+  const printPdf = async () => {
+    if (!note) return;
+    (document.activeElement as HTMLElement | null)?.blur();
+    setExporting(true);
+    try {
+      const strokes = (await idb.get<Stroke[]>('ink', note.id)) ?? [];
+      const images = await loadInkImages(note.id);
+      const fresh = useNotes.getState().notes.find((n) => n.id === note.id) ?? note;
+      const nb = notebooks.find((b) => b.id === fresh.notebookId);
+      await printNote({
+        title: fresh.title,
+        html: fresh.html,
+        strokes,
+        inkPages: fresh.inkPages,
+        images,
+        sheet: fresh.sheet,
+        subtitle: [nb ? `Cuaderno: ${nb.name}` : '', noteDocName ? `Fuente: ${noteDocName}` : ''].filter(Boolean).join('  ·  ') || undefined,
+      });
+    } catch (e) {
+      alert(`No se pudo imprimir: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const exportPdf = async () => {
     if (!note) return;
     (document.activeElement as HTMLElement | null)?.blur(); // fuerza guardar lo último escrito
@@ -187,6 +214,14 @@ export function NotesPanel() {
             )}
             <button className="btn ghost sm" onClick={() => void exportPdf()} disabled={exporting} title="Exportar nota a PDF (texto + escritura a mano)">
               <Icon name="download" size={15} /> PDF
+            </button>
+            <button
+              className="btn ghost sm"
+              onClick={() => void printPdf()}
+              disabled={exporting}
+              title="Guardar como PDF por la impresora: conserva griego, flechas, ≥ y µ, que el exportador translitera"
+            >
+              <Icon name="printer" size={15} /> PDF con símbolos
             </button>
             <button
               className="btn ghost sm"
