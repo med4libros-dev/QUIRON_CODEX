@@ -139,6 +139,12 @@ export function NavRail() {
                     GPC <small>Temario, mapa y guías</small>
                   </span>
                 </button>
+                <button role="menuitem" onClick={run(() => useUI.getState().setStrategyOpen(true))} title="Ajusta tu plan con tus propias circunstancias y lo que la app ya sabe de cómo estudias">
+                  <Icon name="target" size={17} />
+                  <span>
+                    Estrategia <small>Ajusta el plan a cómo estudias</small>
+                  </span>
+                </button>
                 <button role="menuitem" onClick={run(() => useUI.getState().setGuardQuickOpen(true))} title="Vista de Guardia: fichas de bolsillo y calculadoras (G)">
                   <Icon name="shield" size={17} />
                   <span>

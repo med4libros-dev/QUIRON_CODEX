@@ -382,6 +382,18 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 
 - **La actualización silenciosa queda pendiente**: `tauri-plugin-updater` exige una llave de firma minisign, y ni `npm` ni el binario del CLI de Tauri son alcanzables desde el entorno donde se construye este proyecto. El aviso cubre el 80 % sin tocar el pipeline de releases.
 
+## v0.19 · Estrategia de estudio
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Evidencia | `strategy/evidence.ts` | `gather()` arma el retrato real desde los almacenes que ya existen: cumplimiento del plan hasta hoy, minutos por día de la semana y por hora (de `planner.logs`), mediana diaria, días activos de los últimos 21, temas flojos (`analytics/mastery`), olvidos de tarjetas y aciertos de simulacros. `summarize()` lo pasa a texto para el motor |
+| Cuestionario | `strategy/questions.ts` | Dos bloques con usos distintos: «circunstancias» ajusta el plan (es aritmética sobre tiempo disponible); «preferencias» **solo** elige qué herramienta sugerir. `BLOCK_NOTE` lo dice en pantalla |
+| Propuestas | `strategy/propose.ts` | `localProposals()` son reglas deterministas (sirven sin clave y de respaldo). `aiProposals()` manda evidencia + respuestas con un catálogo cerrado de acciones. `sanitize()` descarta lo que no está en el catálogo y recorta cada número a su rango |
+| Pantalla | `strategy/StrategyModal.tsx` | Cuestionario → propuestas → aplicar una por una. Cada aplicación es un `setConfig`/`setRetention`/`setReminders` normal, así que el plan se recalcula como siempre y las lecciones marcadas se conservan |
+
+- La IA no planifica: el planificador determinista sigue siendo la única fuente del plan, y la IA solo propone valores para sus parámetros. Eso mantiene el plan explicable y acota el daño de una respuesta mala.
+- `v19.py` incluye un motor que devuelve basura a propósito (acciones inexistentes, 9000 minutos, `primaryShare: 5`, una vista `javascript:`) y comprueba que nada de eso entra.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

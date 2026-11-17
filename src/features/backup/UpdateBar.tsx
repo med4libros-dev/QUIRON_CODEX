@@ -26,6 +26,7 @@ export function UpdateBar() {
       <Icon name="download" size={17} />
       <span>
         Hay una versión nueva: <b>{rel.version}</b>
+        <i className="muted small"> · cierra la app antes de instalar</i>
       </span>
       <span className="spacer" />
       <button className="btn sm" onClick={() => openExternal(rel.setup || rel.url)}>

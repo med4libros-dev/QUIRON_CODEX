@@ -115,6 +115,13 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.19
+- **Estrategia de estudio** (Herramientas → Estrategia): un cuestionario corto sobre **tu realidad** —cuánto tiempo real tienes, cómo quedas postguardia, dónde estudias, qué te importa más— junto con **lo que la app ya sabe de cómo estudias**: cumplimiento del plan, minutos reales por día y por hora, olvidos al repasar, aciertos en simulacros y temas flojos.
+- De ahí salen **ajustes concretos al plan** —minutos diarios, fin de semana, postguardia, enfoque en la rotación, exigencia del repaso, recordatorios— cada uno con el dato que lo sostiene, y **los apruebas uno por uno**. El planificador sigue siendo determinista: la IA solo mueve sus perillas.
+- **Sin estilos de aprendizaje.** Emparejar la enseñanza con un supuesto estilo (visual, auditivo, kinestésico) no mejora los resultados, y la app lo dice en la propia pantalla. Tus preferencias de formato solo deciden **qué herramienta de la app se te sugiere**, porque la que no te pesa es la que acabas usando.
+- **Funciona sin IA**: sin clave configurada, las propuestas salen de reglas de la app con los mismos datos. Y lo que el motor devuelve se valida contra un catálogo cerrado: una propuesta de «9000 minutos diarios» se recorta a 240, y una acción que no existe se descarta.
+- El aviso de versión nueva ahora recuerda **cerrar la app antes de instalar**: los widgets pueden dejar el proceso vivo y el instalador no alcanza a reemplazarlo.
+
 ### v0.18
 - **Aviso de versión nueva**: la app de escritorio consulta una vez al día si hay una publicada y te lo dice, con un botón para descargarla. Si no hay internet no aparece, y una versión que rechazas no vuelve a avisar. En el navegador y el teléfono no sale: la PWA se actualiza sola al recargar.
 - **«Antes de empezar el internado»**: en Inicio aparece lo que falta para que la app aguante el año — carpeta de respaldo, carpeta de resúmenes y tus primeras fichas de guardia — con el porqué de cada uno. Se resuelven desde ahí y la tarjeta desaparece sola cuando ya no queda nada.

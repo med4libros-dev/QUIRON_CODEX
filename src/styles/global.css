@@ -8155,6 +8155,9 @@ button.kpi:hover {
 .update-bar > span:first-of-type {
   font-family: var(--font-read);
 }
+.update-bar i {
+  font-style: normal;
+}
 
 /* ---------- Lo que falta antes del internado ---------- */
 .first-run {
@@ -8186,4 +8189,78 @@ button.kpi:hover {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+/* ---------- Estrategia de estudio ---------- */
+.strat-block {
+  margin-bottom: 18px;
+}
+.strat-block h4 {
+  margin: 0 0 2px;
+  font-family: var(--font-read);
+  font-size: 15px;
+}
+.strat-block > p {
+  margin: 0 0 10px;
+  line-height: 1.45;
+}
+.strat-q {
+  margin-bottom: 12px;
+}
+.strat-q > span {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--font-read);
+}
+.strat-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.strat-opts .chip.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.strat-evid {
+  margin: 4px 0 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.strat-evid summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+}
+.strat-evid pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.prop-list {
+  margin: 10px 0;
+  padding: 0;
+  list-style: none;
+}
+.prop-list li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.prop-list li.done {
+  opacity: 0.55;
+}
+.prop-list p {
+  margin: 3px 0 0;
+  line-height: 1.5;
+}
+.prop-list .btn,
+.prop-list .ok-text {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }

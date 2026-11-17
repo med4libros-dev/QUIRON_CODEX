@@ -28,6 +28,7 @@ import { onWindowMessage } from './lib/windowSync';
 import { useTrash } from './store/trash';
 import { ShortcutsModal, WhatsNew } from './home/WhatsNew';
 import { PocketApp } from './pocket/PocketApp';
+import { StrategyModal } from './strategy/StrategyModal';
 import { startReminders } from './lib/reminders';
 import { startAutoFocus } from './lib/autoFocus';
 import { startInkOcrAuto } from './lib/inkOcrAuto';
@@ -322,6 +323,7 @@ export default function App() {
       </div>
       <TopicSheet />
       <TemarioModal />
+      <StrategyGate />
       <GuardQuick />
       <SoapModal />
       <MiniPlayer />
@@ -368,4 +370,16 @@ function useNarrowScreen(max = 560) {
     return () => mq.removeEventListener('change', on);
   }, [max]);
   return narrow;
+}
+
+
+/** La estrategia se monta solo cuando se abre: arrastra el planificador y el análisis. */
+function StrategyGate() {
+  const open = useUI((s) => s.strategyOpen);
+  if (!open) return null;
+  return (
+    <Suspense fallback={null}>
+      <StrategyModal onClose={() => useUI.getState().setStrategyOpen(false)} />
+    </Suspense>
+  );
 }

@@ -8,8 +8,9 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'download', title: 'Te avisa cuando hay versión nueva', text: 'La app de escritorio consulta una vez al día si publiqué algo nuevo y te lo dice con un botón para descargarlo. Si no hay internet, no aparece y no estorba.' },
-  { icon: 'check', title: 'Antes de empezar el internado', text: 'En Inicio aparece lo que falta para que la app aguante el año: carpeta de respaldo, carpeta de resúmenes y tus primeras fichas de guardia. Cada punto se resuelve desde ahí y desaparece solo.' },
+  { icon: 'target', title: 'Estrategia de estudio', text: 'En Herramientas → Estrategia: un cuestionario corto sobre tu realidad (tiempo, guardias, dónde estudias) y lo que la app ya sabe de cómo estudias de verdad. De ahí salen ajustes concretos a tu plan que tú apruebas uno por uno.' },
+  { icon: 'chart', title: 'Con tus datos, no con un test de personalidad', text: 'Usa tu cumplimiento del plan, tus horas reales de estudio, tus olvidos al repasar y tus temas flojos. Emparejar la enseñanza con un «estilo de aprendizaje» no mejora resultados, así que tus preferencias de formato solo deciden qué herramienta se te sugiere.' },
+  { icon: 'shield', title: 'Funciona sin IA', text: 'Sin clave configurada, las propuestas salen de reglas de la app con esos mismos datos. Y lo que el motor devuelve se valida: nada fuera de rango entra a tu plan.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

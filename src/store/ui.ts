@@ -68,6 +68,8 @@ export interface UIState {
   setCardDraft: (d: UIState['cardDraft']) => void;
   startReview: (r: UIState['review']) => void;
   setTemarioOpen: (v: boolean) => void;
+  strategyOpen: boolean;
+  setStrategyOpen: (v: boolean) => void;
   setGuardQuickOpen: (v: boolean) => void;
 }
 
@@ -76,6 +78,7 @@ export const useUI = createStore<UIState>((set) => ({
   cardDraft: null,
   review: null,
   temarioOpen: false,
+  strategyOpen: false,
   guardQuickOpen: false,
   guardTab: 'topics',
   drugWeight: null,
@@ -117,5 +120,6 @@ export const useUI = createStore<UIState>((set) => ({
   setCardDraft: (cardDraft) => set({ cardDraft }),
   startReview: (review) => set({ review }),
   setTemarioOpen: (temarioOpen) => set({ temarioOpen }),
+  setStrategyOpen: (strategyOpen) => set({ strategyOpen }),
   setGuardQuickOpen: (guardQuickOpen) => set(guardQuickOpen ? { guardQuickOpen, guardTab: 'topics' as const } : { guardQuickOpen }),
 }));
