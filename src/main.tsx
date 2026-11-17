@@ -61,7 +61,7 @@ function registerServiceWorker() {
   if (isDesktop()) return;
   if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return;
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js').catch(() => {
+    void navigator.serviceWorker.register(new URL('sw.js', document.baseURI)).catch(() => {
       /* sin service worker la app funciona igual, solo no se instala */
     });
   });

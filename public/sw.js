@@ -9,7 +9,8 @@
  * Las peticiones a las APIs de IA nunca se cachean ni se interceptan.
  */
 const CACHE = 'quiron-v1';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
+// Relativas al propio sw.js: la app vive en la raíz (escritorio) o bajo /QUIRON_CODEX/ (GitHub Pages).
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
