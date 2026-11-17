@@ -115,6 +115,11 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.20
+- **Arreglado el lienzo en Safari y iPad**: la app usaba `100vh`, que en iOS mide la ventana **sin** la barra de direcciones; quedaba más alta que la pantalla y, con `body` en `overflow: hidden`, el panel de abajo se volvía inalcanzable. Ahora usa `100dvh`, que mide lo que de verdad se ve y se reajusta cuando la barra aparece o se esconde.
+- **Colapsar un panel**: dos asas en el separador de Estudio. Una deja el lienzo a pantalla completa, la otra el PDF, y una pestaña en el borde regresa a los dos. Con el dedo son objetivos de 44 px, porque arrastrar un separador de 7 px en una tableta no es realista.
+- **Versión web para compartir**: `https://med4libros-dev.github.io/QUIRON_CODEX/`, publicada sola en cada versión. Rutas relativas en el manifiesto y el service worker para que la misma compilación sirva en la raíz (escritorio) y bajo un subdirectorio (Pages).
+
 ### v0.19
 - **Estrategia de estudio** (Herramientas → Estrategia): un cuestionario corto sobre **tu realidad** —cuánto tiempo real tienes, cómo quedas postguardia, dónde estudias, qué te importa más— junto con **lo que la app ya sabe de cómo estudias**: cumplimiento del plan, minutos reales por día y por hora, olvidos al repasar, aciertos en simulacros y temas flojos.
 - De ahí salen **ajustes concretos al plan** —minutos diarios, fin de semana, postguardia, enfoque en la rotación, exigencia del repaso, recordatorios— cada uno con el dato que lo sostiene, y **los apruebas uno por uno**. El planificador sigue siendo determinista: la IA solo mueve sus perillas.

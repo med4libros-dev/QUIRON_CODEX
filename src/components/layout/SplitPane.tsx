@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { capturePointer } from '../../lib/pointer';
+import { Icon } from '../Icon';
 import { useSettings } from '../../store/settings';
 
 /**
@@ -28,6 +29,14 @@ export function SplitPane({ pdf, notes }: { pdf: ReactNode; notes: ReactNode }) 
   const nudge = (dir: -1 | 1) => setRatio(ratio + (swapped ? -dir : dir) * 0.02);
 
   const both = mode === 'both';
+  const setMode = useSettings((s) => s.setPaneMode);
+  // Colapsar: deja una sola mitad a pantalla completa. En el lienzo es la diferencia entre
+  // escribir en media pantalla de tableta y escribir en toda.
+  const collapse = (keep: 'pdf' | 'notes') => setMode(mode === keep ? 'both' : keep);
+  const flecha = (keep: 'pdf' | 'notes') => {
+    const hacia = (keep === 'notes') === !swapped;
+    return vertical ? (hacia ? 'chevronUp' : 'chevronDown') : hacia ? 'chevronLeft' : 'chevronRight';
+  };
   return (
     <div className={`split${dragging ? ' dragging' : ''}${swapped ? ' swapped' : ''}${vertical ? ' vertical' : ''}`} ref={ref} data-mode={mode}>
       <section
@@ -61,6 +70,28 @@ export function SplitPane({ pdf, notes }: { pdf: ReactNode; notes: ReactNode }) 
         }}
       >
         <span />
+        {/* Dos asas, una por panel: colapsan el de su lado y lo devuelven al tocarlas otra vez.
+            Viven dentro del separador para que ninguna barra de los paneles las tape. */}
+        <div className="split-grips">
+          <button
+            className="split-grip"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => collapse('notes')}
+            title="Solo las notas (el lienzo a pantalla completa)"
+            aria-label="Colapsar el PDF"
+          >
+            <Icon name={flecha('notes')} size={14} />
+          </button>
+          <button
+            className="split-grip"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => collapse('pdf')}
+            title="Solo el PDF"
+            aria-label="Colapsar las notas"
+          >
+            <Icon name={flecha('pdf')} size={14} />
+          </button>
+        </div>
       </div>
       <section
         className="split-pane"
@@ -70,6 +101,13 @@ export function SplitPane({ pdf, notes }: { pdf: ReactNode; notes: ReactNode }) 
       >
         {notes}
       </section>
+      {/* Con un panel colapsado, el único camino de vuelta: una pestaña en el borde. */}
+      {!both && (
+        <button className="split-back" onClick={() => setMode('both')} title="Volver a ver los dos" aria-label="Volver a ver los dos paneles" style={{ order: 4 }}>
+          <Icon name={vertical ? 'chevronDown' : 'chevronLeft'} size={15} />
+          <span>Ver los dos</span>
+        </button>
+      )}
     </div>
   );
 }

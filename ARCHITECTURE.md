@@ -394,6 +394,16 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - La IA no planifica: el planificador determinista sigue siendo la única fuente del plan, y la IA solo propone valores para sus parámetros. Eso mantiene el plan explicable y acota el daño de una respuesta mala.
 - `v19.py` incluye un motor que devuelve basura a propósito (acciones inexistentes, 9000 minutos, `primaryShare: 5`, una vista `javascript:`) y comprueba que nada de eso entra.
 
+## v0.20 · iPad, colapsar y web pública
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Alto real de la ventana | `global.css` `.app`, `.modal` | `100vh` en iOS mide la ventana sin la barra de direcciones: la app quedaba más alta que la pantalla y `body { overflow: hidden }` hacía inalcanzable el panel de abajo. `100dvh` (con `100vh` antes, de respaldo) mide lo visible y se reajusta |
+| Colapsar | `components/layout/SplitPane.tsx` | Dos asas dentro del propio separador (posicionadas absolutas, `z-index` por encima de las barras de los paneles) que alternan `paneMode`, y una pestaña `.split-back` para volver. `onPointerDown` con `stopPropagation` para no iniciar un arrastre al tocarlas |
+| Web pública | `.github/workflows/web.yml` | Compila con Vite y publica en GitHub Pages en cada push a main. `base: './'` y rutas relativas en `manifest.webmanifest`, `sw.js`, `index.html` y el registro del service worker: la misma compilación sirve en la raíz y bajo `/QUIRON_CODEX/`. Pages se enciende una vez a mano (el token del workflow no puede crear el sitio) |
+
+- No se pudo reproducir Safari localmente (no hay WebKit instalable en el entorno de construcción), así que el arreglo de `dvh` se razonó desde el código y se verificó la geometría en tamaño de iPad; la confirmación final es en el dispositivo.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

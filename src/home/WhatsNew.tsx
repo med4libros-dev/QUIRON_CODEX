@@ -8,9 +8,9 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'target', title: 'Estrategia de estudio', text: 'En Herramientas → Estrategia: un cuestionario corto sobre tu realidad (tiempo, guardias, dónde estudias) y lo que la app ya sabe de cómo estudias de verdad. De ahí salen ajustes concretos a tu plan que tú apruebas uno por uno.' },
-  { icon: 'chart', title: 'Con tus datos, no con un test de personalidad', text: 'Usa tu cumplimiento del plan, tus horas reales de estudio, tus olvidos al repasar y tus temas flojos. Emparejar la enseñanza con un «estilo de aprendizaje» no mejora resultados, así que tus preferencias de formato solo deciden qué herramienta se te sugiere.' },
-  { icon: 'shield', title: 'Funciona sin IA', text: 'Sin clave configurada, las propuestas salen de reglas de la app con esos mismos datos. Y lo que el motor devuelve se valida: nada fuera de rango entra a tu plan.' },
+  { icon: 'monitor', title: 'Arreglado en Safari y iPad', text: 'La app medía la ventana sin contar la barra de direcciones, así que en iOS quedaba más alta que la pantalla y el panel de abajo —el lienzo— se salía de vista. Ahora mide lo que de verdad se ve.' },
+  { icon: 'chevronLeft', title: 'Colapsar un panel', text: 'Dos asas en el separador: una deja el lienzo a pantalla completa, la otra el PDF. Una pestaña en el borde te regresa a los dos. Con el dedo también, porque arrastrar un separador de 7 px es imposible.' },
+  { icon: 'folder', title: 'Versión web para compartir', text: 'La app vive también en med4libros-dev.github.io/QUIRON_CODEX, sin instalar nada ni cuenta de por medio. En iPad o Android: Compartir → Agregar a inicio.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

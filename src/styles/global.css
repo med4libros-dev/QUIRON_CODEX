@@ -181,7 +181,11 @@ h4 {
 .app {
   display: grid;
   grid-template-columns: 72px 1fr;
+  /* En iOS, 100vh mide la ventana SIN la barra de direcciones: la app queda más alta que lo
+     visible y, con body en overflow hidden, el panel de abajo (el lienzo) se vuelve inalcanzable.
+     dvh mide lo que de verdad se ve y se reajusta al aparecer o esconderse la barra. */
   height: 100vh;
+  height: 100dvh;
 }
 .main {
   display: flex;
@@ -293,6 +297,7 @@ h4 {
   flex-shrink: 1;
 }
 .split-divider {
+  position: relative;
   flex: none;
   width: 7px;
   cursor: col-resize;
@@ -2561,6 +2566,7 @@ a.btn {
 .modal {
   max-width: 100%;
   max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
   background: var(--surface);
@@ -8263,4 +8269,89 @@ button.kpi:hover {
 .prop-list .ok-text {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+/* ---------- Colapsar un panel de Estudio ---------- */
+/* Las asas viven sobre el separador: con el dedo, arrastrar 7 px es imposible, pero tocar sí. */
+.split-grips {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 40;
+  pointer-events: none;
+}
+.split-grip {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+.split-grip:hover,
+.split-grip:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.split.vertical .split-grips {
+  flex-direction: row;
+}
+.split.vertical .split-grip {
+  width: 34px;
+  height: 26px;
+}
+/* Con un panel colapsado, la pestaña de regreso pegada al borde. */
+.split-back {
+  position: absolute;
+  z-index: 7;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-right: 0;
+  border-radius: 2px 0 0 2px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.split-back:hover,
+.split-back:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.split.vertical .split-back {
+  top: auto;
+  bottom: 0;
+  right: 50%;
+  transform: translateX(50%);
+  border: 1px solid var(--border-strong);
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+}
+.split {
+  position: relative;
+}
+@media (pointer: coarse) {
+  .split-grip {
+    width: 32px;
+    height: 44px;
+  }
+  .split.vertical .split-grip {
+    width: 44px;
+    height: 32px;
+  }
 }
