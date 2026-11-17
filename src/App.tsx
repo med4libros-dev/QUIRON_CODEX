@@ -26,6 +26,7 @@ import { onDesktopEvent } from './lib/widgets';
 import { onWindowMessage } from './lib/windowSync';
 import { useTrash } from './store/trash';
 import { ShortcutsModal, WhatsNew } from './home/WhatsNew';
+import { PocketApp } from './pocket/PocketApp';
 import { startReminders } from './lib/reminders';
 import { startAutoFocus } from './lib/autoFocus';
 import { startInkOcrAuto } from './lib/inkOcrAuto';
@@ -222,6 +223,8 @@ export default function App() {
   const [studySeen, setStudySeen] = useState(view === 'study');
   if (view === 'study' && !studySeen) setStudySeen(true);
   const compareOn = useUI((s) => !!s.compare);
+  const pocketFull = useSettings((s) => s.pocketFull);
+  const phone = useNarrowScreen();
   const focus = useUI((s) => s.focus);
   useEffect(() => {
     const el = document.documentElement;
@@ -237,6 +240,9 @@ export default function App() {
       document.removeEventListener('fullscreenchange', onFs);
     };
   }, [focus]);
+
+  // Teléfono (o el Fold cerrado): se abre en Bolsillo. Al desplegar, la app completa, sin perder nada.
+  if (phone && !pocketFull) return <PocketApp />;
 
   return (
     <div className="app">
@@ -344,4 +350,20 @@ export default function App() {
       <div className="night-veil" aria-hidden="true" />
     </div>
   );
+}
+
+/**
+ * ¿La pantalla es de teléfono? Se mide en vivo: el Fold pasa de ~344 px cerrado
+ * a ~690 px abierto sin recargar, y la app tiene que reacomodarse en el momento.
+ */
+function useNarrowScreen(max = 560) {
+  const [narrow, setNarrow] = useState(() => (typeof window === 'undefined' ? false : window.innerWidth <= max));
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${max}px)`);
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [max]);
+  return narrow;
 }

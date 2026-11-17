@@ -7888,3 +7888,262 @@ button.kpi:hover {
   padding: 6px 0;
   border-bottom: 1px solid var(--border);
 }
+
+/* ---------- Bolsillo: el teléfono en guardia ---------- */
+/* Tres franjas: título arriba, contenido al medio, pestañas abajo (donde llega el pulgar). */
+.pocket {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100dvh;
+  background: var(--bg);
+}
+.pk-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.pk-title {
+  font-family: var(--font-read);
+  font-size: 19px;
+}
+.pk-exit {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.pk-body {
+  overflow: auto;
+  padding: 12px 12px 18px;
+  -webkit-overflow-scrolling: touch;
+}
+.pk-search {
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: 12px;
+  font-size: 16px; /* menos de 16 px hace que iOS y Android acerquen la pantalla al escribir */
+}
+.pk-empty {
+  padding: 24px 6px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Pestañas: cuatro objetivos de 56 px, siempre a la vista, con el área segura del gesto. */
+.pk-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.pk-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 6px 2px;
+  border: 0;
+  border-top: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pk-tab.on {
+  border-top-color: var(--accent);
+  color: var(--accent);
+}
+.pk-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+.pk-dot {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  margin-left: 6px;
+  min-width: 17px;
+  padding: 1px 4px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--paper);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 15px;
+  text-align: center;
+}
+
+/* Fichas de guardia: todo el renglón es el objetivo. */
+.pk-card {
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  margin-bottom: 8px;
+  background: var(--paper);
+}
+.pk-card-head {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: var(--font-read);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.pk-card.open .pk-card-head {
+  border-bottom: 1px solid var(--border);
+}
+.pk-spec {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pk-card-body {
+  padding: 4px 12px 12px;
+}
+.pk-field h4 {
+  margin: 12px 0 4px;
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pk-field ul {
+  margin: 0;
+  padding-left: 18px;
+  font-family: var(--font-read);
+  line-height: 1.55;
+}
+.pk-field li + li {
+  margin-top: 4px;
+}
+
+/* En Bolsillo, lo que viene de la app grande se adapta en vez de reescribirse. */
+.pocket .calc,
+.pocket .drug-card {
+  margin-bottom: 8px;
+}
+.pocket .calc-head,
+.pocket .drug-head {
+  min-height: 52px;
+}
+.pocket .calc-check {
+  min-height: 48px;
+}
+.pocket .input,
+.pocket .select {
+  min-height: 48px;
+  font-size: 16px;
+}
+.pocket .btn {
+  min-height: 48px;
+}
+
+/* En el teléfono, el encabezado de cada escala se apila: el nombre no compite con la fuente. */
+.pocket .calc-head {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* El Fold cerrado son ~344 px: cabe, pero sin holguras de tableta. */
+@media (max-width: 380px) {
+  .pk-body {
+    padding: 10px 8px 16px;
+  }
+  .pk-tab {
+    font-size: 10px;
+  }
+  .pk-card-head {
+    font-size: 14px;
+    padding: 8px 9px;
+  }
+}
+
+/* ---------- Táctil: el Fold desplegado y la Surface con el dedo ---------- */
+/* Hasta la 0.17 solo algunos componentes crecían con el dedo; el resto se quedaba en
+   objetivos de ratón. Esto sube el piso a 44 px (WCAG 2.5.8) para los controles comunes. */
+@media (pointer: coarse) {
+  .rail-btn {
+    min-height: 48px;
+    justify-content: center;
+  }
+  .btn,
+  .select,
+  .input,
+  select,
+  input[type='text'],
+  input[type='number'],
+  input[type='date'],
+  input[type='search'] {
+    min-height: 44px;
+  }
+  .icon-btn,
+  .fold-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .linkish {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .chip,
+  button.chip {
+    min-height: 36px;
+  }
+  .lesson-check {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .next-list > li > button,
+  .weak-list > li > button,
+  .case-mini > li > button {
+    min-height: 44px;
+  }
+  .lesson-title,
+  .pomo-time {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  /* Las casillas y los radios del formulario: el renglón entero es el objetivo. */
+  label:has(> input[type='checkbox']),
+  label:has(> input[type='radio']) {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 22px;
+    height: 22px;
+  }
+}

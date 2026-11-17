@@ -24,6 +24,8 @@ export interface SettingsState {
   night: 'off' | 'auto' | 'on';
   nightFrom: number;
   nightTo: number;
+  /** En pantalla de teléfono, «ver todo» sale de Bolsillo y abre la app completa. */
+  pocketFull: boolean;
   /** Recordatorios del sistema (Windows) mientras la app está abierta. */
   reminders: boolean;
   /** Hora del aviso diario de flashcards/refuerzo. */
@@ -71,6 +73,7 @@ export interface SettingsState {
   enarmDate: string | null;
   setEnarmDate: (d: string | null) => void;
   setNight: (n: 'off' | 'auto' | 'on', from?: number, to?: number) => void;
+  setPocketFull: (on: boolean) => void;
   setReminders: (on: boolean, hour?: number) => void;
   setTheme: (t: Theme) => void;
   setDark: (d: boolean) => void;
@@ -111,6 +114,7 @@ export const useSettings = createStore<SettingsState>(
     night: 'off',
     nightFrom: 22,
     nightTo: 6,
+    pocketFull: false,
     reminders: false,
     reminderHour: 8,
     enarmDate: null,
@@ -149,6 +153,7 @@ export const useSettings = createStore<SettingsState>(
     saver: 'auto',
     setSaver: (saver) => set({ saver }),
     setEnarmDate: (enarmDate) => set({ enarmDate }),
+    setPocketFull: (pocketFull) => set({ pocketFull }),
     setNight: (night, from, to) => set((s) => ({ night, nightFrom: from ?? s.nightFrom, nightTo: to ?? s.nightTo })),
     setReminders: (reminders, hour) => set((s) => ({ reminders, reminderHour: hour ?? s.reminderHour })),
     setTheme: (theme) => set({ theme }),
@@ -178,8 +183,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel }) => ({
-      theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel,
+    pick: ({ theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel, pocketFull }) => ({
+      theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel, pocketFull,
     }),
   },
 );

@@ -360,6 +360,17 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 
 - La prueba `v16.py` cubre el ciclo completo: respaldar → borrar `kv`, `ink` y `alq:*` → traer de la carpeta → comprobar que la perla y el plan volvieron, y restaurar la copia de un día anterior. La carpeta se simula en la propia página (handles con la forma del selector del sistema) porque OPFS con un handle guardado en IndexedDB tumba al Chromium headless al recargar.
 
+## v0.17 · Bolsillo
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Caparazón de teléfono | `src/pocket/PocketApp.tsx` | Tres franjas (`grid-template-rows: auto 1fr auto`) con `100dvh`: título, contenido y cuatro pestañas abajo. No reimplementa nada: reusa `CalculatorCard`, `DrugPanel` y `FlashcardReview`, y lee las fichas de `topicStore` |
+| Cuándo entra | `useNarrowScreen(560)` en `App.tsx` | `matchMedia` con escucha, no una medida al arrancar: el Fold pasa de ~344 px a ~690 px sin recargar y la app cambia en el momento. `settings.pocketFull` recuerda «Ver todo» |
+| Objetivos táctiles | `@media (pointer: coarse)` en `global.css` | Hasta la 0.16 solo crecían algunos componentes; ahora el piso es 44 px para `.btn`, `.icon-btn`, `.fold-btn`, `.rail-btn`, campos, casillas y los renglones de lista (WCAG 2.5.8) |
+| Medidas del Fold 5 | `v17.py` | Cerrado 904×2316 @2.625 → **344×882** css; abierto 1812×2176 → **690×829** css. La suite comprueba ambas, el cambio en vivo y que no haya desborde horizontal ni controles chicos |
+
+- Bolsillo es solo lectura en las fichas de guardia: capturar con una mano en una guardia no es un caso real, y evita escribir en el almacén desde el teléfono.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

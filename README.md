@@ -115,6 +115,12 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.17
+- **Bolsillo**: en una pantalla de teléfono la app abre en un modo de cuatro cosas — **ficha de guardia, dosis por peso, las 17 escalas y la cola de repaso** — con la barra abajo y todo a una mano. Es lo que sirve a las 3 a.m., sin la tableta. «Ver todo» abre la app completa y se recuerda.
+- **Pensado para el Galaxy Z Fold**: cerrado (~344 px) abre en Bolsillo; al desplegar (~690 px) pasa a la app completa **en el momento**, sin recargar ni perder lo que estabas viendo; al cerrar, vuelve.
+- **Todo se puede tocar**: ningún control baja de 44 px con el dedo (WCAG 2.5.8), ni en el teléfono ni en la tableta. Antes **75 de ellos sí**: la barra lateral eran botones de 55 × 31.
+- Las fichas de guardia en Bolsillo son **solo lectura**: en guardia se consulta, no se captura. Se llenan en la tableta, con lo que dice tu GPC.
+
 ### v0.16
 - **El respaldo deja de sobrescribirse a sí mismo**: en la carpeta queda **una copia por día** (los últimos 7 días, y más atrás la del lunes de cada semana). Antes, si un dato se corrompía o borrabas algo por error, el respaldo bueno desaparecía en los dos minutos siguientes. Ahora puedes volver a cualquiera de esos días desde Ajustes → Respaldo → «Días anteriores».
 - **La fecha la pone el propio respaldo**, no el disco: OneDrive reescribe las fechas al sincronizar, así que la copia del día se decide por el `exportedAt` que el archivo declara.

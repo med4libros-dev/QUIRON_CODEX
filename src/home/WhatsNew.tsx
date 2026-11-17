@@ -8,9 +8,9 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'clock', title: 'El respaldo ya no se sobrescribe a sí mismo', text: 'En la carpeta queda una copia por día (los últimos 7 días, y más atrás la del lunes de cada semana). Si algo se corrompe o borras por error, puedes volver a cualquiera de esos días desde Ajustes → Respaldo.' },
-  { icon: 'shield', title: 'Probado borrando todo', text: 'Ahora hay una prueba que respalda, borra hasta el último dato y restaura, para comprobar que tu progreso vuelve completo. Antes nadie lo había verificado de punta a punta.' },
-  { icon: 'folder', title: 'La fecha la pone el respaldo, no el disco', text: 'OneDrive reescribe las fechas de los archivos al sincronizar, así que la copia del día se decide por lo que el propio respaldo declara.' },
+  { icon: 'shield', title: 'Bolsillo: la app en el teléfono', text: 'En una pantalla de teléfono, Quirón abre en un modo de cuatro cosas: ficha de guardia, dosis por peso, las 17 escalas y la cola de repaso. Barra abajo, a una mano. «Ver todo» abre la app completa si la necesitas.' },
+  { icon: 'monitor', title: 'Pensado para el Fold', text: 'Cerrado (~344 px) abre en Bolsillo; al desplegar (~690 px) pasa a la app completa en el momento, sin recargar ni perder lo que estabas viendo. Al cerrar, vuelve.' },
+  { icon: 'target', title: 'Todo se puede tocar', text: 'Ningún control baja ya de 44 px con el dedo, ni en el teléfono ni en la tableta. Antes 75 de ellos sí: la barra lateral eran botones de 55 × 31.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */
