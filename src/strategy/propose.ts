@@ -28,15 +28,17 @@ export function localProposals(e: Evidence, ans: Record<string, string>, cfg: In
   const out: Proposal[] = [];
 
   // 1. El plan pide más de lo que haces. Lo que no se cumple no es un plan, es una deuda.
-  if (e.adherence !== null && e.adherence < 70 && e.planned >= 7) {
-    const real = e.medianMinutes ?? Math.round(cfg.dailyMinutes * 0.6);
+  // Hace falta estudio registrado: un 0% de cumplimiento recién instalada la app no dice
+  // que el plan sea demasiado, dice que todavía no hay datos.
+  if (e.adherence !== null && e.adherence < 70 && e.planned >= 7 && e.medianMinutes !== null && e.activeDays >= 3) {
+    const real = e.medianMinutes;
     const nuevo = clamp(Math.max(real, cfg.dailyMinutes * 0.7), 20, cfg.dailyMinutes);
     if (nuevo < cfg.dailyMinutes) {
       out.push({
         id: 'bajar-minutos',
         kind: 'config',
         title: `Bajar el objetivo diario a ${nuevo} min`,
-        why: `Cumples el ${e.adherence}% del plan y en un día típico registras ${e.medianMinutes ?? '—'} min. Un objetivo que no alcanzas te deja deuda todos los días; uno que sí alcanzas se sostiene.`,
+        why: `Cumples el ${e.adherence}% del plan y en un día típico registras ${e.medianMinutes} min. Un objetivo que no alcanzas te deja deuda todos los días; uno que sí alcanzas se sostiene.`,
         patch: { dailyMinutes: nuevo },
       });
     }
