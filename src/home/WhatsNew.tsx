@@ -8,8 +8,7 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'sparkles', title: 'Vidrio líquido', text: 'El pack visual nuevo, por omisión: las superficies desenfocan lo que tienen detrás, toman color del fondo y responden al toque. Códice (papel y tinta) sigue disponible en Preferencias → Estilo.' },
-  { icon: 'pen', title: 'El desenfoque no le quita tiempo al lápiz', text: 'Mientras escribes se apaga solo y vuelve en la primera pausa; en ahorro de batería no se enciende. Recomponer un desenfoque en cada trazo es justo lo que arruina la latencia.' },
+  { icon: 'repeat', title: 'Empezar de cero', text: 'En Herramientas: borra el progreso del temario para arrancar limpio el día que empiece el internado de verdad. Eliges exactamente qué se va, descarga un respaldo antes y te pide escribir REINICIAR. Tus notas, cuadernos y perlas no se tocan.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

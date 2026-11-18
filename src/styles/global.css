@@ -8600,3 +8600,57 @@ button.kpi:hover {
     --glass-blur: none;
   }
 }
+
+/* ---------- Empezar de cero ---------- */
+.reset-list {
+  margin: 10px 0;
+  padding: 0;
+  list-style: none;
+}
+.reset-list li + li {
+  border-top: 1px solid var(--border);
+}
+.reset-list label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 9px 2px;
+  cursor: pointer;
+}
+.reset-list input {
+  margin-top: 3px;
+  flex: 0 0 auto;
+}
+.reset-list span {
+  display: block;
+}
+.reset-list small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.reset-bk {
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0;
+}
+.reset-confirm {
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm, 2px);
+}
+.reset-confirm .input {
+  width: 100%;
+  margin-top: 6px;
+  letter-spacing: 0.1em;
+}
+.btn.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn.danger:not(:disabled):hover {
+  background: var(--danger);
+  color: var(--accent-text);
+}

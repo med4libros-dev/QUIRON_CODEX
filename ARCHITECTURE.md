@@ -438,6 +438,14 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - Contraste medido componiendo cada color translúcido sobre lo que tiene detrás: **3.3:1** (día) y **5.5:1** (noche) para los bordes de control. `f4` y `v12c` lo comprueban en los dos packs y en los dos temas.
 - `f4` dejó de ser el guardián de Códice y pasó a vigilar **cada pack con sus propias reglas**: en vidrio exige desenfoque y que se apague al escribir; en Códice, que no haya desenfoque y que el papel siga siendo la superficie más clara.
 
+## v0.25 · Empezar de cero
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Qué se puede borrar | `internship/reset.ts` `PARTES` | Cada parte declara su etiqueta, lo que de verdad se lleva y las claves (`kv` o `localStorage`) que vacía. «Progreso» usa `parcial()` para limpiar `done`, `survival` y `shifts` **conservando** la configuración; «el plan completo» borra la clave entera |
+| El borrado | `reiniciar(ids, conRespaldo)` | Descarga un respaldo, hace `flushPersistence()` y luego `freezePersistence()` para que ningún store reescriba lo borrado antes de recargar |
+| La pantalla | `internship/ResetModal.tsx` | Solo «progreso» viene marcado; confirmación escribiendo `REINICIAR`; dice en voz alta qué **no** toca (notas, cuadernos, lienzos, perlas, PDF) |
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

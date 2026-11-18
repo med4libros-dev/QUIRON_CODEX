@@ -30,6 +30,7 @@ import { useTrash } from './store/trash';
 import { ShortcutsModal, WhatsNew } from './home/WhatsNew';
 import { PocketApp } from './pocket/PocketApp';
 import { StrategyModal } from './strategy/StrategyModal';
+import { ResetModal } from './internship/ResetModal';
 import { startReminders } from './lib/reminders';
 import { startAutoFocus } from './lib/autoFocus';
 import { startInkOcrAuto } from './lib/inkOcrAuto';
@@ -325,6 +326,7 @@ export default function App() {
       <TopicSheet />
       <TemarioModal />
       <StrategyGate />
+      <ResetGate />
       <GuardQuick />
       <SoapModal />
       <MiniPlayer />
@@ -384,4 +386,12 @@ function StrategyGate() {
       <StrategyModal onClose={() => useUI.getState().setStrategyOpen(false)} />
     </Suspense>
   );
+}
+
+
+/** Empezar de cero: se monta solo al abrirlo. */
+function ResetGate() {
+  const open = useUI((s) => s.resetOpen);
+  if (!open) return null;
+  return <ResetModal onClose={() => useUI.getState().setResetOpen(false)} />;
 }

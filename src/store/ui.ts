@@ -69,6 +69,8 @@ export interface UIState {
   startReview: (r: UIState['review']) => void;
   setTemarioOpen: (v: boolean) => void;
   strategyOpen: boolean;
+  resetOpen: boolean;
+  setResetOpen: (v: boolean) => void;
   setStrategyOpen: (v: boolean) => void;
   setGuardQuickOpen: (v: boolean) => void;
 }
@@ -79,6 +81,7 @@ export const useUI = createStore<UIState>((set) => ({
   review: null,
   temarioOpen: false,
   strategyOpen: false,
+  resetOpen: false,
   guardQuickOpen: false,
   guardTab: 'topics',
   drugWeight: null,
@@ -121,5 +124,6 @@ export const useUI = createStore<UIState>((set) => ({
   startReview: (review) => set({ review }),
   setTemarioOpen: (temarioOpen) => set({ temarioOpen }),
   setStrategyOpen: (strategyOpen) => set({ strategyOpen }),
+  setResetOpen: (resetOpen) => set({ resetOpen }),
   setGuardQuickOpen: (guardQuickOpen) => set(guardQuickOpen ? { guardQuickOpen, guardTab: 'topics' as const } : { guardQuickOpen }),
 }));

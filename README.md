@@ -115,6 +115,10 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.25
+- **Empezar de cero** (Herramientas → Empezar de cero): reinicia el temario para arrancar limpio. Eliges qué se borra —progreso, plan completo, tus cambios al temario, flashcards, simulacros, fichas y casos, bitácora— y cada opción dice exactamente qué se lleva. Viene marcado **solo el progreso**; todo lo demás es opcional.
+- Antes de borrar **descarga un respaldo completo**, y pide escribir `REINICIAR` para confirmar. Tus notas, cuadernos, lienzos, perlas HY y los PDF que subiste no se tocan ahí.
+
 ### v0.24
 - **Vidrio líquido**: pack visual nuevo y por omisión, traducido del lenguaje *Liquid Glass* de Apple. Las superficies desenfocan y saturan lo que tienen detrás, llevan un filo especular arriba, esquinas redondeadas y botones en cápsula, y responden al puntero y al dedo. **Códice sigue ahí**, en Preferencias → Estilo, y vuelve el selector de pack.
 - **El desenfoque no le quita tiempo al lápiz**: se apaga solo mientras escribes (`[data-ink-busy]`) y vuelve en la primera pausa real, y tampoco se enciende en ahorro de batería ni con «reducir transparencia» del sistema. Si el navegador no soporta `backdrop-filter`, las superficies se vuelven opacas en vez de ilegibles.

@@ -139,6 +139,12 @@ export function NavRail() {
                     GPC <small>Temario, mapa y guías</small>
                   </span>
                 </button>
+                <button role="menuitem" onClick={run(() => useUI.getState().setResetOpen(true))} title="Borrar el progreso para arrancar limpio">
+                  <Icon name="repeat" size={17} />
+                  <span>
+                    Empezar de cero <small>Reiniciar el temario y el plan</small>
+                  </span>
+                </button>
                 <button role="menuitem" onClick={run(() => useUI.getState().setStrategyOpen(true))} title="Ajusta tu plan con tus propias circunstancias y lo que la app ya sabe de cómo estudias">
                   <Icon name="target" size={17} />
                   <span>
