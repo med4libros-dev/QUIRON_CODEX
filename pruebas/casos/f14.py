@@ -2,6 +2,14 @@
 """Quirón Codex 0.9: doble plana, barra flotante, hojas, FSRS, historial, temario y espacio."""
 import threading, http.server, socketserver, functools, time, json, sys
 from playwright.sync_api import sync_playwright
+
+def abrir_hoja(pg):
+    """Los controles de hoja viven tras el botón «Hoja» desde la 0.26."""
+    if pg.locator('.hoja-pop').count() == 0:
+        pg.click('.ink-toolbar button:has-text("Hoja")')
+        pg.wait_for_selector('.hoja-pop')
+
+
 http.server.SimpleHTTPRequestHandler.extensions_map['.mjs'] = 'text/javascript'
 http.server.SimpleHTTPRequestHandler.log_message = lambda *a, **k: None
 class Q(socketserver.TCPServer): allow_reuse_address = True
@@ -75,8 +83,10 @@ with sync_playwright() as p:
     time.sleep(1.6)
     sheets = pg.locator('.ink-sheet').count()
     ok('dos hojas con trazos', sheets >= 2, sheets)
-    ok('once estilos de hoja', pg.locator('select[aria-label="Tipo de hoja"] option').count() == 11, pg.locator('select[aria-label="Tipo de hoja"] option').count())
-    pg.click('.ink-toolbar button:has-text("Hojas")'); pg.wait_for_selector('.sheet-grid')
+    abrir_hoja(pg)
+    ok('once estilos de hoja', pg.locator('.hoja-pop select[aria-label="Tipo de hoja"] option').count() == 11, pg.locator('.hoja-pop select[aria-label="Tipo de hoja"] option').count())
+    pg.keyboard.press('Escape'); time.sleep(0.3)
+    pg.click('.ink-toolbar button:has-text("Organizar")'); pg.wait_for_selector('.sheet-grid')
     pg.wait_for_selector('.sheet-thumb img', timeout=8000)
     ok('miniaturas de las dos hojas', pg.locator('.sheet-thumb img').count() == 2, pg.locator('.sheet-thumb img').count())
     ok('cada hoja muestra cuánto tiene', '1' in pg.inner_text('.sheet-foot'))

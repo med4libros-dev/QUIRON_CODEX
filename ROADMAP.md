@@ -195,6 +195,8 @@ Fuera de la 1.0 por ahora: fuente Unicode al exportar y mover la suite de prueba
 - App instalable (PWA) en Edge con ícono propio; modo guardia (repasos de 5–10 min con una mano).
 - Sincronización opcional en la nube (por ejemplo Supabase) además de la carpeta de OneDrive.
 - ~~Exportar el plan al calendario (.ics)~~ ✅ v0.8. Informe semanal de avance: pendiente.
+- ~~**Lista del día 1**~~ ✅ v0.26 (`home/Day1.tsx`): comprueba fecha de inicio, respaldo, fichas de guardia de urgencias, dosis y resúmenes antes de la primera guardia.
+- ~~Barra del lienzo más corta~~ ✅ v0.26: los ajustes por nota pasaron al panel «Hoja» y exportar al menú ⋯ (`features/notes/InkCanvas.tsx`, `NotesPanel.tsx`).
 
 ## Algoritmo de distribución anual (Fase 1)
 

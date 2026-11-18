@@ -212,28 +212,6 @@ export function NotesPanel() {
                 <Icon name="speaker" size={16} />
               </button>
             )}
-            <button className="btn ghost sm" onClick={() => void exportPdf()} disabled={exporting} title="Exportar nota a PDF (texto + escritura a mano)">
-              <Icon name="download" size={15} /> PDF
-            </button>
-            <button
-              className="btn ghost sm"
-              onClick={() => void printPdf()}
-              disabled={exporting}
-              title="Guardar como PDF por la impresora: conserva griego, flechas, ≥ y µ, que el exportador translitera"
-            >
-              <Icon name="printer" size={15} /> PDF con símbolos
-            </button>
-            <button
-              className="btn ghost sm"
-              onClick={() => {
-                (document.activeElement as HTMLElement | null)?.blur();
-                const fresh = useNotes.getState().notes.find((n) => n.id === note.id) ?? note;
-                exportToWord(fresh.title, fresh.html, noteDocName ? `Fuente: ${noteDocName}` : undefined);
-              }}
-              title="Exportar a Word (.doc)"
-            >
-              <Icon name="download" size={15} /> Word
-            </button>
             <div className="group more-wrap">
               <button
                 className={`icon-btn${menuOpen ? ' active' : ''}`}
@@ -256,7 +234,13 @@ export function NotesPanel() {
                   onPick={(k) => {
                     setMenuOpen(false);
                     if (k === 'book') void exportBook();
-                    else setNoteDialog(k);
+                    else if (k === 'pdf') void exportPdf();
+                    else if (k === 'print') void printPdf();
+                    else if (k === 'word') {
+                      (document.activeElement as HTMLElement | null)?.blur();
+                      const fresh = useNotes.getState().notes.find((n) => n.id === note.id) ?? note;
+                      exportToWord(fresh.title, fresh.html, noteDocName ? `Fuente: ${noteDocName}` : undefined);
+                    } else setNoteDialog(k);
                   }}
                 />
               )}
@@ -426,7 +410,7 @@ function NoteMenu({
   exporting,
 }: {
   onClose: () => void;
-  onPick: (k: 'ocr' | 'dict' | 'tags' | 'hist' | 'book') => void;
+  onPick: (k: 'ocr' | 'dict' | 'tags' | 'hist' | 'book' | 'pdf' | 'print' | 'word') => void;
   hasInk: boolean;
   tagCount: number;
   bookName?: string;
@@ -466,6 +450,25 @@ function NoteMenu({
         <Icon name="clock" size={16} />
         <span>
           Historial <small>Volver a una versión anterior</small>
+        </span>
+      </button>
+      <hr className="menu-sep" />
+      <button role="menuitem" onClick={() => onPick('pdf')} disabled={exporting} title="Exportar nota a PDF (texto + escritura a mano)">
+        <Icon name="download" size={16} />
+        <span>
+          Exportar a PDF <small>Texto y lo escrito a mano</small>
+        </span>
+      </button>
+      <button role="menuitem" onClick={() => onPick('print')} disabled={exporting}>
+        <Icon name="printer" size={16} />
+        <span>
+          PDF con símbolos <small>Por la impresora: conserva griego, flechas, ≥ y µ</small>
+        </span>
+      </button>
+      <button role="menuitem" onClick={() => onPick('word')}>
+        <Icon name="download" size={16} />
+        <span>
+          Exportar a Word <small>Archivo .doc editable</small>
         </span>
       </button>
       {bookName && (

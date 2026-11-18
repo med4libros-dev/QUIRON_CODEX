@@ -49,6 +49,8 @@ const PATHS = {
   paperclip: 'M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.6 8.6a2 2 0 0 1-2.8-2.8L15 7.5',
   list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
   x: 'M18 6L6 18M6 6l12 12',
+  page: 'M6 3h8l4 4v14H6zM14 3v4h4',
+  circle: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z',
   printer: 'M6 9V3h12v6M6 18H4v-6h16v6h-2M8 14h8v7H8z',
   chevronUp: 'M18 15l-6-6-6 6',
   chevronDown: 'M6 9l6 6 6-6',

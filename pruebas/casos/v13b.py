@@ -1,5 +1,13 @@
 import threading, http.server, socketserver, functools, time, datetime
 from playwright.sync_api import sync_playwright
+
+def abrir_hoja(pg):
+    """Los controles de hoja viven tras el botón «Hoja» desde la 0.26."""
+    if pg.locator('.hoja-pop').count() == 0:
+        pg.click('.ink-toolbar button:has-text("Hoja")')
+        pg.wait_for_selector('.hoja-pop')
+
+
 http.server.SimpleHTTPRequestHandler.extensions_map['.mjs']='text/javascript'
 http.server.SimpleHTTPRequestHandler.log_message=lambda *a,**k: None
 class Q(socketserver.TCPServer): allow_reuse_address=True
@@ -48,12 +56,15 @@ with sync_playwright() as p:
     pg.click('.nb-card:has-text("Pruebas")'); time.sleep(0.4)
     pg.click('.nb-notes .btn.primary:has-text("Nota")'); time.sleep(1.6)
     pg.click('[role=tab]:has-text("Lienzo")'); pg.wait_for_selector('.ink-page canvas'); time.sleep(0.8)
+    abrir_hoja(pg)
     ok('hay selector de capa', pg.locator('[aria-label="Capa del lienzo"]').count() == 1)
     ok('hay plantillas de flujograma', pg.locator('select[aria-label="Plantilla de flujograma"] option').count() == 4)
     pg.select_option('select[aria-label="Plantilla de flujograma"]', 'tres-pasos'); time.sleep(1.4)
+    pg.keyboard.press('Escape'); time.sleep(0.3)
     painted = pg.evaluate("""() => { const c = document.querySelector('.ink-page canvas'); const x = c.getContext('2d').getImageData(0,0,c.width,c.height).data; let n=0; for (let i=3;i<x.length;i+=4) if (x[i]) n++; return n; }""")
     ok('el flujograma se dibuja', painted > 2000, painted)
     # capa borrador: trazo nuevo marcado y ocultable
+    abrir_hoja(pg)
     pg.click('[aria-label="Capa del lienzo"] button:has-text("Borrador")'); time.sleep(0.4)
 
     bx = pg.locator('.ink-page').first.bounding_box()
@@ -68,7 +79,9 @@ with sync_playwright() as p:
           const g = s.get(id); g.onsuccess = () => res((g.result||[]).map(st => st.layer || 'clean')); }; }; })""")
     ok('el trazo nuevo va al borrador', 'draft' in (layers or []), layers)
     with_draft = pg.evaluate("""() => { const c = document.querySelector('.ink-page canvas'); const x = c.getContext('2d').getImageData(0,0,c.width,c.height).data; let n=0; for (let i=3;i<x.length;i+=4) if (x[i]) n++; return n; }""")
-    pg.click('button[title^="Ocultar el borrador"]'); time.sleep(1.0)
+    abrir_hoja(pg)
+    pg.click('.hoja-pop button[title^="Ocultar el borrador"]'); time.sleep(1.0)
+    pg.keyboard.press('Escape'); time.sleep(0.4)
     hidden = pg.evaluate("""() => { const c = document.querySelector('.ink-page canvas'); const x = c.getContext('2d').getImageData(0,0,c.width,c.height).data; let n=0; for (let i=3;i<x.length;i+=4) if (x[i]) n++; return n; }""")
     ok('ocultar el borrador lo quita de la vista', hidden < with_draft, (with_draft, hidden))
     ok('pero no lo borra', len(layers or []) == len(pg.evaluate("""() => new Promise(res => { const r = indexedDB.open('alquimia');

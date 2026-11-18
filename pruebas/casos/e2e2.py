@@ -3,6 +3,13 @@ from playwright.sync_api import sync_playwright
 
 import math as _math
 
+
+def menu_nota(pg, etiqueta):
+    """Exportar vive en el menú ⋯ desde la 0.26."""
+    pg.click('button[aria-label="Más acciones de la nota"]')
+    pg.click(f'.more-menu button:has-text("{etiqueta}")')
+
+
 def dial_open(page, which='.pen-dial'):
     """Abre el disco de instrumentos si está cerrado."""
     page.wait_for_selector(which)
@@ -158,10 +165,10 @@ with sync_playwright() as p:
     ok('rich html kept', '<h2' in eh and ('<b>' in eh or 'bold' in eh or '<strong' in eh) and 'text-align: center' in eh, eh[:200])
 
     # Exportar Word y PDF
-    with page.expect_download() as dw: page.click('.notes-panel > .toolbar button:has-text("Word")')
+    with page.expect_download() as dw: menu_nota(page, 'Exportar a Word')
     wd = open(dw.value.path(), 'rb').read().decode('utf-8', 'ignore')
     ok('export word', dw.value.suggested_filename.endswith('.doc') and '<table' in wd and '☑' in wd, dw.value.suggested_filename)
-    with page.expect_download() as dp: page.click('.notes-panel > .toolbar button:has-text("PDF")')
+    with page.expect_download() as dp: menu_nota(page, 'Exportar a PDF')
     pd = open(dp.value.path(), 'rb').read(); open('/tmp/tc/export-word-note.pdf','wb').write(pd)
     ok('export pdf', pd[:5] == b'%PDF-')
 

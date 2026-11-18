@@ -85,7 +85,26 @@ export function InkCanvas({ note }: { note: Note }) {
   /** Tapar y repasar: cubre la columna izquierda (Cornell o dos columnas). */
   const [mask, setMask] = useState(false);
   const [sheetsOpen, setSheetsOpen] = useState(false);
+  const [hojaOpen, setHojaOpen] = useState(false);
   const inkRev = useBridge((s) => (s.inkRev?.noteId === note.id ? s.inkRev.n : 0));
+
+  // El panel de hoja se cierra con Escape o tocando fuera, como cualquier otro diálogo.
+  useEffect(() => {
+    if (!hojaOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setHojaOpen(false);
+    };
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t?.closest('.hoja-pop') && !t?.closest('[aria-haspopup="dialog"]')) setHojaOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown, true);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown, true);
+    };
+  }, [hojaOpen]);
 
   // Recortes pegados desde el PDF: se guardan aparte de los trazos y se recargan si llega uno nuevo.
   useEffect(() => {
@@ -544,8 +563,21 @@ export function InkCanvas({ note }: { note: Note }) {
           </button>
         )}
         <button className="btn ghost sm" onClick={() => setSheetsOpen(true)} title="Organizar hojas: reordenar arrastrando y fusionar" disabled={pages < 2}>
-          <Icon name="layers" size={16} /> Hojas
+          <Icon name="layers" size={16} /> Organizar
         </button>
+        {/* Lo que se cambia una vez por nota vive aquí dentro: la barra se queda con lo de cada trazo. */}
+        <button
+          className={`btn ghost sm${hojaOpen ? ' active' : ''}`}
+          onClick={() => setHojaOpen((v) => !v)}
+          aria-expanded={hojaOpen}
+          aria-haspopup="dialog"
+          title="Hoja: tamaño, estilo, capa, plantillas y fondo"
+        >
+          <Icon name="page" size={16} /> Hoja
+        </button>
+      </div>
+      {hojaOpen && (
+        <div className="hoja-pop" role="dialog" aria-label="Opciones de la hoja">
         <select
           className="select xs"
           value=""
@@ -667,10 +699,11 @@ export function InkCanvas({ note }: { note: Note }) {
             <option value="columns">Dos columnas</option>
           </optgroup>
         </select>
-        <button className="icon-btn danger" onClick={clearAll} title="Borrar todo">
+        <button className="icon-btn danger" onClick={clearAll} title="Borrar todo lo escrito en esta nota">
           <Icon name="trash" />
         </button>
-      </div>
+        </div>
+      )}
       {audioOpen && <ClassAudioBar noteId={note.id} seekRef={seekRef} onListening={setListening} />}
       <div className="ink-body">
       <PenDial

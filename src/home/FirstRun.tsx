@@ -12,7 +12,7 @@ const HIDDEN = 'qc:firstRunHidden';
  * Lo que falta para que la app aguante el año. Aparece en Inicio mientras quede algo
  * pendiente y se va sola cuando todo está listo; cada punto se resuelve desde aquí.
  */
-export function FirstRun() {
+export function FirstRun({ onOpenDay1 }: { onOpenDay1?: () => void }) {
   const [backup, setBackup] = useState<boolean | null>(null);
   const [hidden, setHidden] = useState(() => localStorage.getItem(HIDDEN) === '1');
   const [busy, setBusy] = useState(false);
@@ -81,6 +81,15 @@ export function FirstRun() {
           <Icon name="x" size={14} />
         </button>
       </div>
+      {onOpenDay1 && (
+        <p className="small muted">
+          ¿Ya con fecha para empezar?{' '}
+          <button className="linkish" onClick={onOpenDay1}>
+            Preparar el día 1
+          </button>{' '}
+          revisa todo de una vez.
+        </p>
+      )}
       <ul className="fr-list">
         {pend.map((p) => (
           <li key={p.id}>

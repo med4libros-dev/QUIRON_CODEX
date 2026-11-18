@@ -115,6 +115,13 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.26
+- **Preparar el día 1** (Turno → «Preparar el día 1», y en la pantalla de bienvenida): cinco pasos para llegar listo a tu primera guardia. Confirma la fecha de inicio, descarga un respaldo, cuenta cuántas de las diez fichas de guardia de urgencias llevas, revisa tus dosis y tus resúmenes. Lo que falta queda marcado y te lleva a donde se arregla.
+- **La barra del lienzo ocupa la mitad.** Lo que se elige una vez por nota —tamaño de hoja, estilo de papel, capa, plantillas de flujograma, fondo, limpiar— se fue al botón **Hoja**; la barra se queda con lo de cada trazo. En la Surface el lienzo gana unos 250 px de alto. El panel se cierra con Escape o tocando fuera.
+- **Exportar está en el menú ⋯** de la nota: PDF, PDF con símbolos y Word, cada uno con una línea que dice para qué sirve. El de símbolos sigue siendo el que conserva griego, flechas, ≥ y µ.
+- **Las ventanas ya no son transparentes.** Preferencias y los demás diálogos tapan de verdad lo que hay detrás; el vidrio líquido se queda en las barras y las cápsulas, donde adorna sin estorbar la lectura.
+- Las barras flotantes de respaldo y actualización **se esconden mientras hay una ventana abierta** y dejan sitio al final de la página, para que el último botón no quede debajo.
+
 ### v0.25
 - **Empezar de cero** (Herramientas → Empezar de cero): reinicia el temario para arrancar limpio. Eliges qué se borra —progreso, plan completo, tus cambios al temario, flashcards, simulacros, fichas y casos, bitácora— y cada opción dice exactamente qué se lleva. Viene marcado **solo el progreso**; todo lo demás es opcional.
 - Antes de borrar **descarga un respaldo completo**, y pide escribir `REINICIAR` para confirmar. Tus notas, cuadernos, lienzos, perlas HY y los PDF que subiste no se tocan ahí.

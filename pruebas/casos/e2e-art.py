@@ -3,6 +3,13 @@ from playwright.sync_api import sync_playwright
 
 import math as _math
 
+
+def menu_nota(pg, etiqueta):
+    """Exportar vive en el menú ⋯ desde la 0.26."""
+    pg.click('button[aria-label="Más acciones de la nota"]')
+    pg.click(f'.more-menu button:has-text("{etiqueta}")')
+
+
 def dial_open(page, which='.pen-dial'):
     """Abre el disco de instrumentos si está cerrado."""
     page.wait_for_selector(which)
@@ -158,7 +165,7 @@ with sync_playwright() as p:
     ok('rich html kept', '<h2' in eh and ('<b>' in eh or 'bold' in eh or '<strong' in eh) and 'text-align: center' in eh, eh[:200])
 
     # Exportar Word y PDF
-    page.click('.notes-panel > .toolbar button:has-text("Word")'); time.sleep(0.3)
+    menu_nota(page, 'Exportar a Word'); time.sleep(0.3)
     ok('download toast', 'no está disponible' in page.inner_text('body'))
     # Lienzo con instrumentos
     page.click('[role=tab]:has-text("Lienzo")'); page.wait_for_selector('.ink-page canvas')

@@ -2,6 +2,14 @@
 """Quirón Codex 0.8: letra reconocida, Ctrl+F, pestañas, oclusión, papelera, etiquetas y exportaciones."""
 import threading, http.server, socketserver, functools, time, json, sys
 from playwright.sync_api import sync_playwright
+
+def abrir_hoja(pg):
+    """Los controles de hoja viven tras el botón «Hoja» desde la 0.26."""
+    if pg.locator('.hoja-pop').count() == 0:
+        pg.click('.ink-toolbar button:has-text("Hoja")')
+        pg.wait_for_selector('.hoja-pop')
+
+
 http.server.SimpleHTTPRequestHandler.extensions_map['.mjs'] = 'text/javascript'
 http.server.SimpleHTTPRequestHandler.log_message = lambda *a, **k: None
 class Q(socketserver.TCPServer): allow_reuse_address = True
@@ -171,7 +179,9 @@ with sync_playwright() as p:
 
     # ---------- 11. Tapar y repasar (Cornell) ----------
     pg.click('.notes-panel [role=tab]:has-text("Lienzo")'); pg.wait_for_selector('.ink-page')
-    pg.select_option('.ink-toolbar select[aria-label="Tipo de hoja"]', 'cornell'); time.sleep(0.4)
+    abrir_hoja(pg)
+    pg.select_option('.hoja-pop select[aria-label="Tipo de hoja"]', 'cornell')
+    pg.keyboard.press('Escape'); time.sleep(0.4)
     ok('aparece «Tapar y repasar» en hoja Cornell', pg.locator('.ink-toolbar button:has-text("Tapar y repasar")').count() == 1)
     pg.click('.ink-toolbar button:has-text("Tapar y repasar")'); time.sleep(0.4)
     ok('la columna queda tapada', pg.locator('.ink-mask').count() >= 1)
@@ -182,8 +192,10 @@ with sync_playwright() as p:
 
     # ---------- 12. Papelera: hoja del lienzo ----------
     # Sin hojas continuas para contar hojas reales (la hoja de más no se guarda).
-    pg.click('.ink-toolbar button[aria-pressed="true"][title^="Hojas continuas"]'); time.sleep(0.5)
-    ok('se pueden apagar las hojas continuas', pg.locator('.ink-toolbar button[title^="Hojas continuas: apagadas"]').count() == 1)
+    abrir_hoja(pg)
+    pg.click('.hoja-pop button[aria-pressed="true"][title^="Hojas continuas"]'); time.sleep(0.5)
+    ok('se pueden apagar las hojas continuas', pg.locator('.hoja-pop button[title^="Hojas continuas: apagadas"]').count() == 1)
+    pg.keyboard.press('Escape'); time.sleep(0.3)
     pg.click('.ink-sheet .icon-btn[title="Insertar una hoja antes de esta"]'); time.sleep(0.8)
     sheets = pg.locator('.ink-sheet').count()
     pg.locator('.ink-sheet').last.locator('.icon-btn[title="Quitar hoja"]').click(); time.sleep(1.0)

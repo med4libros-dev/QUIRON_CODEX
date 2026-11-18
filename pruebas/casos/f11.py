@@ -3,6 +3,14 @@ from playwright.sync_api import sync_playwright
 
 import math as _math
 
+
+def abrir_hoja(pg):
+    """Los controles de hoja viven tras el botón «Hoja» desde la 0.26."""
+    if pg.locator('.hoja-pop').count() == 0:
+        pg.click('.ink-toolbar button:has-text("Hoja")')
+        pg.wait_for_selector('.hoja-pop')
+
+
 def dial_open(page, which='.pen-dial'):
     """Abre el disco de instrumentos si está cerrado."""
     page.wait_for_selector(which)
@@ -126,9 +134,12 @@ with sync_playwright() as p:
     ok('move a sheet up', all(s['page']==0 for s in pg.evaluate(INK)))
     pg.click('button[aria-label="Quitar hoja 2"]'); time.sleep(0.8)
     ok('remove an empty sheet', pg.locator('.ink-sheet').count()==n and len(pg.evaluate(INK))>0)
-    pg.select_option('.ink-toolbar select[aria-label="Tipo de hoja"]','cornell'); time.sleep(0.4)
+    abrir_hoja(pg)
+    pg.select_option('.hoja-pop select[aria-label="Tipo de hoja"]','cornell'); time.sleep(0.4)
     ok('Cornell template', pg.get_attribute('.ink-page','data-paper')=='cornell')
-    pg.select_option('.ink-toolbar select[aria-label="Tipo de hoja"]','columns'); time.sleep(0.3)
+    abrir_hoja(pg)
+    pg.select_option('.hoja-pop select[aria-label="Tipo de hoja"]','columns'); time.sleep(0.3)
+    pg.keyboard.press('Escape'); time.sleep(0.3)
     ok('two-column template', pg.get_attribute('.ink-page','data-paper')=='columns')
 
     # ---------- PDF oscuro y pantalla completa ----------

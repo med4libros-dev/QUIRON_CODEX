@@ -19,6 +19,7 @@ import { useSettings } from '../store/settings';
 import { useExam } from '../exam/store';
 import { masteryColor, topicMastery, weakTopics } from '../analytics/mastery';
 import { FirstRun } from '../home/FirstRun';
+import { Day1Modal } from '../home/Day1';
 import { DrugOfDay, WeeklySummary } from '../home/HomeCards';
 import { FoldBtn, useFold } from '../components/Fold';
 import { useWard } from '../ward/store';
@@ -36,6 +37,7 @@ export function InternshipView() {
 }
 
 function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () => void }) {
+  const [day1, setDay1] = useState(false);
   const done = useInternship((s) => s.done);
   const toggleDone = useInternship((s) => s.toggleDone);
   const shifts = useInternship((s) => s.shifts);
@@ -135,9 +137,13 @@ function Dashboard({ config, onEdit }: { config: InternshipConfig; onEdit: () =>
         <button className="btn ghost" onClick={onEdit}>
           <Icon name="settings" size={16} /> Ajustar plan
         </button>
+        <button className="btn ghost" onClick={() => setDay1(true)}>
+          <Icon name="check" size={16} /> Preparar el día 1
+        </button>
       </header>
 
-      <FirstRun />
+      {day1 && <Day1Modal onClose={() => setDay1(false)} onEditPlan={onEdit} />}
+      <FirstRun onOpenDay1={() => setDay1(true)} />
 
       <KpiStrip due={due.length} weak={weakTopics(mastery, 5).length} wardPending={wardPending} enarmDate={enarmDate} today={today} />
 

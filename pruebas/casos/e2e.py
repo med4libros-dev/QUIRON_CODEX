@@ -113,14 +113,16 @@ with sync_playwright() as p:
 
     # Exportar PDF
     with page.expect_download() as dl:
-        page.click('button[title^="Exportar nota a PDF"]')
+        page.click('button[aria-label="Más acciones de la nota"]')
+        page.click('.more-menu button:has-text("Exportar a PDF")')
     path = dl.value.path(); data = open(path, 'rb').read()
     ok('export pdf', data[:5] == b'%PDF-' and len(data) > 1500, f'{dl.value.suggested_filename} {len(data)} bytes')
     open('/tmp/tc/export-synth.pdf', 'wb').write(data)
     # exportar la nota manual (con tinta)
     page.select_option('select[aria-label="Nota activa"]', index=0); time.sleep(0.4)
     with page.expect_download() as dl2:
-        page.click('button[title^="Exportar nota a PDF"]')
+        page.click('button[aria-label="Más acciones de la nota"]')
+        page.click('.more-menu button:has-text("Exportar a PDF")')
     d2 = open(dl2.value.path(), 'rb').read(); open('/tmp/tc/export-ink.pdf', 'wb').write(d2)
     ok('export note with ink', d2[:5] == b'%PDF-', f'{len(d2)} bytes')
 

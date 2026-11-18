@@ -1,5 +1,13 @@
 import threading, http.server, socketserver, functools, time, datetime
 from playwright.sync_api import sync_playwright
+
+def abrir_hoja(pg):
+    """Los controles de hoja viven tras el botón «Hoja» desde la 0.26."""
+    if pg.locator('.hoja-pop').count() == 0:
+        pg.click('.ink-toolbar button:has-text("Hoja")')
+        pg.wait_for_selector('.hoja-pop')
+
+
 http.server.SimpleHTTPRequestHandler.extensions_map['.mjs']='text/javascript'
 http.server.SimpleHTTPRequestHandler.log_message=lambda *a,**k: None
 class Q(socketserver.TCPServer): allow_reuse_address=True
@@ -25,6 +33,7 @@ with sync_playwright() as p:
     pg.click('[role=tab]:has-text("Lienzo")'); pg.wait_for_selector('.ink-page canvas'); time.sleep(0.8)
 
     # --- tamaño de hoja ---
+    abrir_hoja(pg)
     ok('hay selector de tamaño de hoja', pg.locator('select[aria-label="Tamaño de hoja"]').count() == 1)
     ok('cuatro tamaños', pg.locator('select[aria-label="Tamaño de hoja"] option').count() == 4, pg.locator('select[aria-label="Tamaño de hoja"] option').count())
     def ratio():
@@ -42,19 +51,21 @@ with sync_playwright() as p:
     ok('el tamaño se guarda en la nota', pg.evaluate("JSON.parse(localStorage.getItem('alq:settings')||'{}') && true"))
 
     # --- miniaturas ---
+    pg.keyboard.press('Escape'); time.sleep(0.4)
     bx = pg.locator('.ink-page').first.bounding_box()
     pg.mouse.move(bx['x']+90, bx['y']+120); pg.mouse.down()
     for i in range(14): pg.mouse.move(bx['x']+90+i*14, bx['y']+120+(10 if i%2 else -10))
     pg.mouse.up(); time.sleep(1.2)
-    pg.click('.ink-toolbar button[title*="miniaturas"]'); time.sleep(1.4)
+    (abrir_hoja(pg), pg.click('.hoja-pop button[title*="miniaturas"]')); time.sleep(1.4)
     ok('se abre la columna de miniaturas', pg.locator('.sheet-rail').count() == 1)
     ok('hay una miniatura por hoja', pg.locator('.sheet-thumb').count() == pg.locator('.ink-sheet').count(), (pg.locator('.sheet-thumb').count(), pg.locator('.ink-sheet').count()))
     ok('la primera miniatura se dibujó', pg.locator('.sheet-thumb img').count() >= 1)
     ok('la hoja actual va marcada', pg.locator('.sheet-thumb.cur').count() == 1)
-    pg.click('.ink-toolbar button[title*="miniaturas"]'); time.sleep(0.5)
+    (abrir_hoja(pg), pg.click('.hoja-pop button[title*="miniaturas"]')); time.sleep(0.5)
     ok('se puede cerrar', pg.locator('.sheet-rail').count() == 0)
 
     # --- leer la selección (lazo) ---
+    pg.keyboard.press('Escape'); time.sleep(0.3)
     pg.click('button[aria-label="Lazo"]'); time.sleep(0.4)
     print('modo lazo:', pg.locator('button[aria-label="Lazo"][aria-pressed="true"]').count())
     bx = pg.locator('.ink-page').first.bounding_box()

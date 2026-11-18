@@ -1,5 +1,12 @@
 import threading, http.server, socketserver, functools, time, json, datetime, sys
 from playwright.sync_api import sync_playwright
+
+def menu_nota(pg, etiqueta):
+    """Exportar vive en el menú ⋯ desde la 0.26."""
+    pg.click('button[aria-label="Más acciones de la nota"]')
+    pg.click(f'.more-menu button:has-text("{etiqueta}")')
+
+
 http.server.SimpleHTTPRequestHandler.extensions_map['.mjs'] = 'text/javascript'
 http.server.SimpleHTTPRequestHandler.log_message = lambda *a, **k: None
 class Q(socketserver.TCPServer): allow_reuse_address = True
@@ -127,7 +134,7 @@ with sync_playwright() as p:
     pg.click('.ink-toolbar button[title^="Borrador"]')
     # Exportar PDF con imagen
     with pg.expect_download(timeout=20000) as dl:
-        pg.click('.notes-panel button:has-text("PDF")')
+        menu_nota(pg, 'Exportar a PDF')
     ok('export PDF with crop image', dl.value.suggested_filename.endswith('.pdf'), dl.value.suggested_filename)
     pg.keyboard.press('Escape'); pg.keyboard.press('v')
 

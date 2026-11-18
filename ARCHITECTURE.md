@@ -438,6 +438,21 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - Contraste medido componiendo cada color translúcido sobre lo que tiene detrás: **3.3:1** (día) y **5.5:1** (noche) para los bordes de control. `f4` y `v12c` lo comprueban en los dos packs y en los dos temas.
 - `f4` dejó de ser el guardián de Códice y pasó a vigilar **cada pack con sus propias reglas**: en vidrio exige desenfoque y que se apague al escribir; en Códice, que no haya desenfoque y que el papel siga siendo la superficie más clara.
 
+## v0.26 · Día 1 y barras del lienzo
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| Lista del día 1 | `home/Day1.tsx` | Cinco pasos derivados del estado real, no de banderas: fecha de inicio (`config`), antigüedad del último respaldo (`fileBackupOverdue`), fichas de guardia llenas sobre `urgenciasPrioritarias()` (diez temas), dosis guardadas y resúmenes indexados. Cada paso enlaza a donde se arregla; ninguno se puede «marcar» a mano |
+| Entradas | `internship/InternshipView.tsx`, `home/FirstRun.tsx` | Botón en Turno y en la bienvenida. No es un asistente obligatorio: se abre y se cierra cuando quieras |
+| Panel de hoja | `features/notes/InkCanvas.tsx` `hojaOpen` + `.hoja-pop` | Los controles que se eligen **una vez por nota** salen de la barra. Criterio: lo que cambia por trazo se queda a la vista; lo que cambia por hoja se guarda. Cierra con Escape y con `pointerdown` en captura fuera del panel |
+| Exportar | `features/notes/NotesPanel.tsx` `NoteMenu` | PDF, PDF con símbolos y Word pasaron al menú ⋯ como `role="menuitem"` con descripción. Se perdían tres botones de ancho permanente por una acción de final de nota |
+| Opacidad de ventanas | `styles/global.css` `--solid` | Token nuevo (`#f7f8fb` / `#1a202a`) para `.modal`, `.rail-pop`, `.more-menu` y `.hoja-pop`. El vidrio líquido se queda en barras y cápsulas: desenfocar detrás de un diálogo largo lo volvía ilegible |
+| Barras flotantes | `styles/global.css` | `body:has(.modal-backdrop) .sync-bar { display: none }` y `padding-bottom` en `.page` cuando hay barra, para que no tapen el último control |
+
+### Por qué no un menú radial
+
+El radial funciona cuando se elige **a menudo** entre pocos valores discretos y la mano ya está sobre el lienzo: por eso lo usan el lápiz, el color y el grosor. Tamaño de hoja (4 opciones), estilo de papel (11) y plantillas se eligen **una vez por nota** y son listas con nombre; en un radial de once sectores cada etiqueta queda ilegible y hay que apuntar en lugar de leer. Por eso la 0.26 esconde esos controles en un panel con sus etiquetas intactas en vez de convertirlos en una rueda.
+
 ## v0.25 · Empezar de cero
 
 | Módulo | Archivo | Notas |
