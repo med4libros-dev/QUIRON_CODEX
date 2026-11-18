@@ -150,7 +150,12 @@ with sync_playwright() as p:
     pg.keyboard.type(' Segunda línea escrita después.'); time.sleep(1.4)
     pg.click('.notes-panel [data-note-more]'); pg.click('.more-menu button:has-text("Historial")')
     pg.wait_for_selector('.modal:has-text("Historial")')
-    ok('el historial guarda la versión anterior', pg.locator('.hist-list li').count() >= 1, pg.locator('.hist-list li').count())
+    # El historial se lee de IndexedDB: hay que esperar a que termine de buscar.
+    try:
+        pg.wait_for_selector('.hist-list li', timeout=8000)
+    except Exception:
+        pass
+    ok('el historial guarda la versión anterior', pg.locator('.hist-list li').count() >= 1, pg.inner_text('.modal')[:90].replace('\n',' '))
     pg.click('.hist-list .btn.ghost'); time.sleep(1.2)
     ok('restaurar devuelve el texto anterior', 'Segunda línea' not in pg.inner_text('.editor') and 'Primera versión' not in pg.inner_text('.editor') and 'Bronquiolitis' in pg.inner_text('.editor'), pg.inner_text('.editor')[-90:])
     pg.keyboard.press('Escape')

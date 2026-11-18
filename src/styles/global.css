@@ -8428,3 +8428,175 @@ button.kpi:hover {
   font-size: 13.5px;
   line-height: 1.5;
 }
+
+/* =========================================================
+   VIDRIO LÍQUIDO · identidad visual (data-look="glass")
+   Traducción a la web del lenguaje Liquid Glass de Apple: el material
+   desenfoca lo que tiene detrás, toma color de su entorno y responde
+   al toque. Lo que en SwiftUI es .glassEffect() aquí son cuatro cosas
+   juntas: desenfoque con saturación, fondo translúcido, un filo
+   especular arriba y una sombra ambiental.
+   Nunca se desenfoca mientras el lápiz está abajo: ver [data-ink-busy].
+   ========================================================= */
+[data-look='glass'] {
+  --glass-blur: blur(22px) saturate(180%);
+  /* El filo claro de arriba es lo que lee el ojo como «vidrio». */
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+}
+[data-look='glass'][data-theme='light'] {
+  --bg: #e7eaf0;
+  --glass-base: #e7eaf0;
+  --surface: rgba(255, 255, 255, 0.62);
+  --surface-2: rgba(255, 255, 255, 0.48);
+  --surface-3: rgba(255, 255, 255, 0.34);
+  --border: rgba(90, 100, 120, 0.22);
+  /* 0.62 de alfa sobre el vidrio claro da 3.3:1 contra la superficie: WCAG 1.4.11 para
+     los bordes que identifican un control. Con 0.45 se quedaba en 2.3:1. */
+  --border-strong: rgba(60, 70, 90, 0.62);
+  --text: #1a1d24;
+  --text-muted: #5b6372;
+  --accent: #9a2a22;
+  --accent-hover: #7d2019;
+  --accent-soft: rgba(154, 42, 34, 0.14);
+  --accent-line: #9a2a22;
+  --accent-text: #fffdf7;
+  --accent-2: #2f5d50;
+  --accent-2-soft: rgba(47, 93, 80, 0.12);
+  --danger: #a33327;
+  --canvas-bg: #dfe3ec;
+  --paper: rgba(255, 255, 255, 0.78);
+  --ink: #1a1d24;
+  --rule: rgba(47, 93, 80, 0.16);
+  --shadow-page: 0 1px 2px rgba(20, 26, 40, 0.1), 0 10px 30px rgba(20, 26, 40, 0.1);
+  --shadow-float: 0 18px 50px rgba(20, 26, 40, 0.22);
+  --glow-alpha: 0;
+}
+[data-look='glass'][data-theme='dark'] {
+  --bg: #0e1116;
+  --glass-base: #0e1116;
+  --surface: rgba(255, 255, 255, 0.1);
+  --surface-2: rgba(255, 255, 255, 0.07);
+  --surface-3: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.16);
+  --border-strong: rgba(255, 255, 255, 0.55);
+  --text: #eef1f6;
+  --text-muted: #a3acbb;
+  --accent: #d4674f;
+  --accent-hover: #e8836b;
+  --accent-soft: rgba(212, 103, 79, 0.2);
+  --accent-line: #d4674f;
+  --accent-text: #0e1116;
+  --accent-2: #8fb3a4;
+  --accent-2-soft: rgba(143, 179, 164, 0.18);
+  --danger: #e07a62;
+  --canvas-bg: #090b0f;
+  --paper: rgba(32, 38, 48, 0.82);
+  --ink: #eef1f6;
+  --rule: rgba(143, 179, 164, 0.14);
+  --heat-0: rgba(255, 255, 255, 0.06);
+  --shadow-page: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 34px rgba(0, 0, 0, 0.45);
+  --shadow-float: 0 20px 54px rgba(0, 0, 0, 0.6);
+  --glow-alpha: 0;
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* El fondo del que el vidrio toma color: sin esto el desenfoque no tiene qué mezclar. */
+[data-look='glass'] body {
+  background-color: var(--glass-base);
+  background-image:
+    radial-gradient(900px 600px at 12% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+    radial-gradient(800px 520px at 88% 8%, color-mix(in srgb, var(--accent-2) 20%, transparent), transparent 62%);
+  background-attachment: fixed;
+}
+
+/* El material: las superficies de la app. */
+[data-look='glass'] .topbar,
+[data-look='glass'] .rail,
+[data-look='glass'] .card,
+[data-look='glass'] .modal,
+[data-look='glass'] .toolbar,
+[data-look='glass'] .subbar,
+[data-look='glass'] .rail-pop,
+[data-look='glass'] .sync-bar,
+[data-look='glass'] .pk-top,
+[data-look='glass'] .pk-tabs,
+[data-look='glass'] .pk-card,
+[data-look='glass'] .split-grip,
+[data-look='glass'] .split-back {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-hi), var(--shadow-page);
+}
+[data-look='glass'] .card,
+[data-look='glass'] .modal,
+[data-look='glass'] .rail-pop,
+[data-look='glass'] .pk-card,
+[data-look='glass'] .input,
+[data-look='glass'] .select,
+[data-look='glass'] textarea.input {
+  border-radius: var(--radius);
+}
+/* backdrop-filter crea un contexto de apilamiento: sin esto, el menú «⋯» de la barra del
+   PDF queda atrapado debajo de la capa de texto de la página y deja de recibir clics. */
+[data-look='glass'] .toolbar,
+[data-look='glass'] .subbar {
+  position: relative;
+  z-index: 20;
+}
+
+[data-look='glass'] .btn,
+[data-look='glass'] .chip {
+  border-radius: var(--radius-pill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-hi);
+  transition: transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+/* «Interactive glass»: el material responde al puntero y al dedo. */
+[data-look='glass'] .btn:hover,
+[data-look='glass'] .chip:hover {
+  background: color-mix(in srgb, var(--surface) 70%, white 30%);
+}
+[data-look='glass'] .btn:active,
+[data-look='glass'] .chip:active {
+  transform: scale(0.97);
+}
+[data-look='glass'] .btn.primary {
+  background: color-mix(in srgb, var(--accent) 86%, transparent);
+  box-shadow: var(--glass-hi), 0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+[data-look='glass'] .ink-page {
+  border-radius: var(--radius);
+  box-shadow: var(--glass-hi), var(--shadow-page);
+}
+
+/* Rendimiento, que es donde esto se paga:
+   mientras el lápiz escribe, y en ahorro de batería, el desenfoque se apaga.
+   Recomponer un backdrop-filter en cada trazo es lo que mata la latencia. */
+[data-look='glass'][data-ink-busy='1'],
+[data-look='glass'][data-saver='on'] {
+  --glass-blur: none;
+}
+[data-look='glass'][data-ink-busy='1'] .ink-page,
+[data-look='glass'][data-saver='on'] .ink-page {
+  box-shadow: var(--shadow-page);
+}
+/* Sin soporte de desenfoque, el material se vuelve opaco en vez de ilegible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-look='glass'] {
+    --surface: rgba(255, 255, 255, 0.92);
+    --surface-2: rgba(255, 255, 255, 0.86);
+  }
+  [data-look='glass'][data-theme='dark'] {
+    --surface: #1b212b;
+    --surface-2: #222934;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-look='glass'] {
+    --glass-blur: none;
+  }
+}

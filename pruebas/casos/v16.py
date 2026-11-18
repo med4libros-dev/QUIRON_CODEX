@@ -86,7 +86,12 @@ with sync_playwright() as p:
       sessionStorage.setItem('__files', JSON.stringify([...m])); }""")
     pg.click('button:has-text("Respaldar ahora")'); time.sleep(3.0)
     ayer = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
-    ok('guarda una copia con la fecha del día anterior', f'historial/quiron-codex-datos-{ayer}.json' in ls(), ls())
+    # La copia se escribe de forma asíncrona: se espera a que aparezca en vez de suponerlo.
+    esperado = f'historial/quiron-codex-datos-{ayer}.json'
+    for _ in range(20):
+        if esperado in ls(): break
+        time.sleep(0.5)
+    ok('guarda una copia con la fecha del día anterior', esperado in ls(), ls())
     ok('el respaldo vivo sigue ahí', 'quiron-codex-datos.json' in ls())
     ok('la copia no está vacía', pg.evaluate(f"() => new Map(JSON.parse(sessionStorage.getItem('__files')||'[]')).get('historial/quiron-codex-datos-{ayer}.json').text.length") > 2000)
 

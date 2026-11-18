@@ -4,7 +4,9 @@ import type { Theme, View } from '../types';
 export interface SettingsState {
   theme: Theme;
   /** Estilo visual: «glass» (cristal líquido) o «pistache» (papel mate). */
-  look: 'codice';
+  /** Pack visual: vidrio líquido (por omisión) o Códice (papel y tinta). */
+  look: 'glass' | 'codice';
+  setLook: (l: 'glass' | 'codice') => void;
   /** Tema efectivo (resuelto desde 'system'); no se guarda. */
   dark: boolean;
   view: View;
@@ -99,7 +101,7 @@ export interface SettingsState {
 export const useSettings = createStore<SettingsState>(
   (set) => ({
     theme: 'dark',
-    look: 'codice',
+    look: 'glass',
     dark: false,
     view: 'internado',
     splitRatio: 0.56,
@@ -154,6 +156,7 @@ export const useSettings = createStore<SettingsState>(
     setSaver: (saver) => set({ saver }),
     setEnarmDate: (enarmDate) => set({ enarmDate }),
     setPocketFull: (pocketFull) => set({ pocketFull }),
+    setLook: (look) => set({ look }),
     setNight: (night, from, to) => set((s) => ({ night, nightFrom: from ?? s.nightFrom, nightTo: to ?? s.nightTo })),
     setReminders: (reminders, hour) => set((s) => ({ reminders, reminderHour: hour ?? s.reminderHour })),
     setTheme: (theme) => set({ theme }),
@@ -183,8 +186,8 @@ export const useSettings = createStore<SettingsState>(
   {
     key: 'alq:settings',
     storage: 'local',
-    pick: ({ theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel, pocketFull }) => ({
-      theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel, pocketFull,
+    pick: ({ theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel, pocketFull, look }) => ({
+      theme, view, splitRatio, swapPanes, paneMode, activeDocId, activeNoteId, notebookScope, apiKey, model, night, nightFrom, nightTo, reminders, reminderHour, enarmDate, saver, inkZoom, inkPredict, inkAuto, pdfMargin, inkOcrAuto, syncAuto, pdfDark, pdfCrop, pdfSpread, retention, inkGlossary, openDocs, aiProvider, geminiKey, geminiModel, pocketFull, look,
     }),
   },
 );

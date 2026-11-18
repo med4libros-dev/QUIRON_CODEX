@@ -264,7 +264,7 @@ export async function downloadBackup(includePdfs: boolean) {
       if (blob) data.pdfs[id] = { type: blob.type || 'application/pdf', b64: await toB64(blob) };
     }
   }
-  const stamp = new Date().toISOString().slice(0, 10);
+  const stamp = dayOf(new Date().toISOString());
   const out = await serialize(data);
   if (out === null) throw new PasswordNeeded('El cifrado está activo: desbloquéalo con tu contraseña antes de descargar.');
   downloadBlob(new Blob([out], { type: 'application/json' }), `quiron-codex-respaldo-${stamp}${encryptionOn() ? '-cifrado' : ''}.json`);
@@ -335,8 +335,15 @@ async function writeFile(dir: FileSystemDirectoryHandle, name: string, data: Blo
 
 /** Nombre de la copia con fecha: «quiron-codex-datos-2026-11-17.json». */
 const histName = (day: string) => `quiron-codex-datos-${day}.json`;
-const dayOf = (iso: string) => iso.slice(0, 10);
-const isMonday = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay() === 1;
+/**
+ * El día **local**, no el de UTC. En México (UTC−6) cortar el ISO deja que todo lo
+ * respaldado después de las 18:00 lleve la fecha de mañana.
+ */
+const dayOf = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const isMonday = (day: string) => new Date(`${day}T12:00:00`).getDay() === 1;
 
 /** Las copias con fecha que hay en la carpeta, de la más nueva a la más vieja. */
 export async function history(): Promise<{ day: string; size: number; name: string }[]> {
@@ -369,8 +376,10 @@ export async function historyFile(name: string): Promise<File> {
 async function dayOfBackup(file: File): Promise<string> {
   try {
     const head = await file.slice(0, 400).text();
-    const m = /"exportedAt"\s*:\s*"(\d{4}-\d{2}-\d{2})/.exec(head);
-    if (m) return m[1];
+    // Se captura la marca completa y se pasa por dayOf: cortar los primeros diez
+    // caracteres daría el día en UTC, que en México no es el día del usuario.
+    const m = /"exportedAt"\s*:\s*"([^"]+)"/.exec(head);
+    if (m) return dayOf(m[1]);
   } catch {
     /* ilegible: se usa la fecha del archivo */
   }

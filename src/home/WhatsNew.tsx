@@ -8,10 +8,8 @@ import { APP_VERSION } from '../version';
 const SEEN = 'qc:seenVersion';
 
 const NEWS: { icon: Parameters<typeof Icon>[0]['name']; title: string; text: string }[] = [
-  { icon: 'sparkles', title: 'Fichas de guardia desde tu GPC', text: 'En la ficha del tema → Vista de Guardia: «Proponer desde mi GPC» lee la guía que adjuntaste y propone criterios, 1ª y 2ª línea y cuándo referir, citando página. Es un borrador: tú pasas campo por campo, y verificas cada dosis contra tu guía.' },
-  { icon: 'book', title: 'Bitácora en el teléfono', text: 'Nueva pestaña en Bolsillo: registra el caso cuando pasa, en tres líneas anónimas, y suma procedimientos de un toque. Con el mismo aviso si se te cuela un nombre o una cama.' },
-  { icon: 'printer', title: 'PDF con símbolos', text: 'El exportador translitera griego, flechas, ≥ y µ. El botón nuevo guarda el PDF por la impresora del navegador, que sí los conserva.' },
-  { icon: 'check', title: 'Las pruebas ya viven en el repositorio', text: 'Las ~900 verificaciones de extremo a extremo están en pruebas/ y corren en cada cambio. Antes vivían fuera y se habrían perdido.' },
+  { icon: 'sparkles', title: 'Vidrio líquido', text: 'El pack visual nuevo, por omisión: las superficies desenfocan lo que tienen detrás, toman color del fondo y responden al toque. Códice (papel y tinta) sigue disponible en Preferencias → Estilo.' },
+  { icon: 'pen', title: 'El desenfoque no le quita tiempo al lápiz', text: 'Mientras escribes se apaga solo y vuelve en la primera pausa; en ahorro de batería no se enciende. Recomponer un desenfoque en cada trazo es justo lo que arruina la latencia.' },
 ];
 
 /** «Novedades» una vez por versión (solo si ya usabas la app: en una instalación nueva no aparece). */

@@ -18,6 +18,7 @@ const hh = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
 /** Preferencias: modo noche, recordatorios del sistema e IA. */
 export function PrefsDialog({ onClose }: { onClose: () => void }) {
+  const look = useSettings((s) => s.look);
   const night = useSettings((s) => s.night);
   const nightFrom = useSettings((s) => s.nightFrom);
   const nightTo = useSettings((s) => s.nightTo);
@@ -45,6 +46,34 @@ export function PrefsDialog({ onClose }: { onClose: () => void }) {
     {diag && <InkDiagnostic onClose={() => setDiag(false)} />}
     <Modal title="Preferencias" onClose={onClose} width={540}>
       <div className="prefs">
+        <section>
+          <h4>
+            <Icon name="sparkles" size={15} /> Estilo
+          </h4>
+          <p className="muted small">
+            <b>Vidrio líquido</b> desenfoca lo que tiene detrás y responde al toque. <b>Códice</b> es papel y tinta, sin desenfoques: pinta
+            menos y por eso el lápiz responde mejor en la Surface. El desenfoque se apaga solo mientras escribes y en ahorro de batería.
+          </p>
+          <div className="seg" role="radiogroup" aria-label="Estilo">
+            {(
+              [
+                ['glass', 'Vidrio líquido'],
+                ['codice', 'Códice'],
+              ] as const
+            ).map(([v, label]) => (
+              <button
+                key={v}
+                role="radio"
+                aria-checked={look === v}
+                className={look === v ? 'on' : undefined}
+                onClick={() => useSettings.getState().setLook(v)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section>
           <h4>
             <Icon name="moon" size={15} /> Modo noche

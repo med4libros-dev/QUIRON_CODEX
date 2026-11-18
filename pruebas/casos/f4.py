@@ -23,23 +23,50 @@ with sync_playwright() as p:
         pg.goto(URL); pg.wait_for_selector('.setup')
         pg.fill('.setup input[type=date] >> nth=0', start); pg.fill('.setup input[type=number] >> nth=0', '60'); time.sleep(0.2)
         pg.click('button:has-text("Crear mi plan")'); pg.wait_for_selector('.day-card')
+        # --- El pack por omisión es el vidrio; Códice sigue disponible. Cada uno con sus reglas. ---
         look = pg.evaluate("document.documentElement.dataset.look")
-        ok(f'[{scheme}] Códice es el único pack', look == 'codice', look)
+        ok(f'[{scheme}] el vidrio es el pack por omisión', look == 'glass', look)
         bf = pg.evaluate("getComputedStyle(document.querySelector('.card')).backdropFilter")
-        ok(f'[{scheme}] sin desenfoques: nada compite con el papel', bf == 'none', bf)
+        ok(f'[{scheme}] el vidrio desenfoca lo que tiene detrás', 'blur' in bf, bf)
         bd = pg.evaluate("getComputedStyle(document.querySelector('.topbar')).backdropFilter")
-        ok(f'[{scheme}] la barra es opaca, no esmerilada', bd == 'none', bd)
-        bg = pg.evaluate("getComputedStyle(document.body, '::before').backgroundImage")
-        ok(f'[{scheme}] fibra de papel, no gradientes de color', 'repeating-linear-gradient' in bg and 'radial-gradient' not in bg, bg[:80])
-        fam = pg.evaluate("getComputedStyle(document.querySelector('.page-title')).fontFamily")
-        ok(f'[{scheme}] los títulos van en la serif del códice', 'Lora Codex' in fam, fam)
+        ok(f'[{scheme}] la barra también es material', 'blur' in bd, bd)
+        amb = pg.evaluate("getComputedStyle(document.body).backgroundImage")
+        ok(f'[{scheme}] hay un fondo del que tomar color', 'radial-gradient' in amb, amb[:60])
+        # Mientras el lápiz escribe no se desenfoca: es lo que mata la latencia.
+        pg.evaluate("() => document.documentElement.dataset.inkBusy = '1'"); time.sleep(0.2)
+        bf2 = pg.evaluate("getComputedStyle(document.querySelector('.card')).backdropFilter")
+        ok(f'[{scheme}] escribiendo, el desenfoque se apaga', bf2 == 'none', bf2)
+        pg.evaluate("() => delete document.documentElement.dataset.inkBusy"); time.sleep(0.2)
+        pg.evaluate("() => document.documentElement.dataset.saver = 'on'"); time.sleep(0.2)
+        ok(f'[{scheme}] en ahorro de batería tampoco', pg.evaluate("getComputedStyle(document.querySelector('.card')).backdropFilter") == 'none')
+        pg.evaluate("() => delete document.documentElement.dataset.saver"); time.sleep(0.2)
+        # Los bordes que identifican un control, a 3:1 (WCAG 1.4.11).
+        razon = pg.evaluate("""() => {
+          const px = (c) => { const m = c.match(/[\d.]+/g).map(Number); return m.length > 3 ? m : [...m, 1]; };
+          const mezcla = (f, b) => f.slice(0,3).map((v, i) => v * f[3] + b[i] * (1 - f[3]));
+          const lum = (c) => { const s = c.map(v => { v /= 255; return v <= 0.03928 ? v/12.92 : ((v+0.055)/1.055) ** 2.4; });
+            return 0.2126*s[0] + 0.7152*s[1] + 0.0722*s[2]; };
+          const cs = getComputedStyle(document.documentElement);
+          const fondo = px(getComputedStyle(document.querySelector('.card')).backgroundColor);
+          const base = px(getComputedStyle(document.body).backgroundColor);
+          const sup = mezcla(fondo, base);
+          const bor = mezcla(px(cs.getPropertyValue('--border-strong')), sup);
+          const [a, b] = [lum(bor) + 0.05, lum(sup) + 0.05].sort((x, y) => y - x);
+          return Math.round((a / b) * 100) / 100;
+        }""")
+        ok(f'[{scheme}] los bordes de control llegan a 3:1', razon >= 3, razon)
+        # Y Códice sigue siendo Códice cuando se elige.
+        pg.evaluate("() => { const s = JSON.parse(localStorage.getItem('alq:settings')); s.look = 'codice'; localStorage.setItem('alq:settings', JSON.stringify(s)); }")
+        pg.reload(); pg.wait_for_selector('.day-card'); time.sleep(0.5)
+        ok(f'[{scheme}] Códice sigue disponible y sin desenfoques', pg.evaluate("getComputedStyle(document.querySelector('.card')).backdropFilter") == 'none')
         paper = pg.evaluate("() => { const c = getComputedStyle(document.documentElement); const lum = (v) => { const h = v.trim().replace('#',''); const n = parseInt(h.length === 3 ? h.split('').map(x=>x+x).join('') : h, 16); return 0.2126*((n>>16)&255) + 0.7152*((n>>8)&255) + 0.0722*(n&255); }; return ['--paper','--surface','--bg'].map(k => lum(c.getPropertyValue(k))); }")
-        ok(f'[{scheme}] el papel manda sobre la lámina y la mesa', paper[0] > paper[1] > paper[2] if scheme == 'light' else paper[0] > paper[2], paper)
+        ok(f'[{scheme}] en Códice el papel sigue mandando', paper[0] > paper[1] > paper[2] if scheme == 'light' else paper[0] > paper[2], paper)
+        pg.evaluate("() => { const s = JSON.parse(localStorage.getItem('alq:settings')); s.look = 'glass'; localStorage.setItem('alq:settings', JSON.stringify(s)); }")
+        pg.reload(); pg.wait_for_selector('.day-card'); time.sleep(0.5)
         pg.screenshot(path=f'/tmp/tc/shots/f4-{scheme}-inicio.png')
         if scheme == 'light':
-            ok('ya no hay selector de estilo: Códice es el pack', pg.evaluate("() => { const r = document.querySelector('.rail-btn:last-of-type'); return true; }") and not pg.locator('.rail-pop button:has-text("Estilo:")').count())
             pg.reload(); pg.wait_for_selector('.day-card')
-            ok('el pack se mantiene al recargar', pg.evaluate("document.documentElement.dataset.look") == 'codice')
+            ok('el pack elegido se mantiene al recargar', pg.evaluate("document.documentElement.dataset.look") == 'glass')
             ctx.close(); continue
 
         # ---------- Reproductor ----------

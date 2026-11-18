@@ -2,7 +2,7 @@
   "name": "quiron-codex",
   "productName": "Quirón Codex",
   "private": true,
-  "version": "0.23.0",
+  "version": "0.24.0",
   "description": "Quirón Codex: estación de estudio para el internado médico y el ENARM (lector de GPC, notas a mano y texto, planificador anual, guardia, flashcards).",
   "type": "module",
   "scripts": {

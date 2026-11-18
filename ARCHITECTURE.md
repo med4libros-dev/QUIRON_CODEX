@@ -425,6 +425,19 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - Los casos esperan su material en `/tmp/tc` porque así nacieron, fuera del repo; `correr.sh` enlaza esa ruta a `pruebas/trabajo/` en vez de reescribir 33 archivos.
 - Los PDF de prueba se generan (`herramientas/mkpdf.cjs`): su texto está inventado y no son GPC reales.
 
+## v0.24 · Vidrio líquido
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| El pack | `global.css`, sección «VIDRIO LÍQUIDO» | Traducción a CSS de *Liquid Glass*: `backdrop-filter: blur(22px) saturate(180%)`, superficies translúcidas, filo especular (`inset 0 1px 0`), sombra ambiental, radios de 14 px y botones en cápsula. El `body` lleva dos gradientes radiales fijos: sin algo detrás, un desenfoque no tiene qué mezclar |
+| Selector | `settings.look` (`'glass' | 'codice'`) | Vuelve el selector, en Preferencias → Estilo. Códice se conserva entero: es el pack que mejor responde al lápiz |
+| Coste del lápiz | `lib/inkBusy.ts` + `[data-ink-busy]` | `inkDown`/`inkUp` marcan el `<html>`, y el CSS apaga el desenfoque mientras se escribe. Vuelve 900 ms después de soltar, no al instante: entre trazo y trazo hay milisegundos y parpadearía |
+| Degradación | `@supports`, `prefers-reduced-transparency`, `[data-saver]` | Sin soporte de `backdrop-filter` las superficies se vuelven opacas; con transparencia reducida o ahorro de batería, el desenfoque no se enciende |
+| Apilamiento | `[data-look='glass'] .toolbar, .subbar` | `backdrop-filter` crea un contexto de apilamiento: sin un `z-index` explícito, el menú «⋯» de la barra del PDF queda bajo la capa de texto y deja de recibir clics |
+
+- Contraste medido componiendo cada color translúcido sobre lo que tiene detrás: **3.3:1** (día) y **5.5:1** (noche) para los bordes de control. `f4` y `v12c` lo comprueban en los dos packs y en los dos temas.
+- `f4` dejó de ser el guardián de Códice y pasó a vigilar **cada pack con sus propias reglas**: en vidrio exige desenfoque y que se apague al escribir; en Códice, que no haya desenfoque y que el papel siga siendo la superficie más clara.
+
 ## Modelo de datos (resumen)
 
 `DocMeta` · `Highlight{page, rect(0–1), color, text, style: box|underline, thickness}` · `Sticky{page, x, y, text, color, open}` · `Bookmark{page, label}` · `Notebook{name, subjectId, color}` · `Note{docId|null, notebookId|null, html, inkPages, paper: 11 estilos, sheet?: a4|carta|apaisada|rollo, sheetBg?, kind, inkText?, classText?, tags?}` · `Stroke{page, tool: pen|pencil|marker|highlighter, color, size, points[x,y,presión], t?: segundo de la grabación, layer?: 'draft'}` · `Summary{path, title, topicId, level, score, pages}` (índice de la carpeta de resúmenes; sin bytes) · `Subject` · `StudySession{date, topic, subjectId, minutes, done, docId}` · `Goal{metric, target, period, subjectId}` · `FocusLog{date, minutes, subjectId}`

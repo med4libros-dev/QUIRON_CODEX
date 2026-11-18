@@ -115,6 +115,12 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.24
+- **Vidrio líquido**: pack visual nuevo y por omisión, traducido del lenguaje *Liquid Glass* de Apple. Las superficies desenfocan y saturan lo que tienen detrás, llevan un filo especular arriba, esquinas redondeadas y botones en cápsula, y responden al puntero y al dedo. **Códice sigue ahí**, en Preferencias → Estilo, y vuelve el selector de pack.
+- **El desenfoque no le quita tiempo al lápiz**: se apaga solo mientras escribes (`[data-ink-busy]`) y vuelve en la primera pausa real, y tampoco se enciende en ahorro de batería ni con «reducir transparencia» del sistema. Si el navegador no soporta `backdrop-filter`, las superficies se vuelven opacas en vez de ilegibles.
+- Los bordes de los controles se midieron de verdad: **3.3:1 de día y 5.5:1 de noche** compuestos sobre lo que hay detrás (WCAG 1.4.11). La primera versión del pack se quedaba en 2.3:1.
+- **Arreglo**: las copias por día del respaldo se nombraban con la fecha **UTC**. En México eso significaba que todo lo respaldado después de las 18:00 llevaba la fecha de mañana. Ahora usan tu fecha local, igual que el nombre del archivo descargado.
+
 ### v0.23
 - **Fichas de guardia desde tu GPC**: en la ficha del tema → Vista de Guardia, «Proponer desde mi GPC» lee la guía que **tú** adjuntaste y propone criterios, primera y segunda línea y criterios de referencia, **citando la página** de cada línea. Es un borrador: no toca tu ficha hasta que pasas cada campo, y la pantalla te recuerda verificar las dosis contra tu guía. El sistema tiene prohibido inventar una dosis que no esté en el texto; si la guía no la da, escribe el fármaco sin dosis.
 - **Bitácora en el teléfono**: pestaña nueva en Bolsillo para registrar un caso (tres líneas anónimas, con el mismo detector de nombres, camas, NSS y CURP) y sumar procedimientos de un toque.

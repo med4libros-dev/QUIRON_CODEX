@@ -4,14 +4,29 @@
  * Lo pospuesto se ejecuta en la primera pausa, y siempre al ocultar o cerrar la ventana.
  */
 let down = 0;
+
+/**
+ * Marca en el <html> si el lápiz está escribiendo, para que el CSS pueda apagar lo caro
+ * (el desenfoque del pack de vidrio) sin que ningún componente tenga que enterarse.
+ */
+function marcar(activo: boolean) {
+  if (typeof document === 'undefined') return;
+  const el = document.documentElement;
+  if (activo) el.dataset.inkBusy = '1';
+  else delete el.dataset.inkBusy;
+}
 // performance.now(): reloj monótono, no depende de la hora del sistema.
 let lastUp = -1e9;
 export const inkDown = () => {
   down++;
+  marcar(true);
 };
 export const inkUp = () => {
   down = Math.max(0, down - 1);
   lastUp = performance.now();
+  // El desenfoque vuelve en la primera pausa real, no en cuanto se levanta el lápiz:
+  // entre trazo y trazo hay milisegundos, y parpadear sería peor que no tenerlo.
+  if (down === 0) setTimeout(() => void (!inkBusy() && marcar(false)), 900);
 };
 /** Hay un trazo en curso en este instante. */
 export const inkIsDown = () => down > 0;

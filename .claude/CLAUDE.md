@@ -29,8 +29,11 @@ La librería en sí se instala aparte en tu equipo: `pip install "notebooklm-py[
 - `ui-ux-pro-max` (MIT · Next Level Builder) — biblioteca local: paletas, pares tipográficos, 120 pautas de UX, iconos y tipos de gráfica.
 - `design-system` (MIT · Next Level Builder) — tokens en tres capas (primitivo → semántico → componente), que es como ya está hecho `global.css`.
 Licencias en `.claude/skills/VERCEL-SKILLS-LICENSE.md` y `.claude/skills/UI-UX-PRO-MAX-LICENSE.md`.
-Nota: el sistema visual del proyecto («Códice», pack único desde la 0.11) manda sobre cualquier
-sugerencia de estas skills; sirven para auditar y afinar, no para rehacer la identidad.
+Nota: desde la 0.24 hay **dos packs**: «Vidrio líquido» (por omisión) y «Códice» (papel y tinta).
+El usuario eligió reemplazar Códice como pack por omisión a sabiendas del coste en el lápiz.
+Estas skills sirven para auditar y afinar, no para rehacer la identidad por su cuenta.
+Reglas del vidrio: desenfoque con saturación, filo especular arriba, cápsulas y radios de 14 px,
+y **el desenfoque se apaga mientras el lápiz escribe** y en ahorro de batería.
 Reglas del pack: tres niveles de papel (mesa → lámina → página, y la página siempre es la más clara);
 filetes de tinta en vez de sombras y desenfoques; esquinas casi rectas (2 px); versales pequeñas en los
 rótulos; serif propia (Lora, incrustada en `src/styles/fonts.css`) para títulos y para todo lo que se lee;
@@ -51,3 +54,9 @@ front/back → QA → DevOps, cada rol con su contrato de calidad y su archivo e
 Skill en `.claude/skills/boss/`, comandos en `.claude/commands/boss/`, licencia en
 `.claude/skills/BOSS-SKILL-LICENSE.md`. Los *hooks* del repo no se instalaron.
 Está escrito en chino: los documentos que genere hay que pedírselos en español.
+
+# swiftui-liquid-glass (MIT · Thomas Ricouard)
+Guía de la API Liquid Glass de iOS 26 en SwiftUI: `.glassEffect()`, `GlassEffectContainer`,
+vidrio interactivo y cuándo NO usarlo. Es código Swift, no web: de ahí salió el lenguaje visual
+del pack «Vidrio líquido» de la 0.24, no código. `.claude/skills/swiftui-liquid-glass/`,
+licencia en `.claude/skills/LIQUID-GLASS-LICENSE.md`.
