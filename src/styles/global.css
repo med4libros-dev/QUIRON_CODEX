@@ -479,7 +479,19 @@ h4 {
   border-radius: var(--r);
   border: 1px solid var(--border-strong);
   background: var(--surface);
+  color: var(--text);
   min-width: 0;
+}
+
+/* El menú desplegable de un <select> lo dibuja el sistema, no la página. En WebView2
+   sigue el modo claro/oscuro de Windows, que puede no coincidir con el tema de la app:
+   si Windows está en claro y Quirón Codex en oscuro, el fondo sale claro y el texto
+   heredado —claro— queda ilegible. Fijar ambos colores en la propia opción es lo
+   único que el sistema respeta en los dos casos. */
+select option,
+select optgroup {
+  background-color: var(--surface);
+  color: var(--text);
 }
 .input:focus-visible,
 .select:focus-visible {

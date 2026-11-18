@@ -115,6 +115,9 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.26.2
+- **Arreglo: las listas desplegables salían ilegibles.** El menú que aparece al abrir un selector (rotaciones, meses, estilo de hoja, cualquiera) lo dibuja Windows, no la app, y seguía el modo claro/oscuro **del sistema**. Con Windows en claro y Quirón Codex en oscuro, el fondo salía claro y el texto —claro también— quedaba casi invisible (1.3:1). Ahora cada opción fija su propio color: entre 13:1 y 15:1 en los dos packs, de día y de noche, sin importar cómo esté Windows.
+
 ### v0.26.1
 - **Arreglo grave: la app de escritorio no abría.** La ventana salía un instante y se cerraba sola. La causa estaba desde la 0.10: los atajos del sistema (`Ctrl+Alt+Q/K/G`) se registraban de forma que, si otro proceso ya los tenía —una copia anterior de Quirón Codex que quedó viva, o cualquier otro programa—, el arranque entero fallaba. Ahora, si los atajos no se pueden registrar, **la app abre igual** y solo se queda sin ellos. (En la 0.18 pareció arreglarse al reiniciar la Surface: el reinicio mataba al proceso que tenía los atajos.)
 

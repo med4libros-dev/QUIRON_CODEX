@@ -438,6 +438,16 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - Contraste medido componiendo cada color translúcido sobre lo que tiene detrás: **3.3:1** (día) y **5.5:1** (noche) para los bordes de control. `f4` y `v12c` lo comprueban en los dos packs y en los dos temas.
 - `f4` dejó de ser el guardián de Códice y pasó a vigilar **cada pack con sus propias reglas**: en vidrio exige desenfoque y que se apague al escribir; en Códice, que no haya desenfoque y que el papel siga siendo la superficie más clara.
 
+## v0.26.2 · Lo que dibuja el sistema no hereda el tema
+
+`styles/global.css`: el menú desplegable de un `<select>` no es parte del documento — lo pinta el sistema (en WebView2, siguiendo el modo claro/oscuro de Windows), pero el **texto** sí toma el `color` heredado de la página. Con Windows en claro y la app en oscuro, salía texto claro sobre fondo claro: 1.3:1.
+
+El arreglo es fijar ambos colores en la propia opción (`select option, select optgroup { background-color: var(--surface); color: var(--text) }`), que es lo único que el sistema respeta en los dos casos. `.input` y `.select` también declaran su `color` en vez de heredarlo.
+
+Regla que esto deja: **donde el sistema dibuja, no se hereda nada**. Un control nativo (`select`, `option`, `optgroup`, los diálogos de archivo) necesita sus colores declarados, no tomados del tema.
+
+Prueba: `pruebas/casos/v26b.py` mide el color calculado de una opción en los dos packs × los dos temas y exige fondo propio y ≥ 4.5:1. Sin el arreglo da 3/9.
+
 ## v0.26.1 · El arranque no puede depender de los atajos
 
 `src-tauri/src/lib.rs`: `with_shortcuts([...])?` dentro de `.setup()` convertía un fallo de registro en `Err`, y `.run(...).expect(...)` lo convertía en pánico. Registrar un atajo global falla cuando **otro proceso ya lo tiene**: una instancia anterior de la app que quedó viva (las ventanas de widgets mantienen el proceso) o cualquier programa que use `Ctrl+Alt+Q/K/G`. Resultado: ventana un instante y proceso muerto, sin mensaje.
