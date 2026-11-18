@@ -438,6 +438,14 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - Contraste medido componiendo cada color translúcido sobre lo que tiene detrás: **3.3:1** (día) y **5.5:1** (noche) para los bordes de control. `f4` y `v12c` lo comprueban en los dos packs y en los dos temas.
 - `f4` dejó de ser el guardián de Códice y pasó a vigilar **cada pack con sus propias reglas**: en vidrio exige desenfoque y que se apague al escribir; en Códice, que no haya desenfoque y que el papel siga siendo la superficie más clara.
 
+## v0.26.4 · Un menú cuelga del lado que quepa
+
+`.more-wrap .more-menu` forzaba `left: 0; right: auto`, anulando el `right: 0` de `.popover`. Los botones «⋯» están al final de su barra, pegados al borde derecho, así que 290 px hacia la derecha se salían de la ventana: medido, 1548 contra 1340 de ancho. El override se va y el menú hereda el anclaje derecho, con `max-width: calc(100vw - 24px)` por si la ventana es más angosta que el menú.
+
+Ya estaba así antes de la 0.26; lo que cambió es qué quedaba en la parte cortada. Con cuatro acciones de dialogo se podía adivinar; con exportar ahí dentro, el usuario perdía la función.
+
+Prueba: `pruebas/casos/v26d.py` abre el menú a 1340, 1060 y 820 px y exige que ni el menú ni ninguna de sus acciones se salgan del viewport.
+
 ## v0.26.3 · Un modelo que no puede, lo dice; no lo dibuja
 
 | Módulo | Archivo | Notas |

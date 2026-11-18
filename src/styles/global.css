@@ -6024,9 +6024,11 @@ button.kpi:hover {
 }
 .cw-punct { cursor: default; color: var(--text-muted); }
 .cw-punct:hover { background: transparent; }
+/* El menú cuelga del lado que quepa. Los botones «⋯» viven al final de sus barras,
+   así que anclarlo por la izquierda (como estaba) lo sacaba de la ventana: 290 px a la
+   derecha de un botón que ya está pegado al borde. Hereda el `right: 0` de .popover. */
 .more-wrap .more-menu {
-  left: 0;
-  right: auto;
+  max-width: calc(100vw - 24px);
 }
 
 /* =========================================================

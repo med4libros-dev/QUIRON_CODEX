@@ -115,6 +115,9 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.26.4
+- **Arreglo: el menú ⋯ de la nota se salía de la ventana.** Colgaba hacia la derecha de un botón que vive pegado al borde, así que 208 px de menú quedaban fuera de la pantalla y las acciones salían cortadas a media palabra. Venía de antes, pero en la 0.26 ahí se mudaron PDF, PDF con símbolos y Word, y entonces lo cortado eran los comandos. Ahora cuelga del lado que cabe.
+
 ### v0.26.3
 - **El diagrama con IA ahora habla del paciente, no del PDF.** El prompt pedía «convierte el material en un algoritmo» y, cuando la GPC no traía texto, el modelo dibujaba su propia queja: «recepción de documento», «¿contiene texto?», «imposible generar». Ahora tiene prohibido cualquier nodo sobre el documento, debe arrancar con la presentación clínica, cada decisión lleva su criterio y el algoritmo termina en al menos dos destinos del paciente (alta, ingreso, referencia). Si el material no alcanza, lo dice en una frase en vez de dibujarlo.
 - **Las GPC escaneadas se avisan antes de gastar una petición.** El filtro contaba caracteres, y una guía escaneada suma miles entre encabezados, viñetas y números de página sin una sola frase clínica. Ahora cuenta palabras reales: si no las hay, te dice que ese PDF es imagen y no texto, y que por eso tampoco funciona el buscador en él.
