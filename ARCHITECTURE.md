@@ -438,6 +438,16 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - Contraste medido componiendo cada color translúcido sobre lo que tiene detrás: **3.3:1** (día) y **5.5:1** (noche) para los bordes de control. `f4` y `v12c` lo comprueban en los dos packs y en los dos temas.
 - `f4` dejó de ser el guardián de Códice y pasó a vigilar **cada pack con sus propias reglas**: en vidrio exige desenfoque y que se apague al escribir; en Códice, que no haya desenfoque y que el papel siga siendo la superficie más clara.
 
+## v0.26.1 · El arranque no puede depender de los atajos
+
+`src-tauri/src/lib.rs`: `with_shortcuts([...])?` dentro de `.setup()` convertía un fallo de registro en `Err`, y `.run(...).expect(...)` lo convertía en pánico. Registrar un atajo global falla cuando **otro proceso ya lo tiene**: una instancia anterior de la app que quedó viva (las ventanas de widgets mantienen el proceso) o cualquier programa que use `Ctrl+Alt+Q/K/G`. Resultado: ventana un instante y proceso muerto, sin mensaje.
+
+Ahora el registro va en un `match`: si falla, se escribe en stderr y la app sigue abriendo sin atajos globales. `run()` tampoco hace `expect`: su `Err` se registra y el proceso sale limpio.
+
+Regla que esto deja: **nada opcional debe poder abortar `setup`**. Atajos, widgets, notificaciones y cualquier integración con el sistema operativo se registran con su fallo contenido.
+
+Pendiente relacionado: `tauri-plugin-single-instance`, para que una segunda ejecución enfoque la ventana existente en vez de arrancar un proceso paralelo. Es la causa raíz del proceso zombi; este arreglo quita la consecuencia fatal, no la causa.
+
 ## v0.26 · Día 1 y barras del lienzo
 
 | Módulo | Archivo | Notas |

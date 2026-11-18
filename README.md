@@ -115,6 +115,9 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.26.1
+- **Arreglo grave: la app de escritorio no abría.** La ventana salía un instante y se cerraba sola. La causa estaba desde la 0.10: los atajos del sistema (`Ctrl+Alt+Q/K/G`) se registraban de forma que, si otro proceso ya los tenía —una copia anterior de Quirón Codex que quedó viva, o cualquier otro programa—, el arranque entero fallaba. Ahora, si los atajos no se pueden registrar, **la app abre igual** y solo se queda sin ellos. (En la 0.18 pareció arreglarse al reiniciar la Surface: el reinicio mataba al proceso que tenía los atajos.)
+
 ### v0.26
 - **Preparar el día 1** (Turno → «Preparar el día 1», y en la pantalla de bienvenida): cinco pasos para llegar listo a tu primera guardia. Confirma la fecha de inicio, descarga un respaldo, cuenta cuántas de las diez fichas de guardia de urgencias llevas, revisa tus dosis y tus resúmenes. Lo que falta queda marcado y te lleva a donde se arregla.
 - **La barra del lienzo ocupa la mitad.** Lo que se elige una vez por nota —tamaño de hoja, estilo de papel, capa, plantillas de flujograma, fondo, limpiar— se fue al botón **Hoja**; la barra se queda con lo de cada trazo. En la Surface el lienzo gana unos 250 px de alto. El panel se cierra con Escape o tocando fuera.

@@ -80,7 +80,7 @@ fn focus_main(app: &AppHandle, event: &str) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let salida = tauri::Builder::default()
         // Abre la búsqueda de GPC y otros enlaces en el navegador predeterminado.
         .plugin(tauri_plugin_opener::init())
         // Recordatorios de Windows (flashcards del día, refuerzo, pendientes del turno).
@@ -101,26 +101,39 @@ pub fn run() {
                 let search = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyK);
                 let glance = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::KeyG);
 
-                app.handle().plugin(
-                    tauri_plugin_global_shortcut::Builder::new()
-                        .with_shortcuts([capture, search, glance])?
-                        .with_handler(move |app, shortcut, event| {
-                            if event.state() != ShortcutState::Pressed {
-                                return;
-                            }
-                            if shortcut == &capture {
-                                toggle_widget(app, "capture", 380.0, 300.0);
-                            } else if shortcut == &search {
-                                focus_main(app, "qc://search");
-                            } else if shortcut == &glance {
-                                toggle_widget(app, "glance", 320.0, 190.0);
-                            }
-                        })
-                        .build(),
-                )?;
+                // Si otro proceso ya tiene estos atajos (una copia anterior que quedó
+                // viva, u otro programa), registrarlos falla. Eso NO debe impedir que la
+                // app abra: hasta la 0.26 el `?` hacía que `setup` devolviera error y el
+                // `.expect` mataba el proceso, así que la ventana salía y se cerraba sola.
+                match tauri_plugin_global_shortcut::Builder::new().with_shortcuts([capture, search, glance]) {
+                    Ok(b) => {
+                        let plugin = b
+                            .with_handler(move |app, shortcut, event| {
+                                if event.state() != ShortcutState::Pressed {
+                                    return;
+                                }
+                                if shortcut == &capture {
+                                    toggle_widget(app, "capture", 380.0, 300.0);
+                                } else if shortcut == &search {
+                                    focus_main(app, "qc://search");
+                                } else if shortcut == &glance {
+                                    toggle_widget(app, "glance", 320.0, 190.0);
+                                }
+                            })
+                            .build();
+                        if let Err(e) = app.handle().plugin(plugin) {
+                            eprintln!("Quirón Codex: sin atajos globales ({e}). La app abre igual.");
+                        }
+                    }
+                    Err(e) => eprintln!("Quirón Codex: sin atajos globales ({e}). La app abre igual."),
+                }
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("no se pudo iniciar Quirón Codex");
+        .run(tauri::generate_context!());
+
+    // Nunca abortar el arranque por un fallo de arranque: dejar rastro y salir limpio.
+    if let Err(e) = salida {
+        eprintln!("Quirón Codex no pudo iniciar: {e}");
+    }
 }
