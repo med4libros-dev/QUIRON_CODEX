@@ -1,4 +1,8 @@
 import * as esbuild from 'esbuild';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+/** La raíz del repo, deducida de este archivo: así corre igual aquí y en CI. */
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TC = process.env.QC_TC || '/tmp/tc';
 import { readFileSync, writeFileSync, statSync } from 'node:fs';
 const worker = readFileSync('node_modules/pdfjs-dist/build/pdf.worker.min.mjs', 'utf8');
@@ -8,8 +12,8 @@ const workerPlugin = { name: 'url-import', setup(b) {
     contents: `const src = ${JSON.stringify(worker)}; export default URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));`, loader: 'js' }));
 } };
 const r = await esbuild.build({
-  entryPoints: ['src/main.tsx'], bundle: true, format: 'esm', target: 'es2022', write: false, outdir: `${TC}/single`, jsx: 'automatic', minify: true,
-  loader: { '.png': 'dataurl', '.webp': 'dataurl' }, nodePaths: ['/opt/npm-tools/node_modules', '/home/claude/.npm-global/lib/node_modules'], define: { 'process.env.NODE_ENV': '"production"' }, plugins: [workerPlugin], legalComments: 'none', logLevel: 'warning',
+  entryPoints: [join(RAIZ, 'src/main.tsx')], bundle: true, format: 'esm', target: 'es2022', write: false, outdir: `${TC}/single`, jsx: 'automatic', minify: true,
+  loader: { '.png': 'dataurl', '.webp': 'dataurl' }, nodePaths: [join(RAIZ, 'node_modules'), '/opt/npm-tools/node_modules'], define: { 'process.env.NODE_ENV': '"production"' }, plugins: [workerPlugin], legalComments: 'none', logLevel: 'warning',
 });
 const js = r.outputFiles.find((f) => f.path.endsWith('.js')).text.replace(/<\/script/gi, '<\\/script');
 const css = r.outputFiles.find((f) => f.path.endsWith('.css')).text.replace(/<\/style/gi, '<\\/style');

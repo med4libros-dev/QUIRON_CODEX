@@ -21,5 +21,5 @@ const fs = require('fs');
     }
     page.drawRectangle({ x: 56, y: 90, width: 480, height: 60, color: rgb(0.93,0.95,0.97) });
   }
-  fs.writeFileSync('/tmp/tc/test.pdf', await pdf.save()); console.log('pdf ok');
+  fs.writeFileSync(`${process.env.QC_TC || '/tmp/tc'}/test.pdf`, await pdf.save()); console.log('pdf ok');
 })();
