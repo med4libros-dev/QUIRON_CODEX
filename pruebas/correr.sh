@@ -22,6 +22,15 @@ else
   echo "Aviso: /tmp/tc ya existe y no es un enlace; se usará tal cual." >&2
 fi
 
+# e2e-art sirve el paquete de un solo archivo desde /tmp/art, que es donde nació.
+# Sin este enlace el caso no encuentra nada y tumba la suite entera en CI.
+mkdir -p "$TRABAJO/art"
+if [ ! -e /tmp/art ] || [ -L /tmp/art ]; then
+  ln -sfn "$TRABAJO/art" /tmp/art
+else
+  echo "Aviso: /tmp/art ya existe y no es un enlace; se usará tal cual." >&2
+fi
+
 echo "· Compilando la app para pruebas"
 node pruebas/herramientas/build.mjs
 node pruebas/herramientas/build-art.mjs
