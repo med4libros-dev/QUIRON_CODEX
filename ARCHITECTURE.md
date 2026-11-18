@@ -438,6 +438,19 @@ Una nota tiene `docId` (PDF de origen, opcional) y `notebookId` (cuaderno, opcio
 - Contraste medido componiendo cada color translúcido sobre lo que tiene detrás: **3.3:1** (día) y **5.5:1** (noche) para los bordes de control. `f4` y `v12c` lo comprueban en los dos packs y en los dos temas.
 - `f4` dejó de ser el guardián de Códice y pasó a vigilar **cada pack con sus propias reglas**: en vidrio exige desenfoque y que se apague al escribir; en Códice, que no haya desenfoque y que el papel siga siendo la superficie más clara.
 
+## v0.26.3 · Un modelo que no puede, lo dice; no lo dibuja
+
+| Módulo | Archivo | Notas |
+|---|---|---|
+| ¿El material sirve? | `exam/generate.ts` `materialUsable` | Cuenta palabras (`\p{L}{3,}`) y exige que ≥60 % de los caracteres visibles sean letras. El umbral viejo —400 caracteres— lo pasaba una GPC escaneada con solo encabezados, viñetas y folios |
+| Aviso de PDF sin texto | `sinTextoMsg` | Nombra la causa (el PDF es imagen) y la consecuencia que el usuario ya notó (el buscador tampoco lo lee). Se intenta primero el respaldo a apuntes; el aviso solo sale si tampoco hay |
+| Prompt del diagrama | `ai/features.ts` `DIAGRAM_SYSTEM` | Reescrito: prohíbe nodos sobre el documento, fija qué es `start`/`decision`/`step`/`end`, exige ≥2 `end` distintos y etiqueta en todas las salidas de decisión, y define una salida `{"error":"…"}` para rendirse por escrito |
+| Red de seguridad | `sanitizeDiagram` + `META` | Si el modelo ignora la salida de error y dibuja su queja, se detecta: si la mitad o más de los nodos hablan del documento, se lanza el aviso en vez de mostrar el grafo |
+
+Lo que esto enseñó: **un prompt necesita una salida para el fracaso**. Sin ella, un modelo obediente que no puede cumplir usa el único formato que le diste —aquí, un flujograma— para explicar por qué. El `{"error":…}` no es cortesía: es lo que evita que la queja llegue disfrazada de resultado. Y como no se puede confiar en que el modelo la use, la red del lado del código es parte del contrato, no un extra.
+
+Prueba: `pruebas/casos/v26c.py`. Compila `sanitizeDiagram` y `materialUsable` aparte y les pasa el diagrama meta real que produjo Gemini, un algoritmo clínico bueno y dos textos (escaneado y legible). Necesita `node_modules` del repo, así que en el contenedor de desarrollo se salta con `SUMMARY 0 / 0` y en CI corre de verdad.
+
 ## v0.26.2 · Lo que dibuja el sistema no hereda el tema
 
 `styles/global.css`: el menú desplegable de un `<select>` no es parte del documento — lo pinta el sistema (en WebView2, siguiendo el modo claro/oscuro de Windows), pero el **texto** sí toma el `color` heredado de la página. Con Windows en claro y la app en oscuro, salía texto claro sobre fondo claro: 1.3:1.

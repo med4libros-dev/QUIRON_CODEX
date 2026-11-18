@@ -57,14 +57,42 @@ export interface Diagram {
   edges: DiagramEdge[];
 }
 
-const DIAGRAM_SYSTEM = `Eres un médico docente. Convierte el material (una GPC mexicana o apuntes) en un algoritmo clínico de diagnóstico y manejo.
-Devuelve un grafo dirigido: "nodes" (id corto, "label" de máximo 60 caracteres, "kind": "start" | "step" | "decision" | "end") y "edges" ("from", "to", "label" opcional como «Sí», «No», «>48 h»).
-Entre 6 y 16 nodos. Las decisiones tienen 2 o 3 salidas. Sigue el orden del algoritmo de la guía si lo tiene.
-Reglas: usa EXCLUSIVAMENTE el material; no inventes dosis ni criterios. Escribe en español.
-Responde SOLO con JSON válido: {"title":"...","nodes":[...],"edges":[...]}`;
+const DIAGRAM_SYSTEM = `Eres un médico adscrito mexicano que enseña a un interno de pregrado. Conviertes una GPC o unos apuntes en el algoritmo clínico que el interno seguiría **frente al paciente**.
+
+EL DIAGRAMA ES SOBRE EL PACIENTE, NUNCA SOBRE EL DOCUMENTO.
+Prohibido cualquier nodo que hable del material, del PDF, de leerlo, de su calidad o de lo que tú puedes o no hacer. Nada de «Recepción de documento», «¿Contiene texto?», «Sección identificada», «Imposible generar». Si el material no alcanza, usa la salida de error de abajo; no lo dibujes.
+
+FORMA
+- "start": UN solo nodo, la presentación clínica con la que llega el paciente. Ej.: «Adulto con TA ≥140/90 en dos tomas».
+- "decision": una pregunta cerrada con su criterio o corte explícito, tomado de la guía. Ej.: «¿TA ≥180/110 o daño a órgano blanco?». Cada decisión tiene 2 o 3 salidas y TODAS van etiquetadas («Sí», «No», «≥3 criterios»).
+- "step": una acción concreta: un estudio que se pide, una medida que se toma, un fármaco que se inicia. Verbo al frente: «Solicitar…», «Iniciar…», «Medir…».
+- "end": un destino del paciente: alta con cita, hospitalización, referencia a segundo nivel, inicio de diálisis. Al menos 2 nodos "end" distintos: un algoritmo con una sola salida no es un algoritmo.
+- Entre 8 y 16 nodos. Todo nodo salvo "start" tiene al menos una arista que llega; todo nodo salvo "end" tiene al menos una que sale.
+- "label": máximo 60 caracteres, sin punto final.
+
+CONTENIDO
+- Usa EXCLUSIVAMENTE el material. Si una cifra, un corte o un criterio no está en el texto, no lo escribas.
+- NUNCA inventes una dosis. Si la guía da el fármaco sin dosis, escribe solo el fármaco.
+- Prefiere lo que cambia la conducta —criterios de gravedad, de referencia, de ingreso— sobre lo descriptivo (epidemiología, fisiopatología).
+- Si el material trae el algoritmo de la guía, sigue su orden en vez de inventar uno.
+- Español de México, lenguaje de hospital.
+
+SI NO SE PUEDE
+Si el material no trae contenido clínico suficiente para un algoritmo —está vacío, son puros encabezados, viñetas sueltas o texto ilegible— responde EXACTAMENTE:
+{"error":"<una frase que diga qué falta>"}
+No devuelvas un diagrama que explique el problema.
+
+SALIDA
+Solo JSON válido, sin texto alrededor ni bloques de código:
+{"title":"...","nodes":[{"id":"n1","label":"...","kind":"start"}],"edges":[{"from":"n1","to":"n2","label":"Sí"}]}`;
+
+/** Palabras que delatan un nodo sobre el documento en vez de sobre el paciente. */
+const META = /\b(documento|pdf|archivo|material|texto|p[áa]gina|secci[óo]n|viñeta|ilegible|imposible generar|no se puede generar|solicitar documento|solicitar gpc)\b/i;
 
 export function sanitizeDiagram(raw: unknown): Diagram {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  // El modelo tiene permitido rendirse por escrito; eso es un aviso, no un diagrama.
+  if (typeof r.error === 'string' && r.error.trim()) throw new Error(r.error.trim().slice(0, 300));
   const kinds: DiagramKind[] = ['start', 'step', 'decision', 'end'];
   const nodes: DiagramNode[] = (Array.isArray(r.nodes) ? r.nodes : [])
     .map((n) => (n && typeof n === 'object' ? (n as Record<string, unknown>) : {}))
@@ -77,6 +105,11 @@ export function sanitizeDiagram(raw: unknown): Diagram {
     .map((e) => ({ from: String(e.from ?? ''), to: String(e.to ?? ''), label: typeof e.label === 'string' ? e.label.slice(0, 24) : undefined }))
     .filter((e) => ids.has(e.from) && ids.has(e.to) && e.from !== e.to);
   if (nodes.length < 2) throw new Error('El diagrama llegó vacío. Intenta de nuevo.');
+  // Red por si el modelo ignora la salida de error y dibuja su propia queja: si la mitad
+  // o más de los nodos hablan del documento, no es un algoritmo clínico.
+  const meta = nodes.filter((n) => META.test(n.label)).length;
+  if (meta * 2 >= nodes.length)
+    throw new Error('El material no trae contenido clínico suficiente para un algoritmo. Si la GPC está escaneada, el lector no puede leer su texto: busca la versión con texto o usa tus apuntes del tema.');
   return { title: typeof r.title === 'string' ? r.title.slice(0, 100) : 'Algoritmo', nodes, edges };
 }
 

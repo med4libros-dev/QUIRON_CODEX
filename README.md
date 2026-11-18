@@ -115,6 +115,10 @@ La primera vez, **Inicio** te pide la fecha de inicio, tus rotaciones, tu esquem
 ### v0.6.6
 - **Tinta sin retraso** con el Surface Pen (lienzo y PDF): cada punto se dibuja en el mismo instante en que llega, la punta usa la predicción del sistema y el trazo va en una capa de baja latencia.
 
+### v0.26.3
+- **El diagrama con IA ahora habla del paciente, no del PDF.** El prompt pedía «convierte el material en un algoritmo» y, cuando la GPC no traía texto, el modelo dibujaba su propia queja: «recepción de documento», «¿contiene texto?», «imposible generar». Ahora tiene prohibido cualquier nodo sobre el documento, debe arrancar con la presentación clínica, cada decisión lleva su criterio y el algoritmo termina en al menos dos destinos del paciente (alta, ingreso, referencia). Si el material no alcanza, lo dice en una frase en vez de dibujarlo.
+- **Las GPC escaneadas se avisan antes de gastar una petición.** El filtro contaba caracteres, y una guía escaneada suma miles entre encabezados, viñetas y números de página sin una sola frase clínica. Ahora cuenta palabras reales: si no las hay, te dice que ese PDF es imagen y no texto, y que por eso tampoco funciona el buscador en él.
+
 ### v0.26.2
 - **Arreglo: las listas desplegables salían ilegibles.** El menú que aparece al abrir un selector (rotaciones, meses, estilo de hoja, cualquiera) lo dibuja Windows, no la app, y seguía el modo claro/oscuro **del sistema**. Con Windows en claro y Quirón Codex en oscuro, el fondo salía claro y el texto —claro también— quedaba casi invisible (1.3:1). Ahora cada opción fija su propio color: entre 13:1 y 15:1 en los dos packs, de día y de noche, sin importar cómo esté Windows.
 

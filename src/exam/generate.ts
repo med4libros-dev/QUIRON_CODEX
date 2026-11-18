@@ -24,21 +24,45 @@ Responde SOLO con JSON válido: {"questions":[...]} sin texto adicional ni bloqu
 
 export const MAX_CHARS = 60_000;
 
+/**
+ * ¿Este texto da para trabajar? Contar caracteres no basta: una GPC escaneada —o con la
+ * capa de texto rota— deja encabezados, números de página y viñetas sueltas que suman
+ * miles de caracteres sin una sola frase clínica. Se cuentan palabras de verdad
+ * (3+ letras seguidas) y se exige que el texto sea mayormente letras, no símbolos.
+ */
+export function materialUsable(text: string): { ok: boolean; palabras: number; razonLetras: number } {
+  const palabras = (text.match(/\p{L}{3,}/gu) ?? []).length;
+  const letras = (text.match(/\p{L}/gu) ?? []).length;
+  const visibles = text.replace(/\s/g, '').length;
+  const razonLetras = visibles ? letras / visibles : 0;
+  return { ok: palabras >= 150 && razonLetras >= 0.6, palabras, razonLetras };
+}
+
+/** Lo que se le dice al usuario cuando el PDF no trae texto que leer. */
+export function sinTextoMsg(docName: string, palabras: number): string {
+  return `«${docName}» no tiene texto legible (${palabras} palabras aprovechables). Casi siempre significa que el PDF está escaneado: son imágenes de las páginas, no texto, así que ni el buscador ni la IA pueden leerlo. Busca la GER en el sitio del IMSS, que las publica con texto, o usa tus apuntes del tema.`;
+}
+
 export async function materialFor(topicId: string): Promise<{ text: string; docId: string | null; docName: string }> {
   const docId = preferredDoc(topicId, 'GER');
+  let escaneado: string | null = null;
   if (docId) {
     const pages = await pagesOf(docId);
     let text = '';
     for (let i = 0; i < pages.length && text.length < MAX_CHARS; i++) if (pages[i]) text += `\n[p. ${i + 1}]\n${pages[i]}\n`;
     const docName = useLibrary.getState().docs.find((d) => d.id === docId)?.name ?? 'GPC';
-    if (text.trim().length > 400) return { text: text.slice(0, MAX_CHARS), docId, docName };
+    const u = materialUsable(text);
+    if (u.ok) return { text: text.slice(0, MAX_CHARS), docId, docName };
+    // Hay PDF pero no da texto aprovechable. Se intentan los apuntes igual; si tampoco
+    // hay, el aviso dice que el PDF está escaneado, que es la causa real.
+    escaneado = sinTextoMsg(docName, u.palabras);
   }
   // Sin GPC con texto: los apuntes del tema.
   const t = TOPIC[topicId];
   const notes = useNotes.getState().notes.filter((n) => n.title === t.title);
   const text = notes.map((n) => htmlToText(n.html)).join('\n\n');
-  if (text.trim().length < 300) throw new Error(`«${t.title}» no tiene GPC adjunta ni apuntes suficientes. Adjunta la GER en la ficha del tema.`);
-  return { text: text.slice(0, MAX_CHARS), docId: null, docName: 'Apuntes' };
+  if (materialUsable(text).ok) return { text: text.slice(0, MAX_CHARS), docId: null, docName: 'Apuntes' };
+  throw new Error(escaneado ?? `«${t.title}» no tiene GPC adjunta ni apuntes suficientes. Adjunta la GER en la ficha del tema.`);
 }
 
 export async function generateQuestions(
